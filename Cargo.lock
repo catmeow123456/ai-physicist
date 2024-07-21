@@ -21,7 +21,6 @@ version = "0.1.0"
 dependencies = [
  "ndarray",
  "plotly",
- "plotpy",
  "rand",
  "rand_distr",
  "symbolica",
@@ -606,12 +605,6 @@ dependencies = [
  "quote",
  "syn",
 ]
-
-[[package]]
-name = "plotpy"
-version = "1.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e94b57c3968896b779266dbbb72e50ea1702f21664b92e1dbb07cb6a642d3ae9"
 
 [[package]]
 name = "powerfmt"
