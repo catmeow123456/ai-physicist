@@ -8,15 +8,15 @@ use std::ops::{Add, AddAssign, Sub, Mul, Div};
 use std::collections::HashSet;
 use ndarray::{Array2};
 
-fn f_list<T, const N: usize> (a :&[T;N], b: &[T;N], f: fn(&T,&T) -> T) -> [T;N]
-where T: Copy, T: Default,
-{
-    let mut res = [Default::default(); N];
-    for i in 0..N {
-        res[i] = f(&a[i], &b[i]);
-    }
-    res
-}
+// fn f_list<T, const N: usize> (a :&[T;N], b: &[T;N], f: fn(&T,&T) -> T) -> [T;N]
+// where T: Copy, T: Default,
+// {
+//     let mut res = [Default::default(); N];
+//     for i in 0..N {
+//         res[i] = f(&a[i], &b[i]);
+//     }
+//     res
+// }
 
 #[derive(Debug, Clone)]
 pub struct ExpData {
