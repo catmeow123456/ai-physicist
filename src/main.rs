@@ -30,21 +30,25 @@ fn test_expdata() {
 use plotly::{Plot, Scatter};
 use ai_physicist::experiments::expstructure::ExpStructure;
 use ai_physicist::experiments::simulation::collision::Collision;
+use ai_physicist::experiments::simulation::oscillation::Oscillation;
 
-fn plot_expdata(data: &HashMap<String, ExpData>) {
+fn plot_expdata(data: &HashMap<String, ExpData>, name: &str) {
     // plot the arr
     let mut plot = Plot::new();
-    let t= data.get("t").unwrap().data.row(0).to_vec();
-    for (key, value) in data.iter() {
-        if key == "t" {
-            continue;
+    let repeat_time = data.get("t").unwrap().repeat_time;
+    for ith in 0..repeat_time {
+        let t= data.get("t").unwrap().data.row(ith).to_vec();
+        for (key, value) in data.iter() {
+            if key == "t" {
+                continue;
+            }
+            let x = value.data.row(ith).to_vec();
+            let trace = Scatter::new(t.clone(), x.clone());
+            plot.add_trace(trace);
         }
-        let x = value.data.row(0).to_vec();
-        let trace = Scatter::new(t.clone(), x.clone());
-        plot.add_trace(trace);
     }
     // plot.show();
-    plot.write_html("tmp/out.html");
+    plot.write_html(format!("tmp/{}.html", name));
 }
 
 fn test_experiments() {
@@ -53,8 +57,16 @@ fn test_experiments() {
     //     println!("NAME: {} , {}", key, obj);
     // }
     exp.random_sample();
-    let data: HashMap<String, ExpData> = exp.get_expdata(10.0, 100, 1e-8, 10);
-    plot_expdata(&data);
+    let data: HashMap<String, ExpData> = exp.get_expdata(2.0, 100, 1e-8, 10);
+    plot_expdata(&data, "collision");
+
+    let mut exp: Oscillation = ExpStructure::new();
+    exp.random_sample();
+    // for (key, obj) in exp.obj_info().iter() {
+    //     println!("NAME: {} , {}", key, obj);
+    // }
+    let data: HashMap<String, ExpData> = exp.get_expdata(2.0, 100, 1e-8, 10);
+    plot_expdata(&data, "oscillation");
 }
 fn main() {
     // test_symbolica();

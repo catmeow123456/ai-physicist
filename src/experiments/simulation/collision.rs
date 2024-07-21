@@ -17,13 +17,13 @@ fn do_collision(m1: f64, m2: f64, v1: f64, v2: f64) -> (f64, f64) {
 
 impl ExpStructure for Collision {
     fn new() -> Self {
-        let default_mass_struct = make_masspoint((2.0, 5.0));
+        let default_mass_struct = make_masspoint((2.0, 10.0));
         Collision {
             exp_para: HashMap::from([
                 ("x1".to_string(), Parastructure::new(Some((-4.0, -3.0)), None)),
-                ("v1".to_string(), Parastructure::new(Some((2.0, 3.0)), None)),
+                ("v1".to_string(), Parastructure::new(Some((3.0, 5.0)), None)),
                 ("x2".to_string(), Parastructure::new(Some((3.0, 4.0)), None)),
-                ("v2".to_string(), Parastructure::new(Some((-3.0, -2.0)), None)),
+                ("v2".to_string(), Parastructure::new(Some((-5.0, -3.0)), None)),
             ]),
             obj_info: HashMap::from([
                 ("MPa".to_string(), default_mass_struct.clone()),
