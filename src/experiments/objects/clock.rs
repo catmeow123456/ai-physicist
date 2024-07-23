@@ -1,6 +1,8 @@
 use std::collections::HashMap;
 use crate::experiments::expstructure::Objstructure;
-use crate::experiments::objects::ObjType;
+use crate::experiments::objects::obj::ObjType;
+
+use super::obj::DATA;
 
 pub fn make_clock() -> Objstructure {
     Objstructure::new(
@@ -9,5 +11,4 @@ pub fn make_clock() -> Objstructure {
     )
 }
 
-pub static DATA_TIME: &str = "t";
-pub static DATA_CLOCK: [&str; 1] = [DATA_TIME];
+pub static DATA_TIME: DATA = DATA::new(ObjType::Clock, "t");

@@ -1,22 +1,12 @@
 // a data structure that represent n * m arrays
 // where n is the number of times of experiments and m is the number of data points
 
-use std::default::Default;
 use std::f64::NAN;
 use std::fmt;
-use std::ops::{Add, AddAssign, Sub, Mul, Div};
+use std::ops::{Add, AddAssign, Sub, Mul, Div, Neg};
 use std::collections::HashSet;
-use ndarray::{Array2};
-
-// fn f_list<T, const N: usize> (a :&[T;N], b: &[T;N], f: fn(&T,&T) -> T) -> [T;N]
-// where T: Copy, T: Default,
-// {
-//     let mut res = [Default::default(); N];
-//     for i in 0..N {
-//         res[i] = f(&a[i], &b[i]);
-//     }
-//     res
-// }
+use ndarray::{s, Array, Array1, Array2, Array3};
+use ndarray_linalg::Solve;
 
 #[derive(Debug, Clone)]
 pub struct ExpData {
@@ -53,6 +43,10 @@ impl ExpData {
         Self::new(Array2::zeros((repeat_size, n)))
     }
 
+    pub fn from_elem(value: f64, n: usize, repeat_size: usize) -> ExpData {
+        Self::new(Array2::from_elem((repeat_size, n), value))
+    }
+
     pub fn gen_domain(&self) -> Vec<(usize,usize)> {
         let mut res = Vec::new();
         let mut last = 0;
@@ -63,6 +57,20 @@ impl ExpData {
             last = *i + 1;
         }
         res
+    }
+
+    pub fn plot_over_t(&self, name: &str, t: &ExpData) {
+        // plot the arr
+        let mut plot = plotly::Plot::new();
+        let repeat_time = self.repeat_time;
+        for ith in 0..repeat_time {
+            let t = t.data.row(ith).to_vec();
+            let x = self.data.row(ith).to_vec();
+            let trace = plotly::Scatter::new(t, x);
+            plot.add_trace(trace);
+        }
+        // plot.show();
+        plot.write_html(format!("tmp/{}.html", name));
     }
 }
 
@@ -152,4 +160,100 @@ impl AddAssign for ExpData {
     fn add_assign(&mut self, other: ExpData) {
         self.data += &other.data;
     }
+}
+
+impl Neg for ExpData {
+    type Output = ExpData;
+    fn neg(self) -> ExpData {
+        ExpData::new(-&self.data)
+    }
+}
+
+impl ExpData {
+    pub fn pow(&self, other: &ExpData) -> ExpData {
+        let mut res: Array2<f64> = self.data.clone();
+        for i in 0..self.n {
+            if self.badpts.contains(&i) || other.badpts.contains(&i) {
+                for j in 0..self.repeat_time {
+                    res[[j,i]] = NAN;
+                }
+            } else {
+                for j in 0..self.repeat_time {
+                    res[[j,i]] = self.data[[j,i]].powf(other.data[[j,i]]);
+                }
+            }
+        }
+        ExpData::new(res)
+    }
+    pub fn diff_tau(&self) -> ExpData {
+        npsd(self, 1, 5)
+    }
+    pub fn diff(&self, other: &ExpData) -> ExpData {
+        self.diff_tau() / other.diff_tau()
+    }
+    pub fn diff_n(&self, other: &ExpData, n: usize) -> ExpData {
+        assert!(n > 0 && n < 5);
+        if n == 1 {
+            self.diff(other)
+        } else {
+            self.diff(other).diff_n(other, n-1)
+        }
+    }
+}
+
+pub struct NPSCoefficient {
+    pub c: Array3<f64>,
+    pub r: Array2<f64>,
+}
+
+impl NPSCoefficient {
+    pub fn new(n: usize) -> Self {
+        assert!(n > 0 && n < 20);
+        // obtain factorial array
+        let mut c: Array1<f64> = Array::ones(n+1);
+        for i in 1..n+1 { c[i] = c[i-1] * i as f64; }
+        // obtain the transform matrix
+        let col: Array1<f64> = Array::linspace(1.0-(n as f64), n as f64-1.0, n*2-1);
+        let mut a: Array2<f64> = Array2::<f64>::zeros((n*2-1, n));
+        for i in 0..n {
+            a.column_mut(i).assign(&col.mapv(|x| x.powf(i as f64) / c[i]));
+        }
+        let b: Array2<f64> = Array::eye(n);
+        let r: Array1<f64> = col.mapv(|x| x.powf(n as f64) / c[n]);
+        let mut selfc : Array3<f64> = Array::zeros((n, n, n));
+        let mut selfr : Array2<f64> = Array::zeros((n, n));
+        for i in 0..n {
+            for j in 0..n {
+                let aa: Array2<f64> = a.slice(s![i..n+i, ..]).t().to_owned();
+                let bb: Array1<f64> = b.row(j).to_owned();
+                let cc: Array1<f64> = aa.solve_into(bb).unwrap();
+                selfc.slice_mut(s![i, j, ..]).assign(&cc);
+                selfr[[i,j]] = cc.dot(&r.slice(s![i..n+i]));
+            }
+        }
+        NPSCoefficient {
+            c: selfc,
+            r: selfr,
+        }
+    }
+}
+
+fn npsd(y: &ExpData, d: usize, nn: usize) -> ExpData {
+    assert!(d < nn && d > 0 && nn < 10 && nn % 2 == 1);
+    let c: Array2<f64> = NPSCoefficient::new(nn).c.slice(s![.., d, ..]).to_owned();
+    let nnn = nn / 2;
+    let y0: Array2<f64> = y.data.slice(s![.., 0..nn]).to_owned();
+    let y1: Array2<f64> = y.data.slice(s![.., y.n-nn..y.n]).to_owned();
+    let u: Array1<f64> = c.row(nnn).to_owned();
+    let mut z: Array2<f64> = Array::zeros((y.repeat_time, y.n));
+    for i in 0..y.repeat_time {
+        for j in 0..y.n-nn+1 {
+            z[[i, j+nnn]] = u.dot(&y.data.slice(s![i, j..j+nn]))
+        }
+        for j in 0..nnn {
+            z[[i, j]] = y0.row(i).dot(&c.row(nn-j-1));
+            z[[i, y.n-j-1]] = y1.row(i).dot(&c.row(j));
+        }
+    }
+    ExpData::new(z)
 }

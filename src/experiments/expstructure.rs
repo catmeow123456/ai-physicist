@@ -3,7 +3,10 @@ use rand_distr::{Distribution, Normal};
 use std::{fmt, collections::HashMap};
 use ndarray::{ArrayBase, Array1, Array2, Dimension, OwnedRepr};
 use crate::experiments::expdata::ExpData;
-use crate::experiments::objects::ObjType;
+use crate::experiments::objects::obj::{ObjType, ATTR};
+
+use super::objects::clock::DATA_TIME;
+use super::objects::obj::DATA;
 
 // 刻画某个参数结构的抽象类
 // range: 参数的取值范围
@@ -59,11 +62,11 @@ impl fmt::Display for Parastructure {
 #[derive(Clone)]
 pub struct Objstructure {
     obj_type: ObjType,
-    attribute: HashMap<&'static str, Parastructure>,
+    attribute: HashMap<ATTR, Parastructure>,
 }
 impl Objstructure {
     pub fn new(obj_type: ObjType,
-           attribute: HashMap<&'static str, Parastructure>) -> Self {
+           attribute: HashMap<ATTR, Parastructure>) -> Self {
         Objstructure {
             obj_type,
             attribute,
@@ -74,27 +77,27 @@ impl Objstructure {
             para.random_sample();
         }
     }
-    fn measure_para(&self, para_name: &str) -> f64 {
+    fn measure_para(&self, para_name: &ATTR) -> f64 {
         self.attribute.get(para_name).unwrap().measure()
     }
-    fn measure(&self) -> HashMap<&'static str, f64> {
+    fn measure(&self) -> HashMap<ATTR, f64> {
         let mut result = HashMap::new();
         for (name, _) in self.attribute.iter() {
-            result.insert(*name, self.measure_para(name));
+            result.insert(name.clone(), self.measure_para(name));
         }
         result
     }
-    fn real_value(&self) -> HashMap<&'static str, f64> {
+    fn real_value(&self) -> HashMap<ATTR, f64> {
         let mut result = HashMap::new();
         for (name, para) in self.attribute.iter() {
-            result.insert(*name, para.real_value());
+            result.insert(name.clone(), para.real_value());
         }
         result
     }
-    fn get_para_real_value(&self, para_name: &str) -> f64 {
-        self.attribute.get(&para_name).unwrap().real_value()
+    fn get_para_real_value(&self, para_name: &ATTR) -> f64 {
+        self.attribute.get(para_name).unwrap().real_value()
     }
-    fn set_value(&mut self, value_dict: HashMap<&'static str, f64>) {
+    fn set_value(&mut self, value_dict: HashMap<ATTR, f64>) {
         for (name, value) in value_dict.iter() {
             self.attribute.get_mut(name).unwrap().set_value(*value);
         }
@@ -114,29 +117,77 @@ impl fmt::Display for Objstructure {
 }
 
 pub struct DataStructOfDoExperiment {
-    obj_id_map: HashMap<&'static str, (ObjType, usize)>,
-    obj_info_dict: HashMap<ObjType, HashMap<usize, &'static str>>,
-    data_info_dict: HashMap<(&'static str, &'static str), String>,
-    data: HashMap<String, Array1<f64>>,
+    n: usize,
+    obj_id_map: HashMap<&'static str, (ObjType, i32)>,
+    obj_info_dict: HashMap<ObjType, HashMap<i32, &'static str>>,
+    data: HashMap<(DATA, i32), Array1<f64>>,
 }
 impl DataStructOfDoExperiment {
-    fn new(obj_id_map: HashMap<&'static str, (ObjType, usize)>,
-           obj_info_dict: HashMap<ObjType, HashMap<usize, &'static str>>,
-           data_info_dict: HashMap<(&'static str, &'static str), String>) -> Self {
+    fn new(n: usize,
+           obj_id_map: HashMap<&'static str, (ObjType, i32)>,
+           obj_info_dict: HashMap<ObjType, HashMap<i32, &'static str>>,
+        ) -> Self {
         DataStructOfDoExperiment {
+            n,
             obj_id_map,
             obj_info_dict,
-            data_info_dict,
             data: HashMap::new(),
         }
     }
-    pub fn add_data(&mut self, name: &str, data_name: &str, data: &Array1<f64>) {
-        let key = self.data_info_dict.get(&(name, data_name)).unwrap();
-        self.data.insert(key.clone(), data.clone());
+    pub fn add_data(&mut self, name: &str, data_name: &DATA, data: &Array1<f64>) {
+        assert_eq!(data.len(), self.n);
+        let obj_id = self.obj_id_map.get(name).unwrap().1;
+        self.data.insert((data_name.clone(), obj_id), data.clone());
     }
-    fn get_data(&self) -> &HashMap<String, Array1<f64>> {
-        assert_eq!(self.data_info_dict.len(), self.data.len());
+    fn get_data(&self) -> &HashMap<(DATA, i32), Array1<f64>> {
         &self.data
+    }
+}
+pub struct DataStructOfExpData {
+    pub n: usize,
+    pub repeat_time: usize,
+    data: HashMap<(DATA, i32), ExpData>,
+}
+impl DataStructOfExpData {
+    fn new(n: usize, repeat_time: usize, data: HashMap<(DATA, i32), ExpData>) -> Self {
+        DataStructOfExpData {
+            n,
+            repeat_time,
+            data
+        }
+    }
+    pub fn get_data(&self) -> &HashMap<(DATA, i32), ExpData> {
+        &self.data
+    }
+    pub fn get_t(&self) -> &ExpData {
+        self.data.get(&(DATA_TIME.clone(), 0)).unwrap()
+    }
+    pub fn get_data_by_name_id(&self, name: &str, id: i32) -> Result<&ExpData, String> {
+        for (key, value) in self.data.iter() {
+            if key.0.name() == name && key.1 == id {
+                return Ok(value);
+            }
+        }
+        Err(format!("Data {} not found", name))
+    }
+    pub fn plot_expdata(&self, name: &str) {
+        // plot the arr
+        let mut plot = plotly::Plot::new();
+        let t = self.get_t();
+        let repeat_time = t.repeat_time;
+        for ith in 0..repeat_time {
+            let t= t.data.row(ith).to_vec();
+            for (key, value) in self.data.iter() {
+                if key.0 == DATA_TIME {
+                    continue;
+                }
+                let x = value.data.row(ith).to_vec();
+                let trace = plotly::Scatter::new(t.clone(), x.clone());
+                plot.add_trace(trace);
+            }
+        }
+        // plot.show();
+        plot.write_html(format!("tmp/{}.html", name));
     }
 }
 
@@ -148,39 +199,39 @@ pub trait ExpStructure {
     fn mut_exp_para(&mut self) -> &mut HashMap<&'static str, Parastructure>;
     fn obj_info(&self) -> &HashMap<&'static str, Objstructure>;
     fn mut_obj_info(&mut self) -> &mut HashMap<&'static str, Objstructure>;
-    fn data_info(&self) -> &HashMap<&'static str, Vec<&'static str>>;
-    fn create_data_struct_of_do_experiment(&self) -> DataStructOfDoExperiment {
-        let mut obj_id_map: HashMap<&'static str, (ObjType, usize)> = HashMap::new();
-        let mut obj_info_dict: HashMap<ObjType, HashMap<usize, &'static str>> = HashMap::new();
-        let mut data_info_dict: HashMap<(&'static str, &'static str), String> = HashMap::new();
+    fn data_info(&self) -> &HashMap<&'static str, Vec<DATA>>;
+    fn create_data_struct_of_do_experiment(&self, t_num: usize) -> DataStructOfDoExperiment {
+        let mut obj_id_map: HashMap<&'static str, (ObjType, i32)> = HashMap::new();
+        let mut obj_info_dict: HashMap<ObjType, HashMap<i32, &'static str>> = HashMap::new();
         for (name, obj) in self.obj_info().iter() {
-            let obj_type = obj.obj_type.clone();
-            let obj_id = if obj_type == ObjType::Clock {
-                0
-            } else {
-                obj_id_map.len() + 1
-            };
-            obj_id_map.insert(name, (obj_type.clone(), obj_id));
-            if !obj_info_dict.contains_key(&obj_type) {
-                obj_info_dict.insert(obj_type.clone(), HashMap::new());
+            if obj.obj_type == ObjType::Clock {
+                obj_id_map.insert(name, (ObjType::Clock, 0));
             }
-            obj_info_dict.get_mut(&obj_type).unwrap().insert(obj_id, name);
+        }
+        let mut hash_vec: Vec<(&&'static str, &Objstructure)> = self.obj_info().iter().collect();
+        hash_vec.sort_by(|a, b| (**(a.0)).cmp(*(b.0)));
+        for (name, obj) in hash_vec.iter() {
+            let obj_type = obj.obj_type.clone();
+            if obj_type == ObjType::Clock {
+                continue;
+            }
+            let obj_id = obj_id_map.len() as i32;
+            obj_id_map.insert(name, (obj_type.clone(), obj_id));
+            if !obj_info_dict.contains_key(&obj.obj_type) {
+                obj_info_dict.insert(obj_type, HashMap::new());
+            }
+            obj_info_dict.get_mut(&obj.obj_type).unwrap().insert(obj_id, name);
         }
         for (obj_name, data_names) in self.data_info().iter() {
-            let obj_id = obj_id_map.get(obj_name).unwrap().1;
-            for data_name in data_names {
-                let var_name = if obj_id == 0 {
-                    format!("{}", data_name)
-                } else {
-                    format!("{}_{}", data_name, obj_id)
-                };
-                data_info_dict.insert((obj_name, data_name), var_name);
+            let obj_type = obj_id_map.get(obj_name).unwrap().clone().0;
+            for data in data_names {
+                assert_eq!(data.obj(), &obj_type);
             }
         }
         DataStructOfDoExperiment::new(
+            t_num,
             obj_id_map,
             obj_info_dict,
-            data_info_dict,
         )
     }
     fn do_experiment(&self, t_end: f64, t_num: usize, error: f64) -> DataStructOfDoExperiment;
@@ -195,13 +246,13 @@ pub trait ExpStructure {
     fn get_para_real_value(&self, para_name: &str) -> f64 {
         self.exp_para().get(&para_name).unwrap().real_value()
     }
-    fn get_obj_real_value(&self, obj_name: &str, para_name: &str) -> f64 {
+    fn get_obj_real_value(&self, obj_name: &str, para_name: &ATTR) -> f64 {
         self.obj_info().get(&obj_name).unwrap().get_para_real_value(para_name)
     }
-    fn get_expdata(&self, t_end: f64, t_num: usize, error: f64, repeat_time: usize) -> HashMap<String, ExpData> {
+    fn get_expdata(&self, t_end: f64, t_num: usize, error: f64, repeat_time: usize) -> DataStructOfExpData {
         let data_struct = self.do_experiment(t_end, t_num, 0.0);
         let data = data_struct.get_data();
-        let mut multi_data: HashMap<String, ExpData> = HashMap::new();
+        let mut multi_data: HashMap<(DATA, i32), ExpData> = HashMap::new();
         for (name, data) in data.iter() {
             let mut idata: Array2<f64> = Array2::zeros((repeat_time, t_num));
             for i in 0..repeat_time {
@@ -213,7 +264,7 @@ pub trait ExpStructure {
             assert_eq!(idata.shape(), [repeat_time, t_num]);
             multi_data.insert(name.clone(), ExpData::new(idata));
         }
-        multi_data
+        DataStructOfExpData::new(t_num, repeat_time, multi_data)
     }
 }
 

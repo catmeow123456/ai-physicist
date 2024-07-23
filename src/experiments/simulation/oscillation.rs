@@ -1,3 +1,4 @@
+use crate::experiments::objects::obj::DATA;
 use crate::experiments::objects::spring::{make_spring, ATTR_FREEL, ATTR_THICKNESS, DATA_POSL, DATA_POSR};
 use crate::experiments::objects::masspoint::{make_masspoint, ATTR_MASS, DATA_POSX};
 use crate::experiments::objects::clock::{make_clock, DATA_TIME};
@@ -11,7 +12,7 @@ use std::collections::HashMap;
 pub struct Oscillation {
     exp_para: HashMap<&'static str, Parastructure>,
     obj_info: HashMap<&'static str, Objstructure>,
-    data_info: HashMap<&'static str, Vec<&'static str>>,
+    data_info: HashMap<&'static str, Vec<DATA>>,
 }
 impl ExpStructure for Oscillation {
     fn new() -> Self {
@@ -29,9 +30,9 @@ impl ExpStructure for Oscillation {
                 ("Clock", make_clock()),
             ]),
             data_info: HashMap::from([
-                ("MPa", vec![DATA_POSX]),
-                ("SPb", vec![DATA_POSL, DATA_POSR]),
-                ("Clock", vec![DATA_TIME]),
+                ("MPa", vec![DATA_POSX.clone()]),
+                ("SPb", vec![DATA_POSL.clone(), DATA_POSR.clone()]),
+                ("Clock", vec![DATA_TIME.clone()]),
             ]),
         }
     }
@@ -49,16 +50,16 @@ impl ExpStructure for Oscillation {
     fn mut_obj_info(&mut self) -> &mut HashMap<&'static str, Objstructure> {
         &mut self.obj_info
     }
-    fn data_info(&self) -> &HashMap<&'static str, Vec<&'static str>> {
+    fn data_info(&self) -> &HashMap<&'static str, Vec<DATA>> {
         &self.data_info
     }
     fn do_experiment(&self, t_end: f64, t_num: usize, error: f64) -> DataStructOfDoExperiment {
         let x1 = self.get_para_real_value("posl");
         let x2 = self.get_para_real_value("x2");
         let v2 = self.get_para_real_value("v2");
-        let mp1_mass_value = self.get_obj_real_value("MPa", ATTR_MASS);
-        let sp2_length_value = self.get_obj_real_value("SPb", ATTR_FREEL);
-        let sp2_k_value = (self.get_obj_real_value("SPb", ATTR_THICKNESS)).powf(3.0);
+        let mp1_mass_value = self.get_obj_real_value("MPa", &ATTR_MASS);
+        let sp2_length_value = self.get_obj_real_value("SPb", &ATTR_FREEL);
+        let sp2_k_value = (self.get_obj_real_value("SPb", &ATTR_THICKNESS)).powf(3.0);
         let step = (t_end - 0.0) / (t_num as f64);
         let t: Array1<f64> = Array1::range(0.0, t_end, step);
         let sp2_l = Array1::from_elem(t_num, x1);
@@ -68,11 +69,11 @@ impl ExpStructure for Oscillation {
         } else {
             &sp2_l - sp2_length_value + (v2 / omega) * (omega * &t).mapv(|x| x.sin()) + (x2 - x1 + sp2_length_value) * (omega * &t).mapv(|x| x.cos())
         };
-        let mut data_struct = self.create_data_struct_of_do_experiment();
-        data_struct.add_data("Clock", DATA_TIME, &add_normal_errors_to_array(&t, error));
-        data_struct.add_data("MPa", DATA_POSX, &add_normal_errors_to_array(&sp2_r, error));
-        data_struct.add_data("SPb", DATA_POSR, &add_normal_errors_to_array(&sp2_r, error));
-        data_struct.add_data("SPb", DATA_POSL, &add_normal_errors_to_array(&sp2_l, error));
+        let mut data_struct = self.create_data_struct_of_do_experiment(t_num);
+        data_struct.add_data("Clock", &DATA_TIME, &add_normal_errors_to_array(&t, error));
+        data_struct.add_data("MPa", &DATA_POSX, &add_normal_errors_to_array(&sp2_r, error));
+        data_struct.add_data("SPb", &DATA_POSR, &add_normal_errors_to_array(&sp2_r, error));
+        data_struct.add_data("SPb", &DATA_POSL, &add_normal_errors_to_array(&sp2_l, error));
         data_struct
     }
 }
