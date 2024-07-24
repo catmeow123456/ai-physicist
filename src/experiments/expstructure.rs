@@ -2,10 +2,8 @@ use rand::Rng;
 use rand_distr::{Distribution, Normal};
 use std::{fmt, collections::HashMap};
 use ndarray::{ArrayBase, Array1, Array2, Dimension, OwnedRepr};
-use crate::experiments::expdata::ExpData;
-use crate::experiments::objects::obj::{ObjType, ATTR};
-
-use super::objects::clock::DATA_TIME;
+use super::expdata::ExpData;
+use super::objects::obj::{ObjType, ATTR};
 use super::objects::obj::DATA;
 
 // 刻画某个参数结构的抽象类
@@ -155,7 +153,7 @@ impl DataStructOfExpData {
         &self.data
     }
     pub fn get_t(&self) -> &ExpData {
-        self.data.get(&(DATA_TIME.clone(), 0)).unwrap()
+        self.data.get(&(DATA::time(), 0)).unwrap()
     }
     pub fn get_data_by_name_id(&self, name: &str, id: i32) -> Result<&ExpData, String> {
         for (key, value) in self.data.iter() {
@@ -173,7 +171,7 @@ impl DataStructOfExpData {
         for ith in 0..repeat_time {
             let t= t.data.row(ith).to_vec();
             for (key, value) in self.data.iter() {
-                if key.0 == DATA_TIME {
+                if key.0 == DATA::time() {
                     continue;
                 }
                 let x = value.data.row(ith).to_vec();
@@ -253,7 +251,7 @@ pub trait ExpStructure {
             for i in 0..repeat_time {
                 idata.row_mut(i).assign(&data);
             }
-            idata = add_normal_errors_to_array(&idata, error);
+            idata = add_errors(&idata, error);
             assert_eq!(idata.shape(), [repeat_time, t_num]);
             multi_data.insert(name.clone(), ExpData::new(idata));
         }
@@ -261,7 +259,7 @@ pub trait ExpStructure {
     }
 }
 
-pub fn add_normal_errors_to_array<D: Dimension>(array: &ArrayBase<OwnedRepr<f64>, D>, error: f64)
+pub fn add_errors<D: Dimension>(array: &ArrayBase<OwnedRepr<f64>, D>, error: f64)
         -> ArrayBase<OwnedRepr<f64>, D> {
     let mut rng = rand::thread_rng();
     let normal = Normal::new(0.0, error).unwrap();

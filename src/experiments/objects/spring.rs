@@ -8,18 +8,19 @@ use crate::experiments::objects::obj::{
 // 在一个实验中，每一个弹簧对象对应于两个可调节的旋钮，一个调节它的粗细（范围为 thickness_range ），另一个调节它的自由长度（范围为 freeL_range ）。
 
 // make_spring，返回一个弹簧对象的结构，只可以调节它的粗细和自由长度。
-pub fn make_spring(thickness_range: (f64, f64), freel_range: (f64, f64)) -> Objstructure {
-    Objstructure::new(
-        Spring,
-        HashMap::from([
-            (ATTR::thickness(),
-                Parastructure::new(Some(thickness_range), None)),
-            (ATTR::freel(),
-                Parastructure::new(Some(freel_range), None)),
-        ])
-    )
+impl Objstructure {
+    pub fn spring(thickness_range: (f64, f64), freel_range: (f64, f64)) -> Self {
+        Objstructure::new(
+            Spring,
+            HashMap::from([
+                (ATTR::thickness(),
+                    Parastructure::new(Some(thickness_range), None)),
+                (ATTR::freel(),
+                    Parastructure::new(Some(freel_range), None)),
+            ]),
+        )
+    }
 }
-
 impl ATTR {
     pub fn thickness() -> Self { ATTR::new(Spring, "thickness") }
     pub fn freel() -> Self { ATTR::new(Spring, "freel") }

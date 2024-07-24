@@ -9,16 +9,19 @@ use crate::experiments::objects::obj::{
 // 在一个实验中，每一个质点对象对应于两个可调节的旋钮，一个调节它的质量（范围为 mass_range），另一个调节它的电荷（范围为 elec_range）
 
 // make_masspoint，返回一个质点对象的结构，只可以调节它的质量，它没有电荷。
-pub fn make_masspoint(mass_range: (f64, f64)) -> Objstructure {
-    Objstructure::new(
-        MassPoint,
-        HashMap::from([
-            (ATTR::mass(),
-                Parastructure::new(Some(mass_range), None)),
-            (ATTR::elec(),
-                Parastructure::new(Some((0.0, 1e-8)), None)),
-        ]),
-    )
+impl Objstructure {
+    pub fn masspoint(mass_range: (f64, f64)) -> Self {
+        Objstructure::new(
+            MassPoint,
+            HashMap::from([
+                (ATTR::mass(),
+                    Parastructure::new(Some(mass_range), None)),
+                (ATTR::elec(),
+                    Parastructure::new(Some((0.0, 1e-8)), None)),
+            ]),
+        )
+    }
+
 }
 impl ATTR {
     pub fn mass() -> Self { ATTR::new(MassPoint,"m") }

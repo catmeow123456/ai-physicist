@@ -1,7 +1,5 @@
-use crate::experiments::objects::masspoint::make_masspoint;
-use crate::experiments::objects::clock::{make_clock, DATA_TIME};
 use crate::experiments::expstructure::{
-    Parastructure, Objstructure, ExpStructure, add_normal_errors_to_array,
+    Parastructure, Objstructure, ExpStructure, add_errors,
     DataStructOfDoExperiment
 };
 use crate::experiments::objects::obj::{DATA, ATTR};
@@ -22,7 +20,7 @@ fn do_collision(m1: f64, m2: f64, v1: f64, v2: f64) -> (f64, f64) {
 
 impl ExpStructure for Collision {
     fn new() -> Self {
-        let default_mass_struct = make_masspoint((2.0, 10.0));
+        let default_mass_struct = Objstructure::masspoint((2.0, 10.0));
         Collision {
             exp_para: HashMap::from([
                 ("x1", Parastructure::new(Some((-4.0, -3.0)), None)),
@@ -33,12 +31,12 @@ impl ExpStructure for Collision {
             obj_info: HashMap::from([
                 ("MPa", default_mass_struct.clone()),
                 ("MPb", default_mass_struct),
-                ("Clock", make_clock()),
+                ("Clock", Objstructure::clock()),
             ]),
             data_info: HashMap::from([
                 ("MPa", vec![DATA::posx()]),
                 ("MPb", vec![DATA::posx()]),
-                ("Clock", vec![DATA_TIME.clone()]),
+                ("Clock", vec![DATA::time()]),
             ]),
         }
     }
@@ -75,9 +73,9 @@ impl ExpStructure for Collision {
         let data_x1: Array1<f64> = t.mapv(|t| if t < t_collision {x1 + v1 * t} else {x1 + v1 * t_collision + vn1 * (t - t_collision)});
         let data_x2: Array1<f64> = t.mapv(|t| if t < t_collision {x2 + v2 * t} else {x2 + v2 * t_collision + vn2 * (t - t_collision)});
         let mut data_struct = self.create_data_struct_of_do_experiment(t_num);
-        data_struct.add_data("Clock", &DATA_TIME, &add_normal_errors_to_array(&t, error));
-        data_struct.add_data("MPa", &DATA::posx(), &add_normal_errors_to_array(&data_x1, error));
-        data_struct.add_data("MPb", &DATA::posx(), &add_normal_errors_to_array(&data_x2, error));
+        data_struct.add_data("Clock", &DATA::time(), &add_errors(&t, error));
+        data_struct.add_data("MPa", &DATA::posx(), &add_errors(&data_x1, error));
+        data_struct.add_data("MPb", &DATA::posx(), &add_errors(&data_x2, error));
         data_struct
     }
 }

@@ -1,14 +1,17 @@
 use std::collections::HashMap;
-use crate::experiments::expstructure::Objstructure;
-use crate::experiments::objects::obj::ObjType;
-
+use super::super::expstructure::Objstructure;
+use super::obj::ObjType::Clock;
 use super::obj::DATA;
 
-pub fn make_clock() -> Objstructure {
-    Objstructure::new(
-        ObjType::Clock,
-        HashMap::from([]),
-    )
+impl Objstructure {
+    pub fn clock() -> Self {
+        Objstructure::new(
+            Clock,
+            HashMap::from([]),
+        )
+    }
 }
 
-pub static DATA_TIME: DATA = DATA::new(ObjType::Clock, "t");
+impl DATA {
+    pub fn time() -> Self { DATA::new(Clock, "t") }
+}

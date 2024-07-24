@@ -1,9 +1,6 @@
 use crate::experiments::objects::obj::{DATA, ATTR};
-use crate::experiments::objects::spring::make_spring;
-use crate::experiments::objects::masspoint::make_masspoint;
-use crate::experiments::objects::clock::{make_clock, DATA_TIME};
 use crate::experiments::expstructure::{
-    Parastructure, Objstructure, ExpStructure, add_normal_errors_to_array,
+    Parastructure, Objstructure, ExpStructure, add_errors,
     DataStructOfDoExperiment
 };
 use ndarray::Array1;
@@ -16,8 +13,8 @@ pub struct Oscillation {
 }
 impl ExpStructure for Oscillation {
     fn new() -> Self {
-        let default_masspoint_struct = make_masspoint((1.0, 5.0));
-        let default_spring_struct = make_spring((2.0, 2.2), (9.0, 11.0));
+        let default_masspoint_struct = Objstructure::masspoint((1.0, 5.0));
+        let default_spring_struct = Objstructure::spring((2.0, 2.2), (9.0, 11.0));
         Oscillation {
             exp_para: HashMap::from([
                 ("posl", Parastructure::new(Some((-1.0, 1.0)), None)),
@@ -27,12 +24,12 @@ impl ExpStructure for Oscillation {
             obj_info: HashMap::from([
                 ("MPa", default_masspoint_struct),
                 ("SPb", default_spring_struct),
-                ("Clock", make_clock()),
+                ("Clock", Objstructure::clock()),
             ]),
             data_info: HashMap::from([
                 ("MPa", vec![DATA::posx()]),
                 ("SPb", vec![DATA::posl(), DATA::posr()]),
-                ("Clock", vec![DATA_TIME.clone()]),
+                ("Clock", vec![DATA::time()]),
             ]),
         }
     }
@@ -70,10 +67,10 @@ impl ExpStructure for Oscillation {
             &sp2_l - sp2_length_value + (v2 / omega) * (omega * &t).mapv(|x| x.sin()) + (x2 - x1 + sp2_length_value) * (omega * &t).mapv(|x| x.cos())
         };
         let mut data_struct = self.create_data_struct_of_do_experiment(t_num);
-        data_struct.add_data("Clock", &DATA_TIME, &add_normal_errors_to_array(&t, error));
-        data_struct.add_data("MPa", &DATA::posx(), &add_normal_errors_to_array(&sp2_r, error));
-        data_struct.add_data("SPb", &DATA::posr(), &add_normal_errors_to_array(&sp2_r, error));
-        data_struct.add_data("SPb", &DATA::posl(), &add_normal_errors_to_array(&sp2_l, error));
+        data_struct.add_data("Clock", &DATA::time(), &add_errors(&t, error));
+        data_struct.add_data("MPa", &DATA::posx(), &add_errors(&sp2_r, error));
+        data_struct.add_data("SPb", &DATA::posr(), &add_errors(&sp2_r, error));
+        data_struct.add_data("SPb", &DATA::posl(), &add_errors(&sp2_l, error));
         data_struct
     }
 }
