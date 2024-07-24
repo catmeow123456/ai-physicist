@@ -30,6 +30,5 @@ pub fn eval(exp0: &ast::Exp, context: &DataStructOfExpData) -> ExpData {
         ast::Exp::BinaryExp { op: ast::BinaryOp::Pow, ref left, ref right } => eval(&*left, context).pow(&eval(&*right, context)),
         ast::Exp::DiffExp { ref left, ref right, ord} =>
             eval(&*left, context).diff_n(&eval(&*right, context), *ord as usize),
-        
     }
 }

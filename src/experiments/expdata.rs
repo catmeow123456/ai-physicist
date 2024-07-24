@@ -5,7 +5,7 @@ use std::f64::NAN;
 use std::fmt;
 use std::ops::{Add, AddAssign, Sub, Mul, Div, Neg};
 use std::collections::HashSet;
-use ndarray::{s, Array, Array1, Array2, Array3};
+use ndarray::{array, s, Array, Array1, Array2, Array3};
 use ndarray_linalg::Solve;
 
 #[derive(Debug, Clone)]
@@ -22,18 +22,20 @@ impl ExpData {
         let mut badpts = HashSet::new();
         let n = data.ncols();
         let repeat_time = data.nrows();
+        let mut data: Array2::<f64> = data;
         for x in 0..n {
+            let mut flag: bool = false;
             for y in 0..repeat_time {
                 if data[[y,x]].is_nan() || data[[y,x]].is_infinite(){
-                    badpts.insert(x);
+                    flag = true;
                     break;
                 }
             }
-        }
-        let mut data: Array2::<f64> = data;
-        for pt in badpts.iter() {
-            for y in 0..repeat_time {
-                data[[y,*pt]] = NAN;
+            if flag {
+                badpts.insert(x);
+                for y in 0..repeat_time {
+                    data[[y,x]] = NAN;
+                }
             }
         }
         Self {n, repeat_time, data, badpts}
@@ -50,11 +52,17 @@ impl ExpData {
     pub fn gen_domain(&self) -> Vec<(usize,usize)> {
         let mut res = Vec::new();
         let mut last = 0;
-        for i in self.badpts.iter() {
-            if *i > last {
-                res.push((last, *i - 1))
+        let mut badpts: Vec<usize> = self.badpts.iter().cloned().collect();
+        badpts.sort();
+        // println!("{:?}", badpts);
+        for i in badpts {
+            if i > last {
+                res.push((last, i))
             }
-            last = *i + 1;
+            last = i + 1;
+        }
+        if last < self.n {
+            res.push((last, self.n))
         }
         res
     }
@@ -186,7 +194,56 @@ impl ExpData {
         ExpData::new(res)
     }
     pub fn diff_tau(&self) -> ExpData {
-        npsd(self, 1, 5)
+        println!("diff_tau");
+        let mut data: Array2<f64> = Array::zeros((self.repeat_time, self.n));
+        let mut comparedata: Array2<f64> = Array::zeros((self.repeat_time, self.n));
+        let mean: Array1<f64> = self.mean();
+        let std: Array1<f64> = self.std();
+        for (x, y) in self.gen_domain() {
+            // println!("{} {}", x, y);
+            if x as i32 > y as i32 - 10 {
+                for i in x..y {
+                    for j in 0..self.repeat_time {
+                        data[[j,i]] = NAN;
+                    }
+                }
+            } else {
+                for j in 0..self.repeat_time {
+                    data.row_mut(j).slice_mut(s![x..y]).assign(
+                        &npsd(&self.data.slice(s![j, x..y]).to_owned(), 1, 5)
+                    );
+                    data[[j,x]] = NAN;
+                    data[[j,y-1]] = NAN;
+                    let d0: Array1<f64> = npsd(&self.data.slice(s![j, x..y;2]).to_owned(), 1, 5);
+                    let d1: Array1<f64> = npsd(&self.data.slice(s![j, x+1..y;2]).to_owned(), 1, 5);
+                    let mut c0 = 0;
+                    let mut c1 = 0;
+                    for i in x..y {
+                        comparedata[[j,i]] = if (i - x) % 2 == 0 {
+                            c0 += 1; d0[c0 - 1] / 2.
+                        } else {
+                            c1 += 1; d1[c1 - 1] / 2.
+                        };
+                    }
+                }
+                for i in x+1..y {
+                    let delta: Array1<f64> = &data.slice(s![.., i]) - &comparedata.slice(s![.., i]);
+                    if delta.mean().unwrap().powi(2) > 5000. * delta.std(0.).powi(2) {
+                        for j in 0..self.repeat_time {
+                            data[[j,i]] = NAN;
+                        }
+                    }
+                    // if (mean[i] - mean[i-1]).abs() < (std[i] + std[i-1]) * 2. {
+                    //     for j in 0..self.repeat_time {
+                    //         data[[j,i]] = NAN;
+                    //         data[[j,i-1]] = NAN;
+                    //     }
+                    // }
+                }
+            }
+        }
+        ExpData::new(data)
+        // npsd_expdata(self, 1, 5)
     }
     pub fn diff(&self, other: &ExpData) -> ExpData {
         self.diff_tau() / other.diff_tau()
@@ -198,6 +255,15 @@ impl ExpData {
         } else {
             self.diff(other).diff_n(other, n-1)
         }
+    }
+}
+
+impl ExpData {
+    pub fn mean(&self) -> Array1<f64> {
+        self.data.mean_axis(ndarray::Axis(0)).unwrap()
+    }
+    pub fn std(&self) -> Array1<f64> {
+        self.data.std_axis(ndarray::Axis(0), 0.0)
     }
 }
 
@@ -214,12 +280,12 @@ impl NPSCoefficient {
         for i in 1..n+1 { c[i] = c[i-1] * i as f64; }
         // obtain the transform matrix
         let col: Array1<f64> = Array::linspace(1.0-(n as f64), n as f64-1.0, n*2-1);
-        let mut a: Array2<f64> = Array2::<f64>::zeros((n*2-1, n));
+        let mut a: Array2<f64> = Array::zeros((n*2-1, n));
         for i in 0..n {
-            a.column_mut(i).assign(&col.mapv(|x| x.powf(i as f64) / c[i]));
+            a.column_mut(i).assign(&col.mapv(|x| x.powi(i as i32) / c[i]));
         }
         let b: Array2<f64> = Array::eye(n);
-        let r: Array1<f64> = col.mapv(|x| x.powf(n as f64) / c[n]);
+        let r: Array1<f64> = col.mapv(|x| x.powi(n as i32) / c[n]);
         let mut selfc : Array3<f64> = Array::zeros((n, n, n));
         let mut selfr : Array2<f64> = Array::zeros((n, n));
         for i in 0..n {
@@ -238,22 +304,54 @@ impl NPSCoefficient {
     }
 }
 
-fn npsd(y: &ExpData, d: usize, nn: usize) -> ExpData {
-    assert!(d < nn && d > 0 && nn < 10 && nn % 2 == 1);
-    let c: Array2<f64> = NPSCoefficient::new(nn).c.slice(s![.., d, ..]).to_owned();
-    let nnn = nn / 2;
-    let y0: Array2<f64> = y.data.slice(s![.., 0..nn]).to_owned();
-    let y1: Array2<f64> = y.data.slice(s![.., y.n-nn..y.n]).to_owned();
-    let u: Array1<f64> = c.row(nnn).to_owned();
+fn npsd_expdata(y: &ExpData, d: usize, nn: usize) -> ExpData {
     let mut z: Array2<f64> = Array::zeros((y.repeat_time, y.n));
     for i in 0..y.repeat_time {
-        for j in 0..y.n-nn+1 {
-            z[[i, j+nnn]] = u.dot(&y.data.slice(s![i, j..j+nn]))
-        }
-        for j in 0..nnn {
-            z[[i, j]] = y0.row(i).dot(&c.row(nn-j-1));
-            z[[i, y.n-j-1]] = y1.row(i).dot(&c.row(j));
-        }
+        z.row_mut(i).assign(&npsd(&y.data.slice(s![i, ..]).to_owned(), d, nn));
     }
     ExpData::new(z)
+}
+
+const NPSC5: [[[f64;5];5];5] = [[
+    [0.0, -0.0, -0.0, -0.0, 1.0],
+    [0.24999999999999822, -1.3333333333333286, 2.9999999999999925, -3.9999999999999947, 2.083333333333332],
+    [0.9166666666666625, -4.666666666666652, 9.499999999999977, -8.66666666666665, 2.916666666666662],
+    [1.4999999999999956, -6.999999999999983, 11.999999999999973, -8.99999999999998, 2.4999999999999947],
+    [0.9999999999999982, -3.999999999999993, 5.9999999999999885, -3.999999999999992, 0.999999999999998]],
+    [[0.0, -0.0, 0.0, 1.0, 0.0],
+    [-0.08333333333333326, 0.5000000000000003, -1.5000000000000009, 0.833333333333334, 0.24999999999999983],
+    [-0.08333333333333331, 0.33333333333333354, 0.49999999999999967, -1.6666666666666663, 0.9166666666666665],
+    [0.49999999999999956, -3.0000000000000013, 6.000000000000003, -5.000000000000002, 1.5000000000000004],
+    [1.0, -4.000000000000002, 6.000000000000003, -4.000000000000002, 1.0000000000000004]],
+    [[0.0, -0.0, 1.0, -0.0, 0.0],
+    [0.08333333333333337, -0.6666666666666667, 1.6653345369377348e-16, 0.6666666666666665, -0.08333333333333331],
+    [-0.08333333333333348, 1.3333333333333335, -2.5, 1.3333333333333335, -0.08333333333333348],
+    [-0.5, 1.0000000000000002, -3.885780586188048e-16, -0.9999999999999998, 0.49999999999999994],
+    [1.0, -4.000000000000001, 6.000000000000002, -4.000000000000001, 1.0]],
+    [[0.0, 1.0, 0.0, -0.0, 0.0],
+    [-0.25000000000000094, -0.8333333333333302, 1.499999999999996, -0.49999999999999795, 0.08333333333333304],
+    [0.9166666666666665, -1.666666666666666, 0.49999999999999944, 0.3333333333333335, -0.08333333333333331],
+    [-1.4999999999999956, 4.999999999999986, -5.999999999999982, 2.9999999999999902, -0.499999999999998],
+    [0.9999999999999956, -3.999999999999985, 5.9999999999999805, -3.9999999999999893, 0.999999999999998]],
+    [[1.0, 0.0, -0.0, -0.0, 0.0],
+    [-2.083333333333332, 3.9999999999999947, -2.9999999999999925, 1.3333333333333286, -0.2499999999999989],
+    [2.9166666666666625, -8.66666666666665, 9.499999999999977, -4.666666666666652, 0.916666666666663],
+    [-2.499999999999994, 8.99999999999998, -11.999999999999973, 6.999999999999983, -1.4999999999999958],
+    [0.9999999999999982, -3.999999999999992, 5.9999999999999885, -3.999999999999993, 0.9999999999999984]]];
+
+fn npsd(y: &Array1<f64>, d: usize, nn: usize) -> Array1<f64> {
+    assert!(d < nn && d > 0 && nn < 10 && nn % 2 == 1);
+    let nnn = nn / 2;
+    let y0: Array1<f64> = y.slice(s![0..nn]).to_owned();
+    let y1: Array1<f64> = y.slice(s![y.len()-nn..y.len()]).to_owned();
+    let u: Array1<f64> = NPSC5[nnn][d].to_vec().into_iter().collect();
+    let mut z: Array1<f64> = Array::zeros(y.len());
+    for j in 0..y.len()-nn+1 {
+        z[j+nnn] = u.dot(&y.slice(s![j..j+nn]))
+    }
+    for j in 0..nnn {
+        z[j] = y0.dot(&NPSC5[nn-j-1][d].to_vec().into_iter().collect() as &Array1<f64>);
+        z[y.len()-j-1] = y1.dot(&NPSC5[j][d].to_vec().into_iter().collect() as &Array1<f64>);
+    }
+    z
 }
