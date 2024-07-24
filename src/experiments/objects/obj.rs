@@ -71,7 +71,7 @@ impl ATTR {
 impl fmt::Display for ATTR {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            ATTR::Mk { obj: _, name } => write!(f, "{}", name),
+            ATTR::Mk { name, .. } => write!(f, "{}", name),
         }
     }
 }

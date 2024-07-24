@@ -12,15 +12,19 @@ pub fn make_spring(thickness_range: (f64, f64), freel_range: (f64, f64)) -> Objs
     Objstructure::new(
         Spring,
         HashMap::from([
-            (ATTR_THICKNESS.clone(),
+            (ATTR::thickness(),
                 Parastructure::new(Some(thickness_range), None)),
-            (ATTR_FREEL.clone(),
+            (ATTR::freel(),
                 Parastructure::new(Some(freel_range), None)),
         ])
     )
 }
 
-pub static ATTR_THICKNESS: ATTR = ATTR::new(Spring, "thickness");
-pub static ATTR_FREEL: ATTR = ATTR::new(Spring, "freel");
-pub static DATA_POSL: DATA = DATA::new(Spring, "posl");
-pub static DATA_POSR: DATA = DATA::new(Spring, "posr");
+impl ATTR {
+    pub fn thickness() -> Self { ATTR::new(Spring, "thickness") }
+    pub fn freel() -> Self { ATTR::new(Spring, "freel") }
+}
+impl DATA {
+    pub fn posl() -> Self { DATA::new(Spring, "posl") }
+    pub fn posr() -> Self { DATA::new(Spring, "posr") }
+}

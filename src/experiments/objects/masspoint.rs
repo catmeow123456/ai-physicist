@@ -13,15 +13,18 @@ pub fn make_masspoint(mass_range: (f64, f64)) -> Objstructure {
     Objstructure::new(
         MassPoint,
         HashMap::from([
-            (ATTR_MASS.clone(),
+            (ATTR::mass(),
                 Parastructure::new(Some(mass_range), None)),
-            (ATTR_ELEC.clone(),
+            (ATTR::elec(),
                 Parastructure::new(Some((0.0, 1e-8)), None)),
         ]),
     )
 }
-
-pub static ATTR_MASS : ATTR = ATTR::new(MassPoint, "m");
-pub static ATTR_ELEC : ATTR = ATTR::new(MassPoint, "e");
-pub static DATA_POSX : DATA = DATA::new(MassPoint, "posx");
-pub static DATA_POSY : DATA = DATA::new(MassPoint, "posy");
+impl ATTR {
+    pub fn mass() -> Self { ATTR::new(MassPoint,"m") }
+    pub fn elec() -> Self { ATTR::new(MassPoint,"e") }
+}
+impl DATA {
+    pub fn posx() -> Self { DATA::new(MassPoint,"posx") }
+    pub fn posy() -> Self { DATA::new(MassPoint,"posy") }
+}
