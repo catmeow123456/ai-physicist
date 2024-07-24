@@ -156,13 +156,23 @@ impl Mul for &ExpData {
 impl Div for ExpData {
     type Output = ExpData;
     fn div(self, other: ExpData) -> ExpData {
-        ExpData::new(&self.data / &other.data)
+        if self.is_zero() {
+            ExpData::zero(self.n, self.repeat_time)
+        }
+        else {
+            ExpData::new(&self.data / &other.data)
+        }
     }
 }
 impl Div for &ExpData {
     type Output = ExpData;
     fn div(self, other: &ExpData) -> ExpData {
-        ExpData::new(&self.data / &other.data)
+        if self.is_zero() {
+            ExpData::zero(self.n, self.repeat_time)
+        }
+        else {
+            ExpData::new(&self.data / &other.data)
+        }
     }
 }
 
