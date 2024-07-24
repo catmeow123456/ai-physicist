@@ -22,14 +22,8 @@ impl Parastructure {
     pub fn new(range: Option<(f64, f64)>, error: Option<f64>) -> Self {
         Parastructure {
             value: None,
-            range: match range {
-                Some(range) => range,
-                None => (-1e10, 1e10),
-            },
-            error: match error {
-                Some(error) => error,
-                None => 1e-8,
-            }
+            range: range.unwrap_or((-1e10, 1e10)),
+            error: error.unwrap_or(1e-8),
         }
     }
     fn set_value(&mut self, value: f64) {
@@ -108,10 +102,11 @@ impl fmt::Display for Objstructure {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "[Objstructure] obj_type: {}, attribute: {:?}",
                self.obj_type, self.attribute.keys()).unwrap();
-        write!(f, "\nattribute:").unwrap();
+        write!(f, "\nAttribute:").unwrap();
         for (name, para) in self.attribute.iter() {
             write!(f, "\n| {}: {}", name, para).unwrap();
         }
+        write!(f, ".").unwrap();
         Result::Ok(())
     }
 }
@@ -256,9 +251,7 @@ pub trait ExpStructure {
         for (name, data) in data.iter() {
             let mut idata: Array2<f64> = Array2::zeros((repeat_time, t_num));
             for i in 0..repeat_time {
-                for j in 0..t_num {
-                    idata[[i, j]] = data[j]
-                }
+                idata.row_mut(i).assign(&data);
             }
             idata = add_normal_errors_to_array(&idata, error);
             assert_eq!(idata.shape(), [repeat_time, t_num]);

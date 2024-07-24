@@ -5,15 +5,16 @@ use std::f64::NAN;
 use std::fmt;
 use std::ops::{Add, AddAssign, Sub, Mul, Div, Neg};
 use std::collections::HashSet;
-use ndarray::{array, s, Array, Array1, Array2, Array3};
+use ndarray::{s, Array, Array1, Array2, Array3};
 use ndarray_linalg::Solve;
+use statrs::distribution::{ChiSquared, ContinuousCDF};
 
 #[derive(Debug, Clone)]
 pub struct ExpData {
     pub n: usize,
     pub repeat_time: usize,
     pub data: Array2::<f64>,
-    pub badpts: HashSet<usize>
+    pub badpts: HashSet<usize>,
 }
 
 impl ExpData {
@@ -66,6 +67,8 @@ impl ExpData {
         }
         res
     }
+
+    pub fn bds_threshold (&self) -> f64 { 5000. }
 
     pub fn plot_over_t(&self, name: &str, t: &ExpData) {
         // plot the arr
@@ -194,13 +197,18 @@ impl ExpData {
         ExpData::new(res)
     }
     pub fn diff_tau(&self) -> ExpData {
-        println!("diff_tau");
         let mut data: Array2<f64> = Array::zeros((self.repeat_time, self.n));
         let mut comparedata: Array2<f64> = Array::zeros((self.repeat_time, self.n));
         let mean: Array1<f64> = self.mean();
         let std: Array1<f64> = self.std();
         for (x, y) in self.gen_domain() {
-            // println!("{} {}", x, y);
+            if self.is_conserved_slice(x, y) {
+                for i in x..y {
+                    for j in 0..self.repeat_time {
+                        data[[j,i]] = 0.;
+                    }
+                }
+            } else
             if x as i32 > y as i32 - 10 {
                 for i in x..y {
                     for j in 0..self.repeat_time {
@@ -228,17 +236,17 @@ impl ExpData {
                 }
                 for i in x+1..y {
                     let delta: Array1<f64> = &data.slice(s![.., i]) - &comparedata.slice(s![.., i]);
-                    if delta.mean().unwrap().powi(2) > 5000. * delta.std(0.).powi(2) {
+                    if delta.mean().unwrap().powi(2) > self.bds_threshold() * delta.std(0.).powi(2) {
                         for j in 0..self.repeat_time {
                             data[[j,i]] = NAN;
                         }
                     }
-                    // if (mean[i] - mean[i-1]).abs() < (std[i] + std[i-1]) * 2. {
-                    //     for j in 0..self.repeat_time {
-                    //         data[[j,i]] = NAN;
-                    //         data[[j,i-1]] = NAN;
-                    //     }
-                    // }
+                    if (mean[i] - mean[i-1]).abs() < (std[i] + std[i-1]) * 2. {
+                        for j in 0..self.repeat_time {
+                            data[[j,i]] = NAN;
+                            data[[j,i-1]] = NAN;
+                        }
+                    }
                 }
             }
         }
@@ -264,6 +272,31 @@ impl ExpData {
     }
     pub fn std(&self) -> Array1<f64> {
         self.data.std_axis(ndarray::Axis(0), 0.0)
+    }
+    pub fn is_conserved_slice(&self, x: usize, y: usize) -> bool {
+        is_conserved(&self.data.slice(s![.., x..y]).mean_axis(ndarray::Axis(0)).unwrap(),
+                     &self.data.slice(s![.., x..y]).std_axis(ndarray::Axis(0), 0.0),
+                     None)
+    }
+    pub fn is_conserved(&self) -> bool {
+        for (x, y) in self.gen_domain() {
+            if !is_conserved(&self.data.slice(s![.., x..y]).mean_axis(ndarray::Axis(0)).unwrap(),
+                            &self.data.slice(s![.., x..y]).std_axis(ndarray::Axis(0), 0.0),
+                            None) {
+                return false
+            }
+        }
+        true
+    }
+    pub fn is_zero(&self) -> bool {
+        for (x, y) in self.gen_domain() {
+            if !is_zero(&self.data.slice(s![.., x..y]).mean_axis(ndarray::Axis(0)).unwrap(),
+                        &self.data.slice(s![.., x..y]).std_axis(ndarray::Axis(0), 0.0),
+                        None) {
+                return false
+            }
+        }
+        true
     }
 }
 
@@ -302,14 +335,6 @@ impl NPSCoefficient {
             r: selfr,
         }
     }
-}
-
-fn npsd_expdata(y: &ExpData, d: usize, nn: usize) -> ExpData {
-    let mut z: Array2<f64> = Array::zeros((y.repeat_time, y.n));
-    for i in 0..y.repeat_time {
-        z.row_mut(i).assign(&npsd(&y.data.slice(s![i, ..]).to_owned(), d, nn));
-    }
-    ExpData::new(z)
 }
 
 const NPSC5: [[[f64;5];5];5] = [[
@@ -354,4 +379,51 @@ fn npsd(y: &Array1<f64>, d: usize, nn: usize) -> Array1<f64> {
         z[y.len()-j-1] = y1.dot(&NPSC5[j][d].to_vec().into_iter().collect() as &Array1<f64>);
     }
     z
+}
+
+fn ppf(p: f64, dof: f64) -> f64 {
+    let chi = ChiSquared::new(dof).unwrap();
+    chi.inverse_cdf(p)
+}
+fn weighted_sum(value: &Array1<f64>, weight: &Array1<f64>) -> f64 {
+    (value * weight).sum() / weight.sum()
+}
+fn is_conserved(mean: &Array1<f64>, std: &Array1<f64>, alpha: Option<f64>) -> bool {
+    let n = mean.len();
+    assert_eq!(n, std.len());
+    {
+        let tmp = mean[0];
+        if mean.iter().all(|&a| a == tmp) {
+            return true
+        }
+        if std.iter().any(|&a| a == 0.) {
+            return false
+        }
+    }
+    let alpha = alpha.unwrap_or(0.05);
+    let dof = n as f64 - 1.;
+    let weight: Array1<f64> = std.mapv(|x| 1. / x.powi(2));
+    let mean_weighted = weighted_sum(mean, &weight);
+    let chi_square_statistic = ((mean - mean_weighted).mapv(|x| x.powi(2)) * weight).sum();
+    let critical_value = ppf(1.0 - alpha, dof);
+    chi_square_statistic < critical_value
+}
+
+fn is_zero(mean: &Array1<f64>, std: &Array1<f64>, alpha: Option<f64>) -> bool {
+    let n = mean.len();
+    assert_eq!(n, std.len());
+    {
+        if mean.iter().all(|&a| a == 0.) {
+            return true
+        }
+        if std.iter().any(|&a| a == 0.) {
+            return false
+        }
+    }
+    let alpha = alpha.unwrap_or(0.05);
+    let dof = n as f64;
+    let weight: Array1<f64> = std.mapv(|x| 1. / x.powi(2));
+    let chi_square_statistic = (mean.mapv(|x| x.powi(2)) * weight).sum();
+    let critical_value = ppf(1.0 - alpha, dof);
+    chi_square_statistic < critical_value
 }
