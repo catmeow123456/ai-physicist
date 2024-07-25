@@ -1,3 +1,4 @@
+use pyo3::prelude::*;
 use crate::experiments::{
     objects::obj::{DATA, ATTR},
     expstructure::{
@@ -14,6 +15,7 @@ fn do_collision(m1: f64, m2: f64, v1: f64, v2: f64) -> (f64, f64) {
     (vn1, vn2)
 }
 
+#[pyfunction]
 pub fn struct_collision() -> ExpStructure {
     let default_mass_struct = Objstructure::masspoint((2.0, 10.0));
     let exp_para = HashMap::from([

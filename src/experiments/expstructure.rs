@@ -1,3 +1,4 @@
+use pyo3::prelude::*;
 use rand::Rng;
 use rand_distr::{Distribution, Normal};
 use std::{fmt, collections::HashMap};
@@ -9,6 +10,7 @@ use super::objects::obj::DATA;
 // 刻画某个参数结构的抽象类
 // range: 参数的取值范围
 // error: 测量它会带来的误差
+#[pyclass]
 #[derive(Clone)]
 pub struct Parastructure {
     value: Option<f64>,
@@ -51,6 +53,7 @@ impl fmt::Display for Parastructure {
     }
 }
 
+#[pyclass]
 #[derive(Clone)]
 pub struct Objstructure {
     obj_type: ObjType,
@@ -109,6 +112,7 @@ impl fmt::Display for Objstructure {
     }
 }
 
+#[pyclass]
 pub struct DataStructOfDoExperiment {
     n: usize,
     obj_id_map: HashMap<&'static str, (ObjType, i32)>,
@@ -136,6 +140,7 @@ impl DataStructOfDoExperiment {
         &self.data
     }
 }
+#[pyclass]
 pub struct DataStructOfExpData {
     pub n: usize,
     pub repeat_time: usize,
@@ -184,6 +189,7 @@ impl DataStructOfExpData {
     }
 }
 
+#[pyclass]
 pub struct ExpConfig {
     name: String,
     spdim: usize,
@@ -263,6 +269,7 @@ impl ExpConfig {
     }
 }
 
+#[pyclass]
 pub struct ExpStructure {
     exp_config: ExpConfig,
     do_experiment: fn(f64,usize,f64,&ExpConfig) -> DataStructOfDoExperiment,
@@ -277,6 +284,9 @@ impl ExpStructure {
     pub fn print_obj_info(&self) {
         self.exp_config.print_obj_info();
     }
+}
+#[pymethods]
+impl ExpStructure {
     pub fn random_sample(&mut self) {
         self.exp_config.random_sample();
     }

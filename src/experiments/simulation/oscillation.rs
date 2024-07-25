@@ -1,3 +1,4 @@
+use pyo3::prelude::*;
 use crate::experiments::{
     objects::obj::{DATA, ATTR},
     expstructure::{
@@ -8,6 +9,7 @@ use crate::experiments::{
 use ndarray::Array1;
 use std::collections::HashMap;
 
+#[pyfunction]
 pub fn struct_oscillation() -> ExpStructure {
     let default_masspoint_struct = Objstructure::masspoint((1.0, 5.0));
     let default_spring_struct = Objstructure::spring((2.0, 2.2), (9.0, 11.0));

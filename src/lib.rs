@@ -18,8 +18,12 @@ pub mod experiments{
     }
 }
 
+use experiments::{
+    expdata::ExpData,
+    expstructure::{ExpStructure, DataStructOfExpData}
+};
 use pyo3::prelude::*;
-use sentence::parse;
+use sentence::{parse, eval};
 #[pyfunction]
 fn parse_str(input: &str) -> PyResult<String> {
     let res = parse(input).unwrap();
@@ -30,6 +34,11 @@ fn parse_exp(input: &str) -> PyResult<ast::Exp> {
     let res = parse(input).unwrap();
     Ok(res)
 }
+#[pyfunction]
+fn eval_exp(exp: &ast::Exp, data: &DataStructOfExpData) -> PyResult<ExpData> {
+    Ok(eval(exp, data))
+}
+
 
 #[pymodule]
 fn ai_physicist(m: &Bound<'_, PyModule>) -> PyResult<()> {
@@ -39,6 +48,11 @@ fn ai_physicist(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<ast::BinaryOp>()?;
     m.add_class::<ast::UnaryOp>()?;
     m.add_class::<ast::Exp>()?;
-    m.add_class::<experiments::expdata::ExpData>()?;
+    m.add_function(wrap_pyfunction!(experiments::simulation::collision::struct_collision, m)?)?;
+    m.add_function(wrap_pyfunction!(experiments::simulation::oscillation::struct_oscillation, m)?)?;
+    m.add_class::<ExpData>()?;
+    m.add_class::<ExpStructure>()?;
+    m.add_class::<DataStructOfExpData>()?;
+    m.add_function(wrap_pyfunction!(eval_exp, m)?)?;
     Ok(())
 }

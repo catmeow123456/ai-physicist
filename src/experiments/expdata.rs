@@ -1,9 +1,9 @@
 // a data structure that represent n * m arrays
 // where n is the number of times of experiments and m is the number of data points
 
+use pyo3::prelude::*;
 use std::f64::NAN;
 use std::fmt;
-use pyo3::prelude::*;
 use std::ops::{Add, AddAssign, Sub, Mul, Div, Neg};
 use std::collections::HashSet;
 use ndarray::{s, Array, Array1, Array2, Array3};
@@ -86,6 +86,31 @@ impl ExpData {
     }
     fn __difftau__(&self) -> PyResult<ExpData> {
         Ok(self.diff_tau())
+    }
+    pub fn is_conserved_slice(&self, x: usize, y: usize) -> bool {
+        is_conserved(&self.data.slice(s![.., x..y]).mean_axis(ndarray::Axis(0)).unwrap(),
+                     &self.data.slice(s![.., x..y]).std_axis(ndarray::Axis(0), 0.0),
+                     None)
+    }
+    pub fn is_conserved(&self) -> bool {
+        for (x, y) in self.gen_domain() {
+            if !is_conserved(&self.data.slice(s![.., x..y]).mean_axis(ndarray::Axis(0)).unwrap(),
+                            &self.data.slice(s![.., x..y]).std_axis(ndarray::Axis(0), 0.0),
+                            None) {
+                return false
+            }
+        }
+        true
+    }
+    pub fn is_zero(&self) -> bool {
+        for (x, y) in self.gen_domain() {
+            if !is_zero(&self.data.slice(s![.., x..y]).mean_axis(ndarray::Axis(0)).unwrap(),
+                        &self.data.slice(s![.., x..y]).std_axis(ndarray::Axis(0), 0.0),
+                        None) {
+                return false
+            }
+        }
+        true
     }
 }
 
@@ -339,37 +364,13 @@ impl ExpData {
     }
 }
 
+
 impl ExpData {
     pub fn mean(&self) -> Array1<f64> {
         self.data.mean_axis(ndarray::Axis(0)).unwrap()
     }
     pub fn std(&self) -> Array1<f64> {
         self.data.std_axis(ndarray::Axis(0), 0.0)
-    }
-    pub fn is_conserved_slice(&self, x: usize, y: usize) -> bool {
-        is_conserved(&self.data.slice(s![.., x..y]).mean_axis(ndarray::Axis(0)).unwrap(),
-                     &self.data.slice(s![.., x..y]).std_axis(ndarray::Axis(0), 0.0),
-                     None)
-    }
-    pub fn is_conserved(&self) -> bool {
-        for (x, y) in self.gen_domain() {
-            if !is_conserved(&self.data.slice(s![.., x..y]).mean_axis(ndarray::Axis(0)).unwrap(),
-                            &self.data.slice(s![.., x..y]).std_axis(ndarray::Axis(0), 0.0),
-                            None) {
-                return false
-            }
-        }
-        true
-    }
-    pub fn is_zero(&self) -> bool {
-        for (x, y) in self.gen_domain() {
-            if !is_zero(&self.data.slice(s![.., x..y]).mean_axis(ndarray::Axis(0)).unwrap(),
-                        &self.data.slice(s![.., x..y]).std_axis(ndarray::Axis(0), 0.0),
-                        None) {
-                return false
-            }
-        }
-        true
     }
 }
 
