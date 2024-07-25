@@ -12,7 +12,7 @@ use super::objects::obj::DATA;
 #[derive(Clone)]
 pub struct Parastructure {
     value: Option<f64>,
-    pub range: (f64, f64),
+    range: (f64, f64),
     error: f64,
 }
 
