@@ -1,11 +1,17 @@
 use std::fmt;
+use pyo3::prelude::*;
+use pyo3::callback::IntoPyCallbackOutput;
 
+#[pyclass(eq, eq_int)]
+#[derive(Eq, PartialEq, Clone)]
 pub enum Func {
     Sum,
     Prod,
     Forall,
 }
 
+#[pyclass(eq, eq_int)]
+#[derive(Eq, PartialEq, Clone)]
 pub enum BinaryOp {
     Add, Sub, Mul, Div, Pow
 }
@@ -20,6 +26,10 @@ impl fmt::Display for BinaryOp {
         }
     }
 }
+
+
+#[pyclass(eq, eq_int)]
+#[derive(Eq, PartialEq, Clone)]
 pub enum UnaryOp {
     Neg,
     Diff,
@@ -33,6 +43,24 @@ impl fmt::Display for UnaryOp {
     }
 }
 
+impl FromPyObject<'_> for Box<Exp> {
+    fn extract_bound(ob: &Bound<'_, PyAny>) -> PyResult<Self> {
+        let x = ob.extract::<Exp>()?;
+        // println!("Extracted: {}", x);
+        Ok(Box::new(x))
+    }
+}
+
+impl IntoPyCallbackOutput<*mut pyo3::ffi::PyObject> for Box<Exp>
+{
+    #[inline]
+    fn convert(self, py: Python<'_>) -> PyResult<*mut pyo3::ffi::PyObject> {
+        Ok(self.into_py(py).as_ptr())
+    }
+}
+
+#[pyclass(eq)]
+#[derive(Clone, PartialEq)]
 pub enum Exp {
     Number {num: i32},
     Variable {name: String},
@@ -41,6 +69,7 @@ pub enum Exp {
     BinaryExp {left: Box<Exp>, op: BinaryOp, right: Box<Exp>},
     DiffExp {left: Box<Exp>, right: Box<Exp>, ord: i32},
 }
+
 impl fmt::Display for Exp {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
@@ -59,5 +88,12 @@ impl fmt::Display for Exp {
                     _ => write!(f, "D^{}[{}]/D[{}]^{}", ord, left, right,ord),
                 }
         }
+    }
+}
+
+#[pymethods]
+impl Exp {
+    fn to_string(&self) -> String {
+        format!("{}", self)
     }
 }
