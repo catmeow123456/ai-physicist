@@ -39,5 +39,6 @@ fn ai_physicist(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<ast::BinaryOp>()?;
     m.add_class::<ast::UnaryOp>()?;
     m.add_class::<ast::Exp>()?;
+    m.add_class::<experiments::expdata::ExpData>()?;
     Ok(())
 }

@@ -3,12 +3,14 @@
 
 use std::f64::NAN;
 use std::fmt;
+use pyo3::prelude::*;
 use std::ops::{Add, AddAssign, Sub, Mul, Div, Neg};
 use std::collections::HashSet;
 use ndarray::{s, Array, Array1, Array2, Array3};
 use ndarray_linalg::Solve;
 use statrs::distribution::{ChiSquared, ContinuousCDF};
 
+#[pyclass]
 #[derive(Debug, Clone)]
 pub struct ExpData {
     pub n: usize,
@@ -17,8 +19,77 @@ pub struct ExpData {
     pub badpts: HashSet<usize>,
 }
 
+#[pymethods]
 impl ExpData {
-    // Create a new ExpData structure
+    #[new]
+    fn from_vec(data: Vec<Vec<f64>>) -> Self {
+        let n = data[0].len();
+        let repeat_time = data.len();
+        let mut arr: Array2::<f64> = Array::zeros((repeat_time, n));
+        for i in 0..repeat_time {
+            for j in 0..n {
+                arr[[i,j]] = data[i][j];
+            }
+        }
+        Self::new(arr)
+    }
+
+    #[staticmethod]
+    pub fn zero(n: usize, repeat_size: usize) -> Self {
+        Self::new(Array2::zeros((repeat_size, n)))
+    }
+
+    #[staticmethod]
+    pub fn from_elem(value: f64, n: usize, repeat_size: usize) -> Self {
+        Self::new(Array2::from_elem((repeat_size, n), value))
+    }
+    #[getter]
+    fn n(&self) -> PyResult<usize> {
+        Ok(self.n)
+    }
+    #[getter]
+    fn repeat_time(&self) -> PyResult<usize> {
+        Ok(self.repeat_time)
+    }
+    #[getter]
+    fn data(&self) -> PyResult<Vec<Vec<f64>> > {
+        let mut res = Vec::new();
+        for i in 0..self.repeat_time {
+            res.push(self.data.row(i).to_vec())
+        }
+        Ok(res)
+    }
+    #[getter]
+    fn badpts(&self) -> PyResult<HashSet<usize>> {
+        Ok(self.badpts.clone())
+    }
+    fn __add__(&self, other: &ExpData) -> PyResult<ExpData> {
+        Ok(self + other)
+    }
+    fn __sub__(&self, other: &ExpData) -> PyResult<ExpData> {
+        Ok(self - other)
+    }
+    fn __mul__(&self, other: &ExpData) -> PyResult<ExpData> {
+        Ok(self * other)
+    }
+    fn __truediv__(&self, other: &ExpData) -> PyResult<ExpData> {
+        Ok(self / other)
+    }
+    fn __neg__(&self) -> PyResult<ExpData> {
+        Ok(-self.clone())
+    }
+    fn __power__(&self, other: &ExpData) -> PyResult<ExpData> {
+        Ok(self.pow(other))
+    }
+    fn __diff__(&self, other: &ExpData) -> PyResult<ExpData> {
+        Ok(self.diff(other))
+    }
+    fn __difftau__(&self) -> PyResult<ExpData> {
+        Ok(self.diff_tau())
+    }
+}
+
+impl ExpData {
     pub fn new(data: Array2::<f64>) -> Self {
         let mut badpts = HashSet::new();
         let n = data.ncols();
@@ -40,14 +111,6 @@ impl ExpData {
             }
         }
         Self {n, repeat_time, data, badpts}
-    }
-
-    pub fn zero(n: usize, repeat_size: usize) -> ExpData {
-        Self::new(Array2::zeros((repeat_size, n)))
-    }
-
-    pub fn from_elem(value: f64, n: usize, repeat_size: usize) -> ExpData {
-        Self::new(Array2::from_elem((repeat_size, n), value))
     }
 
     pub fn gen_domain(&self) -> Vec<(usize,usize)> {
