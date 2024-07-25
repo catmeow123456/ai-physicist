@@ -10,13 +10,16 @@ use crate::experiments::objects::obj::{
 // make_spring，返回一个弹簧对象的结构，只可以调节它的粗细和自由长度。
 impl Objstructure {
     pub fn spring(thickness_range: (f64, f64), freel_range: (f64, f64)) -> Self {
+        assert!(thickness_range.0 < thickness_range.1 && freel_range.0 < freel_range.1);
+        assert!(thickness_range.0 >= 1.5 && thickness_range.1 <= 2.5);
+        assert!(freel_range.0 >= 1.0 && freel_range.1 <= 20.0);
         Objstructure::new(
             Spring,
             HashMap::from([
                 (ATTR::thickness(),
-                    Parastructure::new(Some(thickness_range), None)),
+                    Parastructure::new(Some(thickness_range))),
                 (ATTR::freel(),
-                    Parastructure::new(Some(freel_range), None)),
+                    Parastructure::new(Some(freel_range))),
             ]),
         )
     }

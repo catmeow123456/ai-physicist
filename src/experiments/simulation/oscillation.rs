@@ -1,9 +1,9 @@
 use pyo3::prelude::*;
+use crate::r;
 use crate::experiments::{
     objects::obj::{DATA, ATTR},
     expstructure::{
-        Parastructure, Objstructure, ExpStructure, ExpConfig, add_errors,
-        DataStructOfDoExperiment
+        Parastructure, Objstructure, ExpStructure, ExpConfig, add_errors, DoExpType
     }
 };
 use ndarray::Array1;
@@ -13,25 +13,25 @@ use std::collections::HashMap;
 pub fn struct_oscillation() -> ExpStructure {
     let default_masspoint_struct = Objstructure::masspoint((1.0, 5.0));
     let default_spring_struct = Objstructure::spring((2.0, 2.2), (9.0, 11.0));
-    let name = "oscillation".to_string();
+    let name = r!("oscillation");
     let spdim = 1 as usize;
     let exp_para = HashMap::from([
-        ("posl", Parastructure::new(Some((-1.0, 1.0)), None)),
-        ("x2", Parastructure::new(Some((9.0, 11.0)), None)),
-        ("v2", Parastructure::new(Some((-2.0, 2.0)), None)),
+        (r!("posl"), Parastructure::new(Some((-1.0, 1.0)))),
+        (r!("x2"), Parastructure::new(Some((9.0, 11.0)))),
+        (r!("v2"), Parastructure::new(Some((-2.0, 2.0)))),
     ]);
     let obj_info = HashMap::from([
-        ("MPa", default_masspoint_struct),
-        ("SPb", default_spring_struct),
-        ("Clock", Objstructure::clock()),
+        (r!("MPa"), default_masspoint_struct),
+        (r!("SPb"), default_spring_struct),
+        (r!("Clock"), Objstructure::clock()),
     ]);
     let data_info = HashMap::from([
-        ("MPa", vec![DATA::posx()]),
-        ("SPb", vec![DATA::posl(), DATA::posr()]),
-        ("Clock", vec![DATA::time()]),
+        (r!("MPa"), vec![DATA::posx()]),
+        (r!("SPb"), vec![DATA::posl(), DATA::posr()]),
+        (r!("Clock"), vec![DATA::time()]),
     ]);
     let exp_config = ExpConfig::new(name, spdim, exp_para, obj_info, data_info);
-    let do_experiment: fn(f64,usize,f64,&ExpConfig) -> DataStructOfDoExperiment = |t_end: f64, t_num: usize, error: f64, exp_config: &ExpConfig| {
+    let do_experiment: DoExpType = |t_end: f64, t_num: usize, error: f64, exp_config: &ExpConfig| {
         let x1 = exp_config.para("posl");
         let x2 = exp_config.para("x2");
         let v2 = exp_config.para("v2");

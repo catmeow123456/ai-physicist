@@ -1,3 +1,5 @@
+use pyo3::prelude::*;
+#[pyclass(eq, eq_int)]
 #[derive(Clone, PartialEq, Eq, Hash, Debug)]
 pub enum ObjType {
     Clock,
@@ -15,18 +17,19 @@ impl fmt::Display for ObjType {
     }
 }
 
+#[pyclass(eq)]
 #[derive(Clone, PartialEq, Eq, Hash, Debug)]
 pub enum DATA {
     Mk {
         obj: ObjType,
-        name: &'static str,
+        name: String,
     },
 }
 impl DATA {
-    pub const fn new(obj: ObjType, name: &'static str) -> DATA {
-        DATA::Mk { obj, name }
+    pub fn new(obj: ObjType, name: &str) -> DATA {
+        DATA::Mk { obj, name: name.to_string() }
     }
-    pub fn name(&self) -> &'static str {
+    pub fn name(&self) -> &String {
         match self {
             DATA::Mk { name, .. } => name,
         }
@@ -45,19 +48,19 @@ impl fmt::Display for DATA {
     }
 }
 
-
+#[pyclass(eq)]
 #[derive(Clone, PartialEq, Eq, Hash, Debug)]
 pub enum ATTR {
     Mk {
         obj: ObjType,
-        name: &'static str,
+        name: String,
     },
 }
 impl ATTR {
-    pub const fn new(obj: ObjType, name: &'static str) -> ATTR {
-        ATTR::Mk { obj, name }
+    pub fn new(obj: ObjType, name: &str) -> ATTR {
+        ATTR::Mk { obj, name: name.to_string() }
     }
-    pub fn name(&self) -> &'static str {
+    pub fn name(&self) -> &String {
         match self {
             ATTR::Mk { name, .. } => name,
         }

@@ -22,7 +22,7 @@ pub struct ExpData {
 #[pymethods]
 impl ExpData {
     #[new]
-    fn from_vec(data: Vec<Vec<f64>>) -> Self {
+    fn __new__(data: Vec<Vec<f64>>) -> Self {
         let n = data[0].len();
         let repeat_time = data.len();
         let mut arr: Array2::<f64> = Array::zeros((repeat_time, n));

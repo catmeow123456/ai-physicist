@@ -7,23 +7,22 @@ use super::expdata::ExpData;
 use super::objects::obj::{ObjType, ATTR};
 use super::objects::obj::DATA;
 
+pub type DoExpType = fn(f64,usize,f64,&ExpConfig) -> DataStructOfDoExperiment;
+
 // 刻画某个参数结构的抽象类
 // range: 参数的取值范围
-// error: 测量它会带来的误差
 #[pyclass]
 #[derive(Clone)]
 pub struct Parastructure {
     value: Option<f64>,
     range: (f64, f64),
-    error: f64,
 }
 
 impl Parastructure {
-    pub fn new(range: Option<(f64, f64)>, error: Option<f64>) -> Self {
+    pub fn new(range: Option<(f64, f64)>) -> Self {
         Parastructure {
             value: None,
             range: range.unwrap_or((-1e10, 1e10)),
-            error: error.unwrap_or(1e-8),
         }
     }
     fn set_value(&mut self, value: f64) {
@@ -34,12 +33,6 @@ impl Parastructure {
         let value = rng.gen_range(self.range.0..self.range.1);
         self.value = Some(value);
     }
-    fn measure(&self) -> f64 {
-        let mut rng = rand::thread_rng();
-        let normal = Normal::new(self.value.unwrap(), self.error).unwrap();
-        let value = normal.sample(&mut rng);
-        value
-    }
     fn real_value(&self) -> f64 {
         self.value.unwrap()
     }
@@ -47,8 +40,8 @@ impl Parastructure {
 
 impl fmt::Display for Parastructure {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "[Parastructure] value: {:?}, range: {:?}, error: {}",
-               self.value, self.range, self.error).unwrap();
+        write!(f, "[Parastructure] value: {:?}, range: {:?}",
+               self.value, self.range).unwrap();
         Result::Ok(())
     }
 }
@@ -71,16 +64,6 @@ impl Objstructure {
         for (_, para) in self.attribute.iter_mut() {
             para.random_sample();
         }
-    }
-    fn measure_para(&self, para_name: &ATTR) -> f64 {
-        self.attribute.get(para_name).unwrap().measure()
-    }
-    fn measure(&self) -> HashMap<ATTR, f64> {
-        let mut result = HashMap::new();
-        for (name, _) in self.attribute.iter() {
-            result.insert(name.clone(), self.measure_para(name));
-        }
-        result
     }
     fn real_value(&self) -> HashMap<ATTR, f64> {
         let mut result = HashMap::new();
@@ -115,14 +98,14 @@ impl fmt::Display for Objstructure {
 #[pyclass]
 pub struct DataStructOfDoExperiment {
     n: usize,
-    obj_id_map: HashMap<&'static str, (ObjType, i32)>,
-    obj_info_dict: HashMap<ObjType, HashMap<i32, &'static str>>,
+    obj_id_map: HashMap<String, (ObjType, i32)>,
+    obj_info_dict: HashMap<ObjType, HashMap<i32, String>>,
     data: HashMap<(DATA, i32), Array1<f64>>,
 }
 impl DataStructOfDoExperiment {
     fn new(n: usize,
-           obj_id_map: HashMap<&'static str, (ObjType, i32)>,
-           obj_info_dict: HashMap<ObjType, HashMap<i32, &'static str>>,
+           obj_id_map: HashMap<String, (ObjType, i32)>,
+           obj_info_dict: HashMap<ObjType, HashMap<i32, String>>,
         ) -> Self {
         DataStructOfDoExperiment {
             n,
@@ -190,18 +173,19 @@ impl DataStructOfExpData {
 }
 
 #[pyclass]
+#[derive(Clone)]
 pub struct ExpConfig {
     name: String,
     spdim: usize,
-    exp_para: HashMap<&'static str, Parastructure>,
-    obj_info: HashMap<&'static str, Objstructure>,
-    data_info: HashMap<&'static str, Vec<DATA>>,
+    exp_para: HashMap<String, Parastructure>,
+    obj_info: HashMap<String, Objstructure>,
+    data_info: HashMap<String, Vec<DATA>>,
 }
 impl ExpConfig {
     pub fn new(name: String, spdim: usize,
-           exp_para: HashMap<&'static str, Parastructure>,
-           obj_info: HashMap<&'static str, Objstructure>,
-           data_info: HashMap<&'static str, Vec<DATA>>) -> Self {
+           exp_para: HashMap<String, Parastructure>,
+           obj_info: HashMap<String, Objstructure>,
+           data_info: HashMap<String, Vec<DATA>>) -> Self {
         ExpConfig {
             name,
             spdim,
@@ -234,26 +218,26 @@ impl ExpConfig {
         }
     }
     pub fn create_data_struct_of_do_experiment(&self, t_num: usize) -> DataStructOfDoExperiment {
-        let mut obj_id_map: HashMap<&'static str, (ObjType, i32)> = HashMap::new();
-        let mut obj_info_dict: HashMap<ObjType, HashMap<i32, &'static str>> = HashMap::new();
+        let mut obj_id_map: HashMap<String, (ObjType, i32)> = HashMap::new();
+        let mut obj_info_dict: HashMap<ObjType, HashMap<i32, String>> = HashMap::new();
         for (name, obj) in self.obj_info.iter() {
             if obj.obj_type == ObjType::Clock {
-                obj_id_map.insert(name, (ObjType::Clock, 0));
+                obj_id_map.insert(name.clone(), (ObjType::Clock, 0));
             }
         }
-        let mut hash_vec: Vec<(&&'static str, &Objstructure)> = self.obj_info.iter().collect();
-        hash_vec.sort_by(|a, b| (**(a.0)).cmp(*(b.0)));
+        let mut hash_vec: Vec<(&String, &Objstructure)> = self.obj_info.iter().collect();
+        hash_vec.sort_by(|a, b| (a.0).cmp(b.0));
         for (name, obj) in hash_vec.iter() {
             let obj_type = obj.obj_type.clone();
             if obj_type == ObjType::Clock {
                 continue;
             }
             let obj_id = obj_id_map.len() as i32;
-            obj_id_map.insert(name, (obj_type.clone(), obj_id));
+            obj_id_map.insert((*name).clone(), (obj_type.clone(), obj_id));
             if !obj_info_dict.contains_key(&obj.obj_type) {
                 obj_info_dict.insert(obj_type, HashMap::new());
             }
-            obj_info_dict.get_mut(&obj.obj_type).unwrap().insert(obj_id, name);
+            obj_info_dict.get_mut(&obj.obj_type).unwrap().insert(obj_id, (*name).clone());
         }
         for (obj_name, data_names) in self.data_info.iter() {
             let obj_type = obj_id_map.get(obj_name).unwrap().clone().0;
@@ -272,10 +256,10 @@ impl ExpConfig {
 #[pyclass]
 pub struct ExpStructure {
     exp_config: ExpConfig,
-    do_experiment: fn(f64,usize,f64,&ExpConfig) -> DataStructOfDoExperiment,
+    do_experiment: DoExpType,
 }
 impl ExpStructure {
-    pub fn new(exp_config: ExpConfig, do_experiment: fn(f64,usize,f64,&ExpConfig) -> DataStructOfDoExperiment) -> Self {
+    pub fn new(exp_config: ExpConfig, do_experiment: DoExpType) -> Self {
         ExpStructure {
             exp_config,
             do_experiment,
@@ -284,9 +268,6 @@ impl ExpStructure {
     pub fn print_obj_info(&self) {
         self.exp_config.print_obj_info();
     }
-}
-#[pymethods]
-impl ExpStructure {
     pub fn random_sample(&mut self) {
         self.exp_config.random_sample();
     }

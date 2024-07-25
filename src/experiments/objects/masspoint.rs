@@ -15,9 +15,9 @@ impl Objstructure {
             MassPoint,
             HashMap::from([
                 (ATTR::mass(),
-                    Parastructure::new(Some(mass_range), None)),
+                    Parastructure::new(Some(mass_range))),
                 (ATTR::elec(),
-                    Parastructure::new(Some((0.0, 1e-8)), None)),
+                    Parastructure::new(Some((0.0, 1e-8)))),
             ]),
         )
     }

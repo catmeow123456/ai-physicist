@@ -1,9 +1,11 @@
 pub mod ast;
 pub mod sentence;
+pub mod macros;
 pub mod test{
     pub mod test_experiments;
 }
 pub mod experiments{
+    pub mod topy;
     pub mod expdata;
     pub mod expstructure;
     pub mod objects{
@@ -19,8 +21,9 @@ pub mod experiments{
 }
 
 use experiments::{
+    topy::register_experiment_maker,
     expdata::ExpData,
-    expstructure::{ExpStructure, DataStructOfExpData}
+    expstructure::DataStructOfExpData,
 };
 use pyo3::prelude::*;
 use sentence::{parse, eval};
@@ -51,8 +54,9 @@ fn ai_physicist(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(experiments::simulation::collision::struct_collision, m)?)?;
     m.add_function(wrap_pyfunction!(experiments::simulation::oscillation::struct_oscillation, m)?)?;
     m.add_class::<ExpData>()?;
-    m.add_class::<ExpStructure>()?;
     m.add_class::<DataStructOfExpData>()?;
     m.add_function(wrap_pyfunction!(eval_exp, m)?)?;
+    m.add_function(wrap_pyfunction!(experiments::simulation::collision::do_collision, m)?)?;
+    register_experiment_maker(m)?;
     Ok(())
 }
