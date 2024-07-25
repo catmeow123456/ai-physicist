@@ -86,7 +86,7 @@ impl Objstructure {
         }
         result
     }
-    fn get_para_real_value(&self, para_name: &ATTR) -> f64 {
+    pub fn get_para_real_value(&self, para_name: &ATTR) -> f64 {
         self.attribute.get(para_name).unwrap().real_value()
     }
     fn set_value(&mut self, value_dict: HashMap<ATTR, f64>) {
@@ -184,24 +184,58 @@ impl DataStructOfExpData {
     }
 }
 
-pub trait ExpStructure {
-    fn new() -> Self;
-    fn name(&self) -> String;
-    fn spdim(&self) -> usize;
-    fn exp_para(&self) -> &HashMap<&'static str, Parastructure>;
-    fn mut_exp_para(&mut self) -> &mut HashMap<&'static str, Parastructure>;
-    fn obj_info(&self) -> &HashMap<&'static str, Objstructure>;
-    fn mut_obj_info(&mut self) -> &mut HashMap<&'static str, Objstructure>;
-    fn data_info(&self) -> &HashMap<&'static str, Vec<DATA>>;
-    fn create_data_struct_of_do_experiment(&self, t_num: usize) -> DataStructOfDoExperiment {
+pub struct ExpConfig {
+    name: String,
+    spdim: usize,
+    exp_para: HashMap<&'static str, Parastructure>,
+    obj_info: HashMap<&'static str, Objstructure>,
+    data_info: HashMap<&'static str, Vec<DATA>>,
+}
+impl ExpConfig {
+    pub fn new(name: String, spdim: usize,
+           exp_para: HashMap<&'static str, Parastructure>,
+           obj_info: HashMap<&'static str, Objstructure>,
+           data_info: HashMap<&'static str, Vec<DATA>>) -> Self {
+        ExpConfig {
+            name,
+            spdim,
+            exp_para,
+            obj_info,
+            data_info,
+        }
+    }
+    pub fn para(&self, para_name: &str) -> f64 {
+        self.exp_para.get(para_name).unwrap().real_value()
+    }
+    pub fn obj(&self, obj_name: &str) -> &Objstructure {
+        self.obj_info.get(obj_name).unwrap()
+    }
+    pub fn obj_para(&self, obj_name: &str, para_name: &ATTR) -> f64 {
+        self.obj_info.get(obj_name).unwrap().get_para_real_value(para_name)
+    }
+    pub fn print_obj_info(&self) {
+        println!("Name: {}; Object Info:", self.name);
+        for (key, obj) in self.obj_info.iter() {
+            println!("{}: {}", key, obj);
+        }
+    }
+    fn random_sample(&mut self) {
+        for (_, para) in self.exp_para.iter_mut() {
+            para.random_sample();
+        }
+        for (_, obj) in self.obj_info.iter_mut() {
+            obj.random_sample();
+        }
+    }
+    pub fn create_data_struct_of_do_experiment(&self, t_num: usize) -> DataStructOfDoExperiment {
         let mut obj_id_map: HashMap<&'static str, (ObjType, i32)> = HashMap::new();
         let mut obj_info_dict: HashMap<ObjType, HashMap<i32, &'static str>> = HashMap::new();
-        for (name, obj) in self.obj_info().iter() {
+        for (name, obj) in self.obj_info.iter() {
             if obj.obj_type == ObjType::Clock {
                 obj_id_map.insert(name, (ObjType::Clock, 0));
             }
         }
-        let mut hash_vec: Vec<(&&'static str, &Objstructure)> = self.obj_info().iter().collect();
+        let mut hash_vec: Vec<(&&'static str, &Objstructure)> = self.obj_info.iter().collect();
         hash_vec.sort_by(|a, b| (**(a.0)).cmp(*(b.0)));
         for (name, obj) in hash_vec.iter() {
             let obj_type = obj.obj_type.clone();
@@ -215,7 +249,7 @@ pub trait ExpStructure {
             }
             obj_info_dict.get_mut(&obj.obj_type).unwrap().insert(obj_id, name);
         }
-        for (obj_name, data_names) in self.data_info().iter() {
+        for (obj_name, data_names) in self.data_info.iter() {
             let obj_type = obj_id_map.get(obj_name).unwrap().clone().0;
             for data in data_names {
                 assert_eq!(data.obj(), &obj_type);
@@ -227,23 +261,28 @@ pub trait ExpStructure {
             obj_info_dict,
         )
     }
-    fn do_experiment(&self, t_end: f64, t_num: usize, error: f64) -> DataStructOfDoExperiment;
-    fn random_sample(&mut self) {
-        for (_, para) in self.mut_exp_para().iter_mut() {
-            para.random_sample();
+}
+
+pub struct ExpStructure {
+    exp_config: ExpConfig,
+    do_experiment: fn(f64,usize,f64,&ExpConfig) -> DataStructOfDoExperiment,
+}
+impl ExpStructure {
+    pub fn new(exp_config: ExpConfig, do_experiment: fn(f64,usize,f64,&ExpConfig) -> DataStructOfDoExperiment) -> Self {
+        ExpStructure {
+            exp_config,
+            do_experiment,
         }
-        for (_, obj) in self.mut_obj_info().iter_mut() {
-            obj.random_sample();
-        }
     }
-    fn get_para_real_value(&self, para_name: &str) -> f64 {
-        self.exp_para().get(&para_name).unwrap().real_value()
+    pub fn print_obj_info(&self) {
+        self.exp_config.print_obj_info();
     }
-    fn get_obj_real_value(&self, obj_name: &str, para_name: &ATTR) -> f64 {
-        self.obj_info().get(&obj_name).unwrap().get_para_real_value(para_name)
+    pub fn random_sample(&mut self) {
+        self.exp_config.random_sample();
     }
-    fn get_expdata(&self, t_end: f64, t_num: usize, error: f64, repeat_time: usize) -> DataStructOfExpData {
-        let data_struct = self.do_experiment(t_end, t_num, 0.0);
+    pub fn get_expdata(&self, t_end: f64, t_num: usize, error: f64, repeat_time: usize) -> DataStructOfExpData {
+        let doexp = self.do_experiment;
+        let data_struct = doexp(t_end, t_num, 0.0, &self.exp_config);
         let data = data_struct.get_data();
         let mut multi_data: HashMap<(DATA, i32), ExpData> = HashMap::new();
         for (name, data) in data.iter() {

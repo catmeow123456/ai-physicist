@@ -1,20 +1,18 @@
 
 #[cfg(test)]
 mod tests {
-    use crate::experiments::expstructure::ExpStructure;
-    use crate::experiments::simulation::collision::Collision;
-    use crate::experiments::simulation::oscillation::Oscillation;
+    use crate::experiments::simulation::{
+        collision::struct_collision,
+        oscillation::struct_oscillation,
+    };
     use std::time::Instant;
     use crate::sentence::{parse, eval};
     #[test]
     fn test_experiments() {
         {
             let now = Instant::now();
-            let mut exp: Collision = ExpStructure::new();
-            for (key, obj) in exp.obj_info().iter() {
-                println!("NAME: {} , {}", key, obj);
-            }
-            println!();
+            let mut exp = struct_collision();
+            // exp.print_obj_info();
             exp.random_sample();
             let data = exp.get_expdata(2.0, 100, 1e-8, 100);
             data.plot_expdata("collision");
@@ -33,7 +31,7 @@ mod tests {
         }
         {
             let now = Instant::now();
-            let mut exp: Oscillation = ExpStructure::new();
+            let mut exp = struct_oscillation();
             exp.random_sample();
             let data = exp.get_expdata(2.0, 100, 1e-8, 100);
             data.plot_expdata("oscillation");
