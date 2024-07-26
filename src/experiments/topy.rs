@@ -51,14 +51,12 @@ impl ExpStructure {
 }
 
 #[pymodule]
-pub fn register_experiment_maker(m: &Bound<'_, PyModule>) -> PyResult<()> {
-    let child_module = PyModule::new_bound(m.py(), "experiment_maker")?;
-    child_module.add_class::<DATA>()?;
-    child_module.add_class::<ATTR>()?;
-    child_module.add_class::<Objstructure>()?;
-    child_module.add_class::<Parastructure>()?;
-    child_module.add_class::<ExpConfig>()?;
-    child_module.add_class::<ExpStructure>()?;
-    m.add_submodule(&child_module)?;
+pub fn register_experiment(m: &Bound<'_, PyModule>) -> PyResult<()> {
+    m.add_class::<DATA>()?;
+    m.add_class::<ATTR>()?;
+    m.add_class::<Objstructure>()?;
+    m.add_class::<Parastructure>()?;
+    m.add_class::<ExpConfig>()?;
+    m.add_class::<ExpStructure>()?;
     Ok(())
 }

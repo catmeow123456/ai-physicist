@@ -21,7 +21,7 @@ pub mod experiments{
 }
 
 use experiments::{
-    topy::register_experiment_maker,
+    topy::register_experiment,
     expdata::ExpData,
     expstructure::DataStructOfExpData,
 };
@@ -42,6 +42,6 @@ fn ai_physicist(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<ExpData>()?;
     m.add_class::<DataStructOfExpData>()?;
     m.add_function(wrap_pyfunction!(experiments::simulation::collision::do_collision, m)?)?;
-    register_experiment_maker(m)?;
+    register_experiment(m)?;
     Ok(())
 }

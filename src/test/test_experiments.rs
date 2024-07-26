@@ -6,7 +6,7 @@ mod tests {
         oscillation::struct_oscillation,
     };
     use std::time::Instant;
-    use crate::sentence::{parse, eval};
+    use crate::sentence::{parse_exp, eval};
     #[test]
     fn test_experiments() {
         {
@@ -18,7 +18,7 @@ mod tests {
             data.plot_expdata("collision");
             println!("Collision exp and plot, Time: {:?}", now.elapsed());
             let now = Instant::now();
-            let expr = parse("(posx[1]'-posx[2]')**2").unwrap();
+            let expr = parse_exp("(posx[1]'-posx[2]')**2").unwrap();
             let d = eval(&expr, &data);
             {
                 assert!(d.is_conserved());
@@ -36,7 +36,7 @@ mod tests {
             let data = exp.get_expdata(2.0, 100, 1e-8, 100);
             data.plot_expdata("oscillation");
             println!("Oscillation Time: {:?}", now.elapsed());
-            let expr = parse("D[posx[1]'']/D[ posx[1] ]").unwrap();
+            let expr = parse_exp("D[posx[1]'']/D[ posx[1] ]").unwrap();
             let now = Instant::now();
             let d = eval(&expr, &data);
             {
