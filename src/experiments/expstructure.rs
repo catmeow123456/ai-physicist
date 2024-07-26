@@ -125,13 +125,15 @@ impl DataStructOfDoExperiment {
 }
 #[pyclass]
 pub struct DataStructOfExpData {
+    pub name: String,
     pub n: usize,
     pub repeat_time: usize,
     data: HashMap<(DATA, i32), ExpData>,
 }
 impl DataStructOfExpData {
-    fn new(n: usize, repeat_time: usize, data: HashMap<(DATA, i32), ExpData>) -> Self {
+    fn new(name: String, n: usize, repeat_time: usize, data: HashMap<(DATA, i32), ExpData>) -> Self {
         DataStructOfExpData {
+            name,
             n,
             repeat_time,
             data
@@ -285,7 +287,7 @@ impl ExpStructure {
             assert_eq!(idata.shape(), [repeat_time, t_num]);
             multi_data.insert(name.clone(), ExpData::new(idata));
         }
-        DataStructOfExpData::new(t_num, repeat_time, multi_data)
+        DataStructOfExpData::new(self.exp_config.name.clone(), t_num, repeat_time, multi_data)
     }
 }
 

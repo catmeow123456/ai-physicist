@@ -62,12 +62,25 @@ impl IntoPyCallbackOutput<*mut pyo3::ffi::PyObject> for Box<Exp>
 #[pyclass(eq)]
 #[derive(Clone, PartialEq)]
 pub enum Exp {
+    // ExpConfig -> MeasureData -> ExpData
     Number {num: i32},
     Variable {name: String},
     VariableId {name: String, id: i32},
     UnaryExp {op: UnaryOp, exp: Box<Exp>},
     BinaryExp {left: Box<Exp>, op: BinaryOp, right: Box<Exp>},
     DiffExp {left: Box<Exp>, right: Box<Exp>, ord: i32},
+}
+
+#[pyclass(eq)]
+#[derive(Clone, PartialEq)]
+pub enum SExp {
+    // MeasureData -> ExpData
+    Mk {name: String, exp: Box<Exp>},
+}
+
+pub enum Expression {
+    Exp {exp: Box<Exp>},
+    SExp {sexp: Box<SExp>},
 }
 
 impl fmt::Display for Exp {
@@ -90,10 +103,10 @@ impl fmt::Display for Exp {
         }
     }
 }
-
-#[pymethods]
-impl Exp {
-    fn to_string(&self) -> String {
-        format!("{}", self)
+impl fmt::Display for SExp {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            SExp::Mk {name, exp} => write!(f, "{} |- {}", name, exp),
+        }
     }
 }

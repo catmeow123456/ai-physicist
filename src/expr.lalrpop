@@ -12,7 +12,13 @@ match {
   // 剩下的情况采用默认方式处理
   _
 }
-
+pub Expression: Box<Expression> = {
+  <exp: Exp> => Box::new(Expression::Exp{ <> }),
+  <sexp: SExp> => Box::new(Expression::SExp{ <> }),
+}
+pub SExp: Box<SExp> = {
+  <name: Ident> "|-" <exp: Exp> => Box::new(SExp::Mk{ <> }),
+}
 pub Exp: Box<Exp> = <addexp: AddExp> => <>;
 
 PrimaryExp: Box<Exp> = {

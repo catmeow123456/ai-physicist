@@ -59,5 +59,6 @@ pub fn register_experiment_maker(m: &Bound<'_, PyModule>) -> PyResult<()> {
     child_module.add_class::<Parastructure>()?;
     child_module.add_class::<ExpConfig>()?;
     child_module.add_class::<ExpStructure>()?;
+    m.add_submodule(&child_module)?;
     Ok(())
 }
