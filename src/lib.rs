@@ -5,6 +5,7 @@ pub mod test{
     pub mod test_experiments;
 }
 pub mod experiments{
+    pub mod impl_for_pyo3;
     pub mod topy;
     pub mod expdata;
     pub mod expstructure;
@@ -37,6 +38,8 @@ fn ai_physicist(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<ast::UnaryOp>()?;
     m.add_class::<ast::Exp>()?;
     m.add_class::<ast::SExp>()?;
+    m.add_class::<ast::IExpConfig>()?;
+    m.add_class::<ast::ObjAttrExp>()?;
     m.add_function(wrap_pyfunction!(experiments::simulation::collision::struct_collision, m)?)?;
     m.add_function(wrap_pyfunction!(experiments::simulation::oscillation::struct_oscillation, m)?)?;
     m.add_class::<ExpData>()?;

@@ -49,7 +49,7 @@ impl fmt::Display for Parastructure {
 #[pyclass]
 #[derive(Clone)]
 pub struct Objstructure {
-    obj_type: ObjType,
+    pub obj_type: ObjType,
     attribute: HashMap<ATTR, Parastructure>,
 }
 impl Objstructure {
@@ -60,7 +60,7 @@ impl Objstructure {
             attribute,
         }
     }
-    fn random_sample(&mut self) {
+    pub fn random_sample(&mut self) {
         for (_, para) in self.attribute.iter_mut() {
             para.random_sample();
         }
@@ -99,18 +99,15 @@ impl fmt::Display for Objstructure {
 pub struct DataStructOfDoExperiment {
     n: usize,
     obj_id_map: HashMap<String, (ObjType, i32)>,
-    obj_info_dict: HashMap<ObjType, HashMap<i32, String>>,
     data: HashMap<(DATA, i32), Array1<f64>>,
 }
 impl DataStructOfDoExperiment {
     fn new(n: usize,
            obj_id_map: HashMap<String, (ObjType, i32)>,
-           obj_info_dict: HashMap<ObjType, HashMap<i32, String>>,
         ) -> Self {
         DataStructOfDoExperiment {
             n,
             obj_id_map,
-            obj_info_dict,
             data: HashMap::new(),
         }
     }
@@ -177,23 +174,50 @@ impl DataStructOfExpData {
 #[pyclass]
 #[derive(Clone)]
 pub struct ExpConfig {
+    // provided
     name: String,
     spdim: usize,
     exp_para: HashMap<String, Parastructure>,
     obj_info: HashMap<String, Objstructure>,
     data_info: HashMap<String, Vec<DATA>>,
+    // auto generated
+    obj_id_map: HashMap<String, (ObjType, i32)>,
+    obj_info_dict: HashMap<ObjType, HashMap<i32, String>>,
 }
 impl ExpConfig {
     pub fn new(name: String, spdim: usize,
            exp_para: HashMap<String, Parastructure>,
            obj_info: HashMap<String, Objstructure>,
            data_info: HashMap<String, Vec<DATA>>) -> Self {
+        let mut obj_id_map: HashMap<String, (ObjType, i32)> = HashMap::new();
+        let mut obj_info_dict: HashMap<ObjType, HashMap<i32, String>> = HashMap::new();
+        for (name, obj) in obj_info.iter() {
+            if obj.obj_type == ObjType::Clock {
+                obj_id_map.insert(name.clone(), (ObjType::Clock, 0));
+            }
+        }
+        let mut hash_vec: Vec<(&String, &Objstructure)> = obj_info.iter().collect();
+        hash_vec.sort_by(|a, b| (a.0).cmp(b.0));
+        for (name, obj) in hash_vec.iter() {
+            let obj_type = obj.obj_type.clone();
+            if obj_type == ObjType::Clock {
+                continue;
+            }
+            let obj_id = obj_id_map.len() as i32;
+            obj_id_map.insert((*name).clone(), (obj_type.clone(), obj_id));
+            if !obj_info_dict.contains_key(&obj.obj_type) {
+                obj_info_dict.insert(obj_type, HashMap::new());
+            }
+            obj_info_dict.get_mut(&obj.obj_type).unwrap().insert(obj_id, (*name).clone());
+        }
         ExpConfig {
             name,
             spdim,
             exp_para,
             obj_info,
             data_info,
+            obj_id_map,
+            obj_info_dict
         }
     }
     pub fn para(&self, para_name: &str) -> f64 {
@@ -211,6 +235,10 @@ impl ExpConfig {
             println!("{}: {}", key, obj);
         }
     }
+    fn set_obj(&mut self, id: i32, obj: Objstructure) {
+        let name = self.obj_info_dict.get(&obj.obj_type).unwrap().get(&id).unwrap();
+        self.obj_info.insert(name.clone(), obj);
+    }
     fn random_sample(&mut self) {
         for (_, para) in self.exp_para.iter_mut() {
             para.random_sample();
@@ -220,37 +248,15 @@ impl ExpConfig {
         }
     }
     pub fn create_data_struct_of_do_experiment(&self, t_num: usize) -> DataStructOfDoExperiment {
-        let mut obj_id_map: HashMap<String, (ObjType, i32)> = HashMap::new();
-        let mut obj_info_dict: HashMap<ObjType, HashMap<i32, String>> = HashMap::new();
-        for (name, obj) in self.obj_info.iter() {
-            if obj.obj_type == ObjType::Clock {
-                obj_id_map.insert(name.clone(), (ObjType::Clock, 0));
-            }
-        }
-        let mut hash_vec: Vec<(&String, &Objstructure)> = self.obj_info.iter().collect();
-        hash_vec.sort_by(|a, b| (a.0).cmp(b.0));
-        for (name, obj) in hash_vec.iter() {
-            let obj_type = obj.obj_type.clone();
-            if obj_type == ObjType::Clock {
-                continue;
-            }
-            let obj_id = obj_id_map.len() as i32;
-            obj_id_map.insert((*name).clone(), (obj_type.clone(), obj_id));
-            if !obj_info_dict.contains_key(&obj.obj_type) {
-                obj_info_dict.insert(obj_type, HashMap::new());
-            }
-            obj_info_dict.get_mut(&obj.obj_type).unwrap().insert(obj_id, (*name).clone());
-        }
         for (obj_name, data_names) in self.data_info.iter() {
-            let obj_type = obj_id_map.get(obj_name).unwrap().clone().0;
+            let obj_type = self.obj_id_map.get(obj_name).unwrap().clone().0;
             for data in data_names {
                 assert_eq!(data.obj(), &obj_type);
             }
         }
         DataStructOfDoExperiment::new(
             t_num,
-            obj_id_map,
-            obj_info_dict,
+            self.obj_id_map.clone()
         )
     }
 }
@@ -267,8 +273,14 @@ impl ExpStructure {
             do_experiment,
         }
     }
+    pub fn name(&self) -> &str {
+        &self.exp_config.name
+    }
     pub fn print_obj_info(&self) {
         self.exp_config.print_obj_info();
+    }
+    pub fn set_obj(&mut self, id: i32, obj: Objstructure) {
+        self.exp_config.set_obj(id, obj);
     }
     pub fn random_sample(&mut self) {
         self.exp_config.random_sample();

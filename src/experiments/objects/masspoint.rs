@@ -11,6 +11,7 @@ use crate::experiments::objects::obj::{
 // make_masspoint，返回一个质点对象的结构，只可以调节它的质量，它没有电荷。
 impl Objstructure {
     pub fn masspoint(mass_range: (f64, f64)) -> Self {
+        assert!(mass_range.0 >= 1.0 && mass_range.1 <= 1000.0);
         Objstructure::new(
             MassPoint,
             HashMap::from([

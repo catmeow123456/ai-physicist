@@ -1,7 +1,10 @@
 use pyo3::prelude::*;
 use lalrpop_util::lalrpop_mod;
 lalrpop_mod!(expr);
-use crate::ast::{Exp, SExp, Expression, UnaryOp, BinaryOp};
+use crate::ast::{Exp, SExp, IExpConfig, Expression, UnaryOp, BinaryOp};
+use crate::experiments::expstructure::{DataStructOfExpData, ExpStructure, Objstructure};
+use crate::experiments::expdata::ExpData;
+use pyo3::exceptions::PyTypeError;
 // mod ast;
 
 #[pymethods]
@@ -43,17 +46,60 @@ fn eval_exp(exp: &Exp, data: &DataStructOfExpData) -> PyResult<ExpData> {
 #[pyfunction]
 fn eval_sexp(sexp: &SExp, data: &DataStructOfExpData) -> PyResult<ExpData> {
     match sexp {
-        SExp::Mk {name, exp} => {
-            assert_eq!(data.name, *name);
-            Ok(eval(exp, data))
+        SExp::Mk {expconfig, exp} => {
+            let ref expconfig = **expconfig;
+            match expconfig {
+                IExpConfig::From {name} => {
+                    assert_eq!(data.name, *name);
+                    Ok(eval(exp, data))
+                }
+                _ => Err(PyTypeError::new_err(format!(
+                    "To evaluate sexp {}, objstructures must be provided, please use 'seval_sexp' instead",sexp)))
+            }
         }
     }
 }
 
+#[pyfunction]
+fn eval_iexpconfig(iexpconfig: &IExpConfig, expstructure: &mut ExpStructure, objsettings: Vec<Objstructure>,
+                   t_end: f64, t_num: usize, error: f64, repeat_time: usize) -> PyResult<DataStructOfExpData> {
+    // create_data_struct_of_do_experiment
+    match iexpconfig {
+        IExpConfig::Mk {objtype, expconfig, id} => {
+            let mut objsettings = objsettings;
+            let obj = objsettings.pop().unwrap();
+            assert_eq!(*objtype, obj.obj_type.to_string());
+            expstructure.set_obj(*id, obj);
+            eval_iexpconfig(expconfig, expstructure, objsettings, t_end, t_num, error, repeat_time)
+        }
+        IExpConfig::From {name} => {
+            assert_eq!(objsettings.len(), 0);
+            assert_eq!(name, expstructure.name());
+            // let mut expstructure = expstructure.clone();
+            Ok(expstructure.get_expdata(t_end, t_num, error, repeat_time))
+        }
+    }
+}
+
+#[pyfunction]
+fn seval_sexp(sexp: &SExp, expstructure: &mut ExpStructure, objsettings: Vec<Objstructure>,
+              t_end: f64, t_num: usize, error: f64, repeat_time: usize) -> PyResult<ExpData> {
+    match sexp {
+        SExp::Mk {expconfig, exp} => {
+            let ref expconfig = **expconfig;
+            let data = eval_iexpconfig(expconfig, expstructure, objsettings, t_end, t_num, error, repeat_time)?;
+            eval_exp(exp, &data)
+        }
+    }
+}
+// , objsettings: Vec<Objstructure>
+
+// IExpConfig::Mk { objtype, expconfig, id } => {
+// assert_eq!(objsettings.len(), 0);
+//     unimplemented!()
+// }
 
 
-use crate::experiments::expdata::ExpData;
-use crate::experiments::expstructure::DataStructOfExpData;
 pub fn eval(exp0: &Exp, context: &DataStructOfExpData) -> ExpData {
     let n = context.n;
     let repeat_time = context.repeat_time;
@@ -86,6 +132,8 @@ pub fn register_sentence(m: &Bound<'_, PyModule>) -> PyResult<()> {
     child_module.add_function(wrap_pyfunction!(parse_sexp, m)?)?;
     child_module.add_function(wrap_pyfunction!(eval_exp, m)?)?;
     child_module.add_function(wrap_pyfunction!(eval_sexp, m)?)?;
+    child_module.add_function(wrap_pyfunction!(eval_iexpconfig, m)?)?;
+    child_module.add_function(wrap_pyfunction!(seval_sexp, m)?)?;
     m.add_submodule(&child_module)?;
     Ok(())
 }

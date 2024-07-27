@@ -17,9 +17,13 @@ pub Expression: Box<Expression> = {
   <sexp: SExp> => Box::new(Expression::SExp{ <> }),
 }
 pub SExp: Box<SExp> = {
-  <name: Ident> "|-" <exp: Exp> => Box::new(SExp::Mk{ <> }),
+  <expconfig: ExpConfig> "|-" <exp: Exp> => Box::new(SExp::Mk{ <> }),
 }
 pub Exp: Box<Exp> = <addexp: AddExp> => <>;
+pub ExpConfig: Box<IExpConfig> = {
+  <name: Ident> => Box::new(IExpConfig::From{ name: name }),
+  <expconfig: ExpConfig>"("<id:Number>"->"<objtype:Ident>")" => Box::new(IExpConfig::Mk{ <> }),
+}
 
 PrimaryExp: Box<Exp> = {
   <num: Number> => Box::new(Exp::Number{ <> }),

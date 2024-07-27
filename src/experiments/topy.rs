@@ -6,6 +6,9 @@ use super::expstructure::{ExpStructure, Parastructure, Objstructure, ExpConfig, 
 
 #[pymethods]
 impl Objstructure {
+    fn random_settings(&mut self) {
+        self.random_sample();
+    }
     #[staticmethod]
     fn make_masspoint(mass_low: f64, mass_high: f64) -> Self {
         Objstructure::masspoint((mass_low, mass_high))

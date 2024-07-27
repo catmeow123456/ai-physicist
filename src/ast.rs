@@ -1,6 +1,5 @@
 use std::fmt;
 use pyo3::prelude::*;
-use pyo3::callback::IntoPyCallbackOutput;
 
 #[pyclass(eq, eq_int)]
 #[derive(Eq, PartialEq, Clone)]
@@ -43,22 +42,6 @@ impl fmt::Display for UnaryOp {
     }
 }
 
-impl FromPyObject<'_> for Box<Exp> {
-    fn extract_bound(ob: &Bound<'_, PyAny>) -> PyResult<Self> {
-        let x = ob.extract::<Exp>()?;
-        // println!("Extracted: {}", x);
-        Ok(Box::new(x))
-    }
-}
-
-impl IntoPyCallbackOutput<*mut pyo3::ffi::PyObject> for Box<Exp>
-{
-    #[inline]
-    fn convert(self, py: Python<'_>) -> PyResult<*mut pyo3::ffi::PyObject> {
-        Ok(self.into_py(py).as_ptr())
-    }
-}
-
 #[pyclass(eq)]
 #[derive(Clone, PartialEq)]
 pub enum Exp {
@@ -74,8 +57,23 @@ pub enum Exp {
 #[pyclass(eq)]
 #[derive(Clone, PartialEq)]
 pub enum SExp {
-    // MeasureData -> ExpData
-    Mk {name: String, exp: Box<Exp>},
+    //  {ObjStructure} -> MeasureData -> ExpData
+    Mk {expconfig: Box<IExpConfig>, exp: Box<Exp>},
+}
+
+#[pyclass(eq)]
+#[derive(Clone, PartialEq)]
+pub enum IExpConfig {
+    // {ObjStructure} -> ExpConfig
+    From { name: String },
+    Mk { objtype: String, expconfig: Box<IExpConfig>, id: i32},
+}
+
+#[pyclass(eq)]
+#[derive(Clone, PartialEq)]
+pub enum ObjAttrExp {
+    // {ObjStructure} -> ExpData  与 MeasureData 无关，与 ObjStructure 有关
+    From { iexpconfig: Box<SExp> },
 }
 
 pub enum Expression {
@@ -106,7 +104,15 @@ impl fmt::Display for Exp {
 impl fmt::Display for SExp {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            SExp::Mk {name, exp} => write!(f, "{} |- {}", name, exp),
+            SExp::Mk {expconfig, exp} => write!(f, "{} |- {}", expconfig, exp),
+        }
+    }
+}
+impl fmt::Display for IExpConfig {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            IExpConfig::From {name} => write!(f, "{}", name),
+            IExpConfig::Mk {objtype, expconfig, id} => write!(f, "{} ({}->{})", expconfig, id, objtype),
         }
     }
 }
