@@ -44,6 +44,25 @@ impl fmt::Display for UnaryOp {
 
 #[pyclass(eq)]
 #[derive(Clone, PartialEq)]
+pub struct MeasureType {
+    pub t_end: f64,
+    pub n:usize,
+    pub repeat_time: usize,
+    pub error: f64,
+}
+impl MeasureType {
+    pub fn new(t_end: f64, n: i32, repeat_time: i32, error: f64) -> Self {
+        Self {
+            t_end,
+            n: n as usize,
+            repeat_time: repeat_time as usize,
+            error,
+        }
+    }
+}
+
+#[pyclass(eq)]
+#[derive(Clone, PartialEq)]
 pub enum Exp {
     // ExpConfig -> MeasureData -> ExpData
     Number {num: i32},
@@ -52,6 +71,7 @@ pub enum Exp {
     UnaryExp {op: UnaryOp, exp: Box<Exp>},
     BinaryExp {left: Box<Exp>, op: BinaryOp, right: Box<Exp>},
     DiffExp {left: Box<Exp>, right: Box<Exp>, ord: i32},
+    ExpWithMeasureType {exp: Box<Exp>, measuretype: Box<MeasureType>},
 }
 
 #[pyclass(eq)]
@@ -73,12 +93,15 @@ pub enum IExpConfig {
 #[derive(Clone, PartialEq)]
 pub enum ObjAttrExp {
     // {ObjStructure} -> ExpData  与 MeasureData 无关，与 ObjStructure 有关
-    From { iexpconfig: Box<SExp> },
+    From { sexp: Box<SExp> },
 }
 
+#[pyclass(eq)]
+#[derive(Clone, PartialEq)]
 pub enum Expression {
     Exp {exp: Box<Exp>},
     SExp {sexp: Box<SExp>},
+    ObjAttrExp {objattrexp: Box<ObjAttrExp>},
 }
 
 impl fmt::Display for Exp {
@@ -98,6 +121,7 @@ impl fmt::Display for Exp {
                     1 => write!(f, "D[{}]/D[{}]", left, right),
                     _ => write!(f, "D^{}[{}]/D[{}]^{}", ord, left, right,ord),
                 }
+            Exp::ExpWithMeasureType {exp, measuretype} => write!(f, "{} with {}", exp, measuretype),
         }
     }
 }
@@ -114,5 +138,26 @@ impl fmt::Display for IExpConfig {
             IExpConfig::From {name} => write!(f, "{}", name),
             IExpConfig::Mk {objtype, expconfig, id} => write!(f, "{} ({}->{})", expconfig, id, objtype),
         }
+    }
+}
+impl fmt::Display for ObjAttrExp {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            ObjAttrExp::From {sexp} => write!(f, "[{}]", sexp),
+        }
+    }
+}
+impl fmt::Display for Expression {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            Expression::Exp {exp} => write!(f, "{}", exp),
+            Expression::SExp {sexp} => write!(f, "{}", sexp),
+            Expression::ObjAttrExp {objattrexp} => write!(f, "{}", objattrexp),
+        }
+    }
+}
+impl fmt::Display for MeasureType {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "[t_end={}, n={}, repeat_time={}, error={}]", self.t_end, self.n, self.repeat_time, self.error)
     }
 }

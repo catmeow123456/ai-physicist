@@ -15,14 +15,24 @@ match {
 pub Expression: Box<Expression> = {
   <exp: Exp> => Box::new(Expression::Exp{ <> }),
   <sexp: SExp> => Box::new(Expression::SExp{ <> }),
+  <objattrexp: ObjAttrExp> => Box::new(Expression::ObjAttrExp{ <> }),
 }
-pub SExp: Box<SExp> = {
-  <expconfig: ExpConfig> "|-" <exp: Exp> => Box::new(SExp::Mk{ <> }),
+pub ObjAttrExp: Box<ObjAttrExp> = {
+  "[" <sexp: SExp> "]" => Box::new(ObjAttrExp::From{ <> }),
 }
 pub Exp: Box<Exp> = <addexp: AddExp> => <>;
 pub ExpConfig: Box<IExpConfig> = {
   <name: Ident> => Box::new(IExpConfig::From{ name: name }),
   <expconfig: ExpConfig>"("<id:Number>"->"<objtype:Ident>")" => Box::new(IExpConfig::Mk{ <> }),
+}
+pub SExp: Box<SExp> = {
+  <expconfig: ExpConfig> "|-" <exp: Exp> => Box::new(SExp::Mk{ <> }),
+}
+
+
+MeasureType: Box<MeasureType> = {
+  "[t_end=" <t_end: FloatConst> ",n=" <n: Number> ",repeat_time=" <repeat_time: Number> ",error=" <error: FloatConst> "]"
+    => Box::new(MeasureType::new(<>)),
 }
 
 PrimaryExp: Box<Exp> = {
@@ -70,6 +80,13 @@ AddExp: Box<Exp> = {
     Box::new(Exp::BinaryExp{ left: addexp, op: BinaryOp::Sub, right: mulexp }),
 }
 
+WithExp: Box<Exp> = {
+  <addexp: AddExp> => <>,
+  <addexp: AddExp> "with" <measuretype: MeasureType> =>
+    Box::new(Exp::ExpWithMeasureType{ exp: addexp, measuretype: measuretype }),
+}
+
+
 Number: i32 = <num: IntConst> => <>;
 
 // 如果匹配到标识符, 就返回这个字符串
@@ -81,4 +98,10 @@ IntConst: i32 = {
   r"[1-9][0-9]*" => i32::from_str_radix(<>, 10).unwrap(),
   r"0[0-7]*" => i32::from_str_radix(<>, 8).unwrap(),
   r"0[xX][0-9a-fA-F]+" => i32::from_str_radix(&<>[2..], 16).unwrap(),
+}
+
+// copilot 写的
+FloatConst: f64 = {
+  r"[0-9]*\.[0-9]+" => (&<>).parse().unwrap(),
+  r"[0-9]*\.[0-9]+[eE][+-]?[0-9]+" => (&<>).parse().unwrap(),
 }

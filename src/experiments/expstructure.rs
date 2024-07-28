@@ -120,7 +120,9 @@ impl DataStructOfDoExperiment {
         &self.data
     }
 }
+
 #[pyclass]
+#[derive(Clone)]
 pub struct DataStructOfExpData {
     pub name: String,
     pub n: usize,
@@ -135,6 +137,9 @@ impl DataStructOfExpData {
             repeat_time,
             data
         }
+    }
+    pub fn set_data(&mut self, data: DATA, id: i32, expdata: ExpData) {
+        self.data.insert((data, id), expdata);
     }
     pub fn get_data(&self) -> &HashMap<(DATA, i32), ExpData> {
         &self.data
@@ -182,6 +187,7 @@ pub struct ExpConfig {
     data_info: HashMap<String, Vec<DATA>>,
     // auto generated
     obj_id_map: HashMap<String, (ObjType, i32)>,
+    obj_name_map: HashMap<i32, (ObjType, String)>,
     obj_info_dict: HashMap<ObjType, HashMap<i32, String>>,
 }
 impl ExpConfig {
@@ -191,9 +197,11 @@ impl ExpConfig {
            data_info: HashMap<String, Vec<DATA>>) -> Self {
         let mut obj_id_map: HashMap<String, (ObjType, i32)> = HashMap::new();
         let mut obj_info_dict: HashMap<ObjType, HashMap<i32, String>> = HashMap::new();
+        let mut obj_name_map: HashMap<i32, (ObjType, String)> = HashMap::new();
         for (name, obj) in obj_info.iter() {
             if obj.obj_type == ObjType::Clock {
                 obj_id_map.insert(name.clone(), (ObjType::Clock, 0));
+                obj_name_map.insert(0, (ObjType::Clock, name.clone()));
             }
         }
         let mut hash_vec: Vec<(&String, &Objstructure)> = obj_info.iter().collect();
@@ -205,6 +213,7 @@ impl ExpConfig {
             }
             let obj_id = obj_id_map.len() as i32;
             obj_id_map.insert((*name).clone(), (obj_type.clone(), obj_id));
+            obj_name_map.insert(obj_id, (obj_type.clone(), (*name).clone()));
             if !obj_info_dict.contains_key(&obj.obj_type) {
                 obj_info_dict.insert(obj_type, HashMap::new());
             }
@@ -217,6 +226,7 @@ impl ExpConfig {
             obj_info,
             data_info,
             obj_id_map,
+            obj_name_map,
             obj_info_dict
         }
     }
@@ -234,6 +244,10 @@ impl ExpConfig {
         for (key, obj) in self.obj_info.iter() {
             println!("{}: {}", key, obj);
         }
+    }
+    fn get_obj(&self, id: i32) -> &Objstructure {
+        let name = &self.obj_name_map.get(&id).unwrap().1;
+        self.obj_info.get(name).unwrap()
     }
     fn set_obj(&mut self, id: i32, obj: Objstructure) {
         let name = self.obj_info_dict.get(&obj.obj_type).unwrap().get(&id).unwrap();
@@ -262,15 +276,18 @@ impl ExpConfig {
 }
 
 #[pyclass]
+#[derive(Clone)]
 pub struct ExpStructure {
     exp_config: ExpConfig,
     do_experiment: DoExpType,
+    datastructofdata: Option<DataStructOfExpData>,
 }
 impl ExpStructure {
     pub fn new(exp_config: ExpConfig, do_experiment: DoExpType) -> Self {
         ExpStructure {
             exp_config,
             do_experiment,
+            datastructofdata: None,
         }
     }
     pub fn name(&self) -> &str {
@@ -279,13 +296,22 @@ impl ExpStructure {
     pub fn print_obj_info(&self) {
         self.exp_config.print_obj_info();
     }
+    pub fn get_obj(&self, id: i32) -> &Objstructure {
+        self.exp_config.get_obj(id)
+    }
     pub fn set_obj(&mut self, id: i32, obj: Objstructure) {
+        if self.datastructofdata.is_some() {
+            self.datastructofdata = None;
+        }
         self.exp_config.set_obj(id, obj);
     }
     pub fn random_sample(&mut self) {
+        if self.datastructofdata.is_some() {
+            self.datastructofdata = None;
+        }
         self.exp_config.random_sample();
     }
-    pub fn get_expdata(&self, t_end: f64, t_num: usize, error: f64, repeat_time: usize) -> DataStructOfExpData {
+    pub fn calc_expdata(&mut self, t_end: f64, t_num: usize, error: f64, repeat_time: usize) {
         let doexp = self.do_experiment;
         let data_struct = doexp(t_end, t_num, 0.0, &self.exp_config);
         let data = data_struct.get_data();
@@ -299,7 +325,22 @@ impl ExpStructure {
             assert_eq!(idata.shape(), [repeat_time, t_num]);
             multi_data.insert(name.clone(), ExpData::new(idata));
         }
-        DataStructOfExpData::new(self.exp_config.name.clone(), t_num, repeat_time, multi_data)
+        self.datastructofdata = Some(DataStructOfExpData::new(self.exp_config.name.clone(), t_num, repeat_time, multi_data));
+    }
+    pub fn get_expdata(&mut self, t_end: f64, t_num: usize, error: f64, repeat_time: usize) -> &DataStructOfExpData {
+        if self.datastructofdata.is_none() {
+            self.calc_expdata(t_end, t_num, error, repeat_time);
+        }
+        self.datastructofdata.as_ref().unwrap()
+    }
+    pub fn expdata_is_none(&self) -> bool {
+        self.datastructofdata.is_none()
+    }
+    pub fn get_ref_expdata(&self) -> &DataStructOfExpData {
+        self.datastructofdata.as_ref().unwrap()
+    }
+    pub fn get_mut_expdata(&mut self) -> &mut DataStructOfExpData {
+        self.datastructofdata.as_mut().unwrap()
     }
 }
 

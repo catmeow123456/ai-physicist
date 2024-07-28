@@ -48,8 +48,8 @@ impl ExpStructure {
     fn random_settings(&mut self) {
         self.random_sample();
     }
-    fn collect_expdata(&self, t_end: f64, t_num: usize, error: f64, repeat_time: usize) -> DataStructOfExpData {
-        self.get_expdata(t_end, t_num, error, repeat_time)
+    pub fn collect_expdata(&mut self, t_end: f64, t_num: usize, error: f64, repeat_time: usize) -> DataStructOfExpData {
+        self.get_expdata(t_end, t_num, error, repeat_time).clone()
     }
 }
 

@@ -20,15 +20,21 @@ impl SExp {
     }
 }
 
+// Function for parsing a string into an expression
+#[pyfunction]
+fn parse(input: &str) -> PyResult<Expression> {
+    let exp = expr::ExpressionParser::new().parse(input).unwrap();
+    Ok(*exp)
+}
 #[pyfunction]
 fn parse_str(input: &str) -> PyResult<String> {
     let res = expr::ExpressionParser::new().parse(input).unwrap();
     match *res {
         Expression::Exp {exp} => Ok(format!("{}", *exp)),
         Expression::SExp {sexp} => Ok(format!("{}", *sexp)),
+        Expression::ObjAttrExp {objattrexp} => Ok(format!("{}", *objattrexp)),
     }
 }
-
 #[pyfunction]
 pub fn parse_exp(input: &str) -> PyResult<Exp> {
     let res: Box<Exp> = expr::ExpParser::new().parse(input).unwrap();
@@ -39,6 +45,8 @@ pub fn parse_sexp(input: &str) -> PyResult<SExp> {
     let res: Box<SExp> = expr::SExpParser::new().parse(input).unwrap();
     Ok(*res)
 }
+
+// Function for evaluating an expression
 #[pyfunction]
 fn eval_exp(exp: &Exp, data: &DataStructOfExpData) -> PyResult<ExpData> {
     Ok(eval(exp, data))
@@ -76,7 +84,7 @@ fn eval_iexpconfig(iexpconfig: &IExpConfig, expstructure: &mut ExpStructure, obj
             assert_eq!(objsettings.len(), 0);
             assert_eq!(name, expstructure.name());
             // let mut expstructure = expstructure.clone();
-            Ok(expstructure.get_expdata(t_end, t_num, error, repeat_time))
+            Ok(expstructure.collect_expdata(t_end, t_num, error, repeat_time))
         }
     }
 }
@@ -92,13 +100,6 @@ fn seval_sexp(sexp: &SExp, expstructure: &mut ExpStructure, objsettings: Vec<Obj
         }
     }
 }
-// , objsettings: Vec<Objstructure>
-
-// IExpConfig::Mk { objtype, expconfig, id } => {
-// assert_eq!(objsettings.len(), 0);
-//     unimplemented!()
-// }
-
 
 pub fn eval(exp0: &Exp, context: &DataStructOfExpData) -> ExpData {
     let n = context.n;
@@ -121,12 +122,16 @@ pub fn eval(exp0: &Exp, context: &DataStructOfExpData) -> ExpData {
         Exp::BinaryExp { op: BinaryOp::Pow, ref left, ref right } => eval(&*left, context).pow(&eval(&*right, context)),
         Exp::DiffExp { ref left, ref right, ord} =>
             eval(&*left, context).diff_n(&eval(&*right, context), *ord as usize),
+        Exp::ExpWithMeasureType {exp, measuretype} => {
+            unimplemented!()
+        }
     }
 }
 
 #[pymodule]
 pub fn register_sentence(m: &Bound<'_, PyModule>) -> PyResult<()> {
     let child_module = PyModule::new_bound(m.py(), "sentence")?;
+    child_module.add_function(wrap_pyfunction!(parse, m)?)?;
     child_module.add_function(wrap_pyfunction!(parse_str, m)?)?;
     child_module.add_function(wrap_pyfunction!(parse_exp, m)?)?;
     child_module.add_function(wrap_pyfunction!(parse_sexp, m)?)?;
