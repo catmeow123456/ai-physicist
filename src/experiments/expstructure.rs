@@ -26,9 +26,9 @@ impl Parastructure {
             range: range.unwrap_or((-1e10, 1e10)),
         }
     }
-    fn set_value(&mut self, value: f64) {
-        self.value = Some(value);
-    }
+    // fn set_value(&mut self, value: f64) {
+    //     self.value = Some(value);
+    // }
     fn random_sample(&mut self) {
         let mut rng = rand::thread_rng();
         let value = rng.gen_range(self.range.0..self.range.1);
@@ -66,21 +66,21 @@ impl Objstructure {
             para.random_sample();
         }
     }
-    fn real_value(&self) -> HashMap<ATTR, f64> {
-        let mut result = HashMap::new();
-        for (name, para) in self.attribute.iter() {
-            result.insert(name.clone(), para.real_value());
-        }
-        result
-    }
+    // fn real_value(&self) -> HashMap<ATTR, f64> {
+    //     let mut result = HashMap::new();
+    //     for (name, para) in self.attribute.iter() {
+    //         result.insert(name.clone(), para.real_value());
+    //     }
+    //     result
+    // }
     pub fn get_para_real_value(&self, para_name: &ATTR) -> f64 {
         self.attribute.get(para_name).unwrap().real_value()
     }
-    fn set_value(&mut self, value_dict: HashMap<ATTR, f64>) {
-        for (name, value) in value_dict.iter() {
-            self.attribute.get_mut(name).unwrap().set_value(*value);
-        }
-    }
+    // fn set_value(&mut self, value_dict: HashMap<ATTR, f64>) {
+    //     for (name, value) in value_dict.iter() {
+    //         self.attribute.get_mut(name).unwrap().set_value(*value);
+    //     }
+    // }
 }
 
 impl fmt::Display for Objstructure {
@@ -152,7 +152,7 @@ impl MeasureType {
 pub struct DataStructOfExpData {
     pub name: String,
     pub measuretype: MeasureType,
-    data: HashMap<(DATA, i32), ExpData>,
+    pub data: HashMap<(DATA, i32), ExpData>,
 }
 impl DataStructOfExpData {
     fn new(name: String, measuretype: MeasureType, data: HashMap<(DATA, i32), ExpData>) -> Self {
@@ -205,12 +205,12 @@ impl DataStructOfExpData {
 pub struct ExpConfig {
     // provided
     name: String,
-    spdim: usize,
+    pub spdim: usize,
     exp_para: HashMap<String, Parastructure>,
     obj_info: HashMap<String, Objstructure>,
     data_info: HashMap<String, Vec<DATA>>,
     // auto generated
-    obj_id_map: HashMap<String, (ObjType, i32)>,
+    pub obj_id_map: HashMap<String, (ObjType, i32)>,
     obj_name_map: HashMap<i32, (ObjType, String)>,
     obj_info_dict: HashMap<ObjType, HashMap<i32, String>>,
 }
@@ -374,6 +374,9 @@ impl ExpStructure {
     }
     pub fn get_mut_expdata(&mut self) -> &mut DataStructOfExpData {
         self.datastructofdata.as_mut().unwrap()
+    }
+    pub fn get_ref_expconfig(&self) -> &ExpConfig {
+        &self.exp_config
     }
 }
 
