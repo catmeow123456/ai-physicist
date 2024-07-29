@@ -125,6 +125,7 @@ pub enum IExpConfig {
     // {ObjStructure} -> ExpConfig
     From { name: String },
     Mk { objtype: String, expconfig: Box<IExpConfig>, id: i32},
+    Mkfix { object: String, expconfig: Box<IExpConfig>, id: i32},
 }
 
 #[pyclass(eq)]
@@ -181,8 +182,9 @@ impl fmt::Display for TExp {
 impl fmt::Display for IExpConfig {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            IExpConfig::From {name} => write!(f, "{}", name),
+            IExpConfig::From {name} => write!(f, "#{}", name),
             IExpConfig::Mk {objtype, expconfig, id} => write!(f, "{} ({}->{})", expconfig, id, objtype),
+            IExpConfig::Mkfix {object, expconfig, id} => write!(f, "{} [{}->{}]", expconfig, id, object),
         }
     }
 }

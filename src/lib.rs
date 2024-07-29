@@ -1,10 +1,7 @@
 pub mod macros;
 pub mod ast;
-pub mod sentence;
+pub mod parsing;
 pub mod knowledge;
-pub mod test{
-    pub mod test_experiments;
-}
 pub mod experiments{
     pub mod impl_for_pyo3;
     pub mod topy;
@@ -28,7 +25,7 @@ use experiments::{
     expstructure::DataStructOfExpData,
 };
 use pyo3::prelude::*;
-use sentence::register_sentence;
+use parsing::register_sentence;
 use knowledge::Knowledge;
 
 #[pymodule]

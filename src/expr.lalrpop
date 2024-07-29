@@ -23,8 +23,9 @@ pub ObjAttrExp: Box<ObjAttrExp> = {
 }
 pub Exp: Box<Exp> = <addexp: AddExp> => <>;
 pub ExpConfig: Box<IExpConfig> = {
-  <name: Ident> => Box::new(IExpConfig::From{ name: name }),
+  "#"<name: Ident> => Box::new(IExpConfig::From{ name: name }),
   <expconfig: ExpConfig>"("<id:Number>"->"<objtype:Ident>")" => Box::new(IExpConfig::Mk{ <> }),
+  <expconfig: ExpConfig>"["<id:Number>"->"<object:Ident>"]" => Box::new(IExpConfig::Mkfix{ <> }),
 }
 pub SExp: Box<SExp> = {
   <expconfig: ExpConfig> "|-" <exp: Exp> => Box::new(SExp::Mk{ <> }),
@@ -42,7 +43,7 @@ MeasureType: Box<MeasureType> = {
 PrimaryExp: Box<Exp> = {
   <num: Number> => Box::new(Exp::Number{ <> }),
   <name: Ident> => Box::new(Exp::Variable{ <> }),
-  <name: Ident>"["<id: Number>"]" => Box::new(Exp::VariableId{ <> }),
+  <exp: Identid> => <>,
   "(" <exp: Exp> ")" => <>,
 }
 
@@ -50,11 +51,11 @@ PowExp: Box<Exp> = {
   <primaryexp: PrimaryExp> => <>,
   <powexp: PowExp> "**" <primaryexp: PrimaryExp> =>
     Box::new(Exp::BinaryExp{ left: powexp, op: BinaryOp::Pow, right: primaryexp }),
-  "D[" <powexp: PowExp> "]/D[" <primaryexp: PrimaryExp> "]" =>
-    Box::new(Exp::DiffExp{ left: powexp, right: primaryexp, ord: 1 }),
-  "D^" <ord: Number> "[" <powexp: PowExp> "]/D[" <primaryexp: PrimaryExp> "]^" <ord2: Number> => {
+  "D[" <left: Exp> "]/D[" <right: Exp> "]" =>
+    Box::new(Exp::DiffExp{ left: left, right: right, ord: 1 }),
+  "D^" <ord: Number> "[" <left: Exp> "]/D[" <right: Exp> "]^" <ord2: Number> => {
     assert!(ord == ord2);
-    Box::new(Exp::DiffExp{ left: powexp, right: primaryexp, ord: ord })
+    Box::new(Exp::DiffExp{ left: left, right: right, ord: ord })
   },
   <primaryexp: PrimaryExp> "'" =>
     Box::new(Exp::DiffExp{ left: primaryexp, right: Box::new(Exp::Variable{ name: "t".to_string() }), ord: 1 }),
@@ -91,11 +92,16 @@ WithExp: Box<Exp> = {
 }
 
 
+Identid: Box<Exp> = {
+  <name: Ident>"["<id: Number>"]" => Box::new(Exp::VariableId{ <> }),
+}
+
 Number: i32 = <num: IntConst> => <>;
 
 // 如果匹配到标识符, 就返回这个字符串
 // 一对尖括号在此处指代的是正则表达式匹配到的字符串 (&str)
 Ident: String = r"[_a-zA-Z][_a-zA-Z0-9]*" => <>.to_string();
+
 
 // 对整数字面量的处理方式: 把匹配到的字符串按对应进制转换成数字
 IntConst: i32 = {

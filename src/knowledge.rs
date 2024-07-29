@@ -9,13 +9,13 @@ use crate::experiments::simulation::{
 use crate::experiments::{
     expdata::ExpData,
     expstructure::{ExpStructure, Objstructure},
+    objects::obj::DATA,
 };
-use crate::sentence::eval;
-use crate::experiments::objects::obj::DATA;
 #[pyclass]
 pub struct Knowledge {
     experiments: HashMap<String, ExpStructure>,
     concepts: HashMap<String, Expression>,
+    objects: HashMap<String, Objstructure>,
 }
 
 #[pymethods]
@@ -25,9 +25,10 @@ impl Knowledge {
         Self {
             experiments: HashMap::from([
                 (r!("oscillation"), struct_oscillation()),
-                (r!("collision"), struct_collision())
+                (r!("collision"), struct_collision()),
             ]),
-            concepts: HashMap::new()
+            concepts: HashMap::new(),
+            objects: HashMap::new(),
         }
     }
     fn list_experiments(&self) {
@@ -39,6 +40,9 @@ impl Knowledge {
         for (name, expression) in self.concepts.iter() {
             println!("{} {}", name, expression);
         }
+    }
+    fn register_object(&mut self, name: String, obj: Objstructure) {
+        self.objects.insert(name, obj);
     }
     fn register_experiment(&mut self, name: String, exp: ExpStructure) {
         self.experiments.insert(name, exp);
@@ -62,9 +66,15 @@ impl Knowledge {
                 exp.set_obj(*id, obj);
                 exp
             }
+            IExpConfig::Mkfix { object, expconfig, id } => {
+                let obj = self.objects.get(object).unwrap();
+                let mut exp = self.get_expstructure(expconfig, objsettings);
+                exp.set_obj(*id, obj.clone());
+                exp
+            }
         }
     }
-    pub fn eval_objattr(&self, objattrexp: &ObjAttrExp, objsettings: Vec<Objstructure>) -> PyResult<ExpData> {
+    pub fn eval_objattr(&self, objattrexp: &ObjAttrExp, objsettings: Vec<Objstructure>) -> ExpData {
         match objattrexp {
             ObjAttrExp::From { sexp } => {
                 let ref sexp = **sexp;
@@ -72,9 +82,10 @@ impl Knowledge {
                     SExp::Mk { expconfig, exp } => {
                         let ref expconfig = **expconfig;
                         let mut data = self.get_expstructure(expconfig, objsettings);
-                        let data = data.get_expdata(MeasureType::default());
+                        // let data = data.get_expdata(MeasureType::default());
                         let ref exp = **exp;
-                        Ok(eval(exp, data))
+                        // Ok(eval(exp, data))
+                        self.eval(exp, &mut data)
                     }
                 }
             }
@@ -130,7 +141,7 @@ impl Knowledge {
                         match expr {
                             Expression::ObjAttrExp { objattrexp } => {
                                 let objsettings = vec![obj.clone()];
-                                let expdata = self.eval_objattr(objattrexp, objsettings).unwrap();
+                                let expdata = self.eval_objattr(objattrexp, objsettings);
                                 let d = DATA::Mk { obj: obj.obj_type.clone(), name: name.clone() };
                                 context.get_mut_expdata().set_data(d, *id, expdata.clone());
                                 expdata
