@@ -15,6 +15,7 @@ match {
 pub Expression: Box<Expression> = {
   <exp: Exp> => Box::new(Expression::Exp{ <> }),
   <sexp: SExp> => Box::new(Expression::SExp{ <> }),
+  <texp: TExp> => Box::new(Expression::TExp{ <> }),
   <objattrexp: ObjAttrExp> => Box::new(Expression::ObjAttrExp{ <> }),
 }
 pub ObjAttrExp: Box<ObjAttrExp> = {
@@ -27,6 +28,9 @@ pub ExpConfig: Box<IExpConfig> = {
 }
 pub SExp: Box<SExp> = {
   <expconfig: ExpConfig> "|-" <exp: Exp> => Box::new(SExp::Mk{ <> }),
+}
+pub TExp: Box<TExp> = {
+  "(" <id:Number> "->" <objtype:Ident> ")" "|-" <exp: Exp> => Box::new(TExp::Mk{ <> }),
 }
 
 

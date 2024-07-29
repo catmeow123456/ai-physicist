@@ -32,6 +32,7 @@ fn parse_str(input: &str) -> PyResult<String> {
     match *res {
         Expression::Exp {exp} => Ok(format!("{}", *exp)),
         Expression::SExp {sexp} => Ok(format!("{}", *sexp)),
+        Expression::TExp {texp} => Ok(format!("{}", *texp)),
         Expression::ObjAttrExp {objattrexp} => Ok(format!("{}", *objattrexp)),
     }
 }

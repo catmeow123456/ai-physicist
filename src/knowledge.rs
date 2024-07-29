@@ -135,6 +135,9 @@ impl Knowledge {
                                 context.get_mut_expdata().set_data(d, *id, expdata.clone());
                                 expdata
                             }
+                            Expression::TExp { texp } => {
+                                self._eval(&texp.subst(*id), context)
+                            }
                             _ => unimplemented!()
                         }
                     }

@@ -73,12 +73,50 @@ pub enum Exp {
     DiffExp {left: Box<Exp>, right: Box<Exp>, ord: i32},
     ExpWithMeasureType {exp: Box<Exp>, measuretype: Box<MeasureType>},
 }
+impl Exp {
+    pub fn subst(&self, oid: i32, nid: i32) -> Self{
+        match self {
+            Exp::Number {num} => Exp::Number {num: *num},
+            Exp::Variable {name} => Exp::Variable {name: name.clone()},
+            Exp::VariableId {name, id} => {
+                if *id == oid {
+                    Exp::VariableId {name: name.clone(), id: nid}
+                } else {
+                    self.clone()
+                }
+            }
+            Exp::UnaryExp {op, exp} =>
+                Exp::UnaryExp {op: op.clone(), exp: Box::new(exp.subst(oid, nid))},
+            Exp::BinaryExp {left, op, right} =>
+                Exp::BinaryExp {left: Box::new(left.subst(oid, nid)), op: op.clone(), right: Box::new(right.subst(oid, nid))},
+            Exp::DiffExp {left, right, ord} => Exp::DiffExp {left: Box::new(left.subst(oid, nid)), right: Box::new(right.subst(oid, nid)), ord: *ord},
+            Exp::ExpWithMeasureType {exp, measuretype} => Exp::ExpWithMeasureType {exp: Box::new(exp.subst(oid, nid)), measuretype: measuretype.clone()},
+        }
+    }
+}
 
 #[pyclass(eq)]
 #[derive(Clone, PartialEq)]
 pub enum SExp {
     //  {ObjStructure} -> MeasureData -> ExpData
     Mk {expconfig: Box<IExpConfig>, exp: Box<Exp>},
+}
+
+#[pyclass(eq)]
+#[derive(Clone, PartialEq)]
+pub enum TExp {
+    // {ObjStructure} -> ExpConfig -> MeasureData -> ExpData
+    Mk {objtype: String, exp: Box<Exp>, id: i32},
+}
+impl TExp {
+    pub fn subst(&self, nid: i32) -> Exp {
+        match self {
+            TExp::Mk {objtype: _, exp, id} => {
+                let ref exp = **exp;
+                exp.subst(*id, nid)
+            }
+        }        
+    }
 }
 
 #[pyclass(eq)]
@@ -101,6 +139,7 @@ pub enum ObjAttrExp {
 pub enum Expression {
     Exp {exp: Box<Exp>},
     SExp {sexp: Box<SExp>},
+    TExp {texp: Box<TExp>},
     ObjAttrExp {objattrexp: Box<ObjAttrExp>},
 }
 
@@ -132,6 +171,13 @@ impl fmt::Display for SExp {
         }
     }
 }
+impl fmt::Display for TExp {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            TExp::Mk {objtype, exp, id} => write!(f, "({}->{}) |- {}", id, objtype, exp),
+        }
+    }
+}
 impl fmt::Display for IExpConfig {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
@@ -152,6 +198,7 @@ impl fmt::Display for Expression {
         match self {
             Expression::Exp {exp} => write!(f, "{}", exp),
             Expression::SExp {sexp} => write!(f, "{}", sexp),
+            Expression::TExp {texp} => write!(f, "{}", texp),
             Expression::ObjAttrExp {objattrexp} => write!(f, "{}", objattrexp),
         }
     }
