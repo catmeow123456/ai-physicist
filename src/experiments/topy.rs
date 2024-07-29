@@ -1,6 +1,7 @@
 use pyo3::prelude::*;
 use std::collections::HashMap;
 
+use crate::ast::MeasureType;
 use super::objects::obj::{ObjType, DATA, ATTR};
 use super::expstructure::{ExpStructure, Parastructure, Objstructure, ExpConfig, DataStructOfExpData};
 
@@ -48,8 +49,8 @@ impl ExpStructure {
     fn random_settings(&mut self) {
         self.random_sample();
     }
-    pub fn collect_expdata(&mut self, t_end: f64, t_num: usize, error: f64, repeat_time: usize) -> DataStructOfExpData {
-        self.get_expdata(t_end, t_num, error, repeat_time).clone()
+    pub fn collect_expdata(&mut self, measuretype: MeasureType) -> DataStructOfExpData {
+        self.get_expdata(measuretype).clone()
     }
 }
 

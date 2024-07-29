@@ -5,6 +5,7 @@ mod tests {
         collision::struct_collision,
         oscillation::struct_oscillation,
     };
+    use crate::ast::MeasureType;
     use std::time::Instant;
     use crate::sentence::{parse_exp, eval};
     #[test]
@@ -14,7 +15,7 @@ mod tests {
             let mut exp = struct_collision();
             // exp.print_obj_info();
             exp.random_sample();
-            let data = exp.get_expdata(2.0, 100, 1e-8, 100);
+            let data = exp.get_expdata(MeasureType::default());
             data.plot_expdata("collision");
             println!("Collision exp and plot, Time: {:?}", now.elapsed());
             let now = Instant::now();
@@ -33,7 +34,7 @@ mod tests {
             let now = Instant::now();
             let mut exp = struct_oscillation();
             exp.random_sample();
-            let data = exp.get_expdata(2.0, 100, 1e-8, 100);
+            let data = exp.get_expdata(MeasureType::default());
             data.plot_expdata("oscillation");
             println!("Oscillation Time: {:?}", now.elapsed());
             let expr = parse_exp("D[posx[1]'']/D[ posx[1] ]").unwrap();

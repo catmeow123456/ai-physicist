@@ -1,14 +1,14 @@
 use pyo3::prelude::*;
 use std::collections::HashMap;
 use crate::r;
-use crate::ast::{UnaryOp, BinaryOp, Exp, SExp, ObjAttrExp, IExpConfig, Expression};
+use crate::ast::{UnaryOp, BinaryOp, Exp, SExp, ObjAttrExp, IExpConfig, Expression, MeasureType};
 use crate::experiments::simulation::{
     oscillation::struct_oscillation,
     collision::struct_collision
 };
 use crate::experiments::{
     expdata::ExpData,
-    expstructure::{ExpStructure, Objstructure, DataStructOfExpData},
+    expstructure::{ExpStructure, Objstructure},
 };
 use crate::sentence::eval;
 use crate::experiments::objects::obj::DATA;
@@ -72,7 +72,7 @@ impl Knowledge {
                     SExp::Mk { expconfig, exp } => {
                         let ref expconfig = **expconfig;
                         let mut data = self.get_expstructure(expconfig, objsettings);
-                        let data = data.get_expdata(2., 100, 1e-8, 10);
+                        let data = data.get_expdata(MeasureType::default());
                         let ref exp = **exp;
                         Ok(eval(exp, data))
                     }
@@ -86,23 +86,18 @@ impl Knowledge {
         if context.expdata_is_none() {
             match exp0 {
                 Exp::ExpWithMeasureType { exp: _, measuretype } => {
-                    context.calc_expdata(measuretype.t_end, measuretype.n, measuretype.error, measuretype.repeat_time);
+                    context.calc_expdata((**measuretype).clone());
                 }
                 _ => {
-                    context.calc_expdata(2.0, 100, 1e-8, 100, );
+                    context.calc_expdata(MeasureType::default());
                 }
             }
         }
         assert!(!context.expdata_is_none());
         let data = context.get_ref_expdata();
-        let n = data.n;
-        let repeat_time = data.repeat_time;
         match exp0 {
             Exp::ExpWithMeasureType { exp, measuretype } => {
-                // assert_eq!(measuretype.t_end, data.t_end);
-                assert_eq!(measuretype.n, n);
-                assert_eq!(measuretype.repeat_time, repeat_time);
-                // assert_eq!(measuretype.error, data.error);
+                assert!(**measuretype == data.measuretype);
                 let ref exp = **exp;
                 self._eval(exp, context)
             }
@@ -117,8 +112,8 @@ impl Knowledge {
     fn _eval(&self, exp0: &Exp, context: &mut ExpStructure) -> ExpData {
         assert!(!context.expdata_is_none());
         let data = context.get_ref_expdata();
-        let n = data.n;
-        let repeat_time = data.repeat_time;
+        let n = data.measuretype.n();
+        let repeat_time = data.measuretype.repeat_time();
         match exp0 {
             Exp::Number {num} => ExpData::from_elem(*num as f64, n, repeat_time),
             Exp::Variable { name } => {

@@ -1,4 +1,5 @@
 use pyo3::prelude::*;
+use crate::ast::MeasureType;
 use rand::Rng;
 use rand_distr::{Distribution, Normal};
 use std::{fmt, collections::HashMap};
@@ -121,20 +122,43 @@ impl DataStructOfDoExperiment {
     }
 }
 
+#[pymethods]
+impl MeasureType {
+    pub fn n(&self) -> usize {
+        self.n
+    }
+    pub fn repeat_time(&self) -> usize {
+        self.repeat_time
+    }
+    pub fn error(&self) -> f64 {
+        self.error
+    }
+    pub fn t_end(&self) -> f64 {
+        self.t_end
+    }
+    #[staticmethod]
+    pub fn default() -> Self {
+        MeasureType {
+            n: 100,
+            repeat_time: 100,
+            error: 1e-8,
+            t_end: 2.0,
+        }
+    }
+}
+
 #[pyclass]
 #[derive(Clone)]
 pub struct DataStructOfExpData {
     pub name: String,
-    pub n: usize,
-    pub repeat_time: usize,
+    pub measuretype: MeasureType,
     data: HashMap<(DATA, i32), ExpData>,
 }
 impl DataStructOfExpData {
-    fn new(name: String, n: usize, repeat_time: usize, data: HashMap<(DATA, i32), ExpData>) -> Self {
+    fn new(name: String, measuretype: MeasureType, data: HashMap<(DATA, i32), ExpData>) -> Self {
         DataStructOfExpData {
             name,
-            n,
-            repeat_time,
+            measuretype,
             data
         }
     }
@@ -311,8 +335,12 @@ impl ExpStructure {
         }
         self.exp_config.random_sample();
     }
-    pub fn calc_expdata(&mut self, t_end: f64, t_num: usize, error: f64, repeat_time: usize) {
+    pub fn calc_expdata(&mut self, measuretype: MeasureType) {
         let doexp = self.do_experiment;
+        let t_end = measuretype.t_end();
+        let t_num = measuretype.n();
+        let repeat_time = measuretype.repeat_time();
+        let error = measuretype.error();
         let data_struct = doexp(t_end, t_num, 0.0, &self.exp_config);
         let data = data_struct.get_data();
         let mut multi_data: HashMap<(DATA, i32), ExpData> = HashMap::new();
@@ -325,13 +353,18 @@ impl ExpStructure {
             assert_eq!(idata.shape(), [repeat_time, t_num]);
             multi_data.insert(name.clone(), ExpData::new(idata));
         }
-        self.datastructofdata = Some(DataStructOfExpData::new(self.exp_config.name.clone(), t_num, repeat_time, multi_data));
+        self.datastructofdata = Some(DataStructOfExpData::new(self.exp_config.name.clone(), measuretype, multi_data));
     }
-    pub fn get_expdata(&mut self, t_end: f64, t_num: usize, error: f64, repeat_time: usize) -> &DataStructOfExpData {
-        if self.datastructofdata.is_none() {
-            self.calc_expdata(t_end, t_num, error, repeat_time);
+    pub fn get_expdata(&mut self, measuretype: MeasureType) -> &DataStructOfExpData {
+        match self.datastructofdata.as_ref() {
+            None => self.calc_expdata(measuretype),
+            Some(datastructofdata) => {
+                if datastructofdata.measuretype != measuretype {
+                    self.calc_expdata(measuretype);
+                }
+            }
         }
-        self.datastructofdata.as_ref().unwrap()
+        self.get_ref_expdata()
     }
     pub fn expdata_is_none(&self) -> bool {
         self.datastructofdata.is_none()

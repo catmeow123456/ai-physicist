@@ -41,6 +41,7 @@ fn ai_physicist(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<ast::SExp>()?;
     m.add_class::<ast::IExpConfig>()?;
     m.add_class::<ast::ObjAttrExp>()?;
+    m.add_class::<ast::MeasureType>()?;
     m.add_class::<ExpData>()?;
     m.add_class::<DataStructOfExpData>()?;
     m.add_class::<Knowledge>()?;

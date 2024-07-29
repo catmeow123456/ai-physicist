@@ -1,7 +1,7 @@
 use pyo3::prelude::*;
 use lalrpop_util::lalrpop_mod;
 lalrpop_mod!(expr);
-use crate::ast::{Exp, SExp, IExpConfig, Expression, UnaryOp, BinaryOp};
+use crate::ast::{Exp, SExp, IExpConfig, Expression, UnaryOp, BinaryOp, MeasureType};
 use crate::experiments::expstructure::{DataStructOfExpData, ExpStructure, Objstructure};
 use crate::experiments::expdata::ExpData;
 use pyo3::exceptions::PyTypeError;
@@ -70,7 +70,7 @@ fn eval_sexp(sexp: &SExp, data: &DataStructOfExpData) -> PyResult<ExpData> {
 
 #[pyfunction]
 fn eval_iexpconfig(iexpconfig: &IExpConfig, expstructure: &mut ExpStructure, objsettings: Vec<Objstructure>,
-                   t_end: f64, t_num: usize, error: f64, repeat_time: usize) -> PyResult<DataStructOfExpData> {
+                   t_end: f64, t_num: i32, error: f64, repeat_time: i32) -> PyResult<DataStructOfExpData> {
     // create_data_struct_of_do_experiment
     match iexpconfig {
         IExpConfig::Mk {objtype, expconfig, id} => {
@@ -83,15 +83,14 @@ fn eval_iexpconfig(iexpconfig: &IExpConfig, expstructure: &mut ExpStructure, obj
         IExpConfig::From {name} => {
             assert_eq!(objsettings.len(), 0);
             assert_eq!(name, expstructure.name());
-            // let mut expstructure = expstructure.clone();
-            Ok(expstructure.collect_expdata(t_end, t_num, error, repeat_time))
+            Ok(expstructure.collect_expdata(MeasureType::new(t_end, t_num, repeat_time, error)))
         }
     }
 }
 
 #[pyfunction]
 fn seval_sexp(sexp: &SExp, expstructure: &mut ExpStructure, objsettings: Vec<Objstructure>,
-              t_end: f64, t_num: usize, error: f64, repeat_time: usize) -> PyResult<ExpData> {
+              t_end: f64, t_num: i32, error: f64, repeat_time: i32) -> PyResult<ExpData> {
     match sexp {
         SExp::Mk {expconfig, exp} => {
             let ref expconfig = **expconfig;
@@ -102,8 +101,8 @@ fn seval_sexp(sexp: &SExp, expstructure: &mut ExpStructure, objsettings: Vec<Obj
 }
 
 pub fn eval(exp0: &Exp, context: &DataStructOfExpData) -> ExpData {
-    let n = context.n;
-    let repeat_time = context.repeat_time;
+    let n = context.measuretype.n();
+    let repeat_time = context.measuretype.repeat_time();
     match exp0 {
         Exp::Number {num} => ExpData::from_elem(*num as f64, n, repeat_time),
         Exp::Variable { name } => {
@@ -122,7 +121,7 @@ pub fn eval(exp0: &Exp, context: &DataStructOfExpData) -> ExpData {
         Exp::BinaryExp { op: BinaryOp::Pow, ref left, ref right } => eval(&*left, context).pow(&eval(&*right, context)),
         Exp::DiffExp { ref left, ref right, ord} =>
             eval(&*left, context).diff_n(&eval(&*right, context), *ord as usize),
-        Exp::ExpWithMeasureType {exp, measuretype} => {
+        Exp::ExpWithMeasureType {exp:_, measuretype:_} => {
             unimplemented!()
         }
     }
