@@ -2,6 +2,7 @@ pub mod macros;
 pub mod ast;
 pub mod parsing;
 pub mod knowledge;
+pub mod regression;
 pub mod experiments{
     pub mod impl_for_pyo3;
     pub mod topy;
@@ -22,11 +23,11 @@ pub mod experiments{
 use experiments::{
     topy::register_experiment,
     expdata::ExpData,
-    expstructure::DataStructOfExpData,
 };
 use pyo3::prelude::*;
 use parsing::register_sentence;
 use knowledge::Knowledge;
+use regression::search_relations;
 
 #[pymodule]
 fn ai_physicist(m: &Bound<'_, PyModule>) -> PyResult<()> {
@@ -40,8 +41,8 @@ fn ai_physicist(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<ast::ObjAttrExp>()?;
     m.add_class::<ast::MeasureType>()?;
     m.add_class::<ExpData>()?;
-    m.add_class::<DataStructOfExpData>()?;
     m.add_class::<Knowledge>()?;
+    m.add_function(wrap_pyfunction!(search_relations, m)?)?;
     m.add_function(wrap_pyfunction!(experiments::simulation::collision::struct_collision, m)?)?;
     m.add_function(wrap_pyfunction!(experiments::simulation::oscillation::struct_oscillation, m)?)?;
     m.add_function(wrap_pyfunction!(experiments::simulation::collision::do_collision, m)?)?;

@@ -3,9 +3,8 @@ use std::collections::HashMap;
 use std::hash::{DefaultHasher, Hash, Hasher};
 
 use crate::ast::MeasureType;
-use super::expdata::ExpData;
 use super::objects::obj::{ObjType, DATA, ATTR};
-use super::expstructure::{ExpStructure, Parastructure, Objstructure, ExpConfig, DataStructOfExpData};
+use super::expstructure::{ExpStructure, Parastructure, Objstructure, ExpConfig, DataStructOfExpData, DataStruct};
 
 #[pymethods]
 impl ObjType {
@@ -35,7 +34,7 @@ impl ExpStructure {
         let expdata = self.get_ref_expconfig();
         expdata.obj_id_map.clone()
     }
-    fn data_info(&self) -> HashMap<(DATA, i32), ExpData>{
+    fn data_info(&self) -> DataStruct{
         let expdata = self.get_ref_expdata();
         // for (key, value) in expdata.data.iter() {
         //     println!("{}: {}", key.0, key.1);
@@ -93,5 +92,7 @@ pub fn register_experiment(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<Parastructure>()?;
     m.add_class::<ExpConfig>()?;
     m.add_class::<ExpStructure>()?;
+    m.add_class::<DataStruct>()?;
+    m.add_class::<DataStructOfExpData>()?;
     Ok(())
 }

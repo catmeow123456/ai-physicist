@@ -149,16 +149,12 @@ impl MeasureType {
 
 #[pyclass]
 #[derive(Clone)]
-pub struct DataStructOfExpData {
-    pub name: String,
-    pub measuretype: MeasureType,
-    pub data: HashMap<(DATA, i32), ExpData>,
+pub struct DataStruct {
+    data: HashMap<(DATA, i32), ExpData>,
 }
-impl DataStructOfExpData {
-    fn new(name: String, measuretype: MeasureType, data: HashMap<(DATA, i32), ExpData>) -> Self {
-        DataStructOfExpData {
-            name,
-            measuretype,
+impl DataStruct {
+    fn new(data: HashMap<(DATA, i32), ExpData>) -> Self {
+        DataStruct {
             data
         }
     }
@@ -168,16 +164,53 @@ impl DataStructOfExpData {
     pub fn get_data(&self) -> &HashMap<(DATA, i32), ExpData> {
         &self.data
     }
-    pub fn get_t(&self) -> &ExpData {
-        self.data.get(&(DATA::time(), 0)).unwrap()
+    pub fn get_data_by_key(&self, data: DATA, id: i32) -> Result<&ExpData, String> {
+        for ((data_, id_), value) in self.data.iter() {
+            if *data_ == data && *id_ == id {
+                return Ok(value);
+            }
+        }
+        Err(format!("Data {} not found", data.name()))
     }
     pub fn get_data_by_name_id(&self, name: &str, id: i32) -> Result<&ExpData, String> {
-        for (key, value) in self.data.iter() {
-            if key.0.name() == name && key.1 == id {
+        for ((data, id_), value) in self.data.iter() {
+            if data.name() == name && *id_ == id {
                 return Ok(value);
             }
         }
         Err(format!("Data {} not found", name))
+    }
+    pub fn iter(&self) -> std::collections::hash_map::Iter<(DATA, i32), ExpData> {
+        self.data.iter()
+    }
+}
+
+#[pyclass]
+#[derive(Clone)]
+pub struct DataStructOfExpData {
+    pub name: String,
+    pub measuretype: MeasureType,
+    pub data: DataStruct,
+}
+impl DataStructOfExpData {
+    fn new(name: String, measuretype: MeasureType, data: DataStruct) -> Self {
+        DataStructOfExpData {
+            name,
+            measuretype,
+            data
+        }
+    }
+    pub fn set_data(&mut self, data: DATA, id: i32, expdata: ExpData) {
+        self.data.set_data(data, id, expdata);
+    }
+    pub fn get_data(&self) -> &DataStruct {
+        &self.data
+    }
+    pub fn get_t(&self) -> &ExpData {
+        self.data.get_data_by_key(DATA::time(), 0).unwrap()
+    }
+    pub fn get_data_by_name_id(&self, name: &str, id: i32) -> Result<&ExpData, String> {
+        self.data.get_data_by_name_id(name, id)
     }
     pub fn plot_expdata(&self, name: &str) {
         // plot the arr
@@ -353,7 +386,10 @@ impl ExpStructure {
             assert_eq!(idata.shape(), [repeat_time, t_num]);
             multi_data.insert(name.clone(), ExpData::new(idata));
         }
-        self.datastructofdata = Some(DataStructOfExpData::new(self.exp_config.name.clone(), measuretype, multi_data));
+        self.datastructofdata = Some(DataStructOfExpData::new(
+            self.exp_config.name.clone(), measuretype,
+            DataStruct::new(multi_data))
+        );
     }
     pub fn get_expdata(&mut self, measuretype: MeasureType) -> &DataStructOfExpData {
         match self.datastructofdata.as_ref() {

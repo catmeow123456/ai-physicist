@@ -10,7 +10,7 @@ pub enum Func {
 }
 
 #[pyclass(eq, eq_int)]
-#[derive(Eq, PartialEq, Clone)]
+#[derive(Eq, PartialEq, Clone, Hash)]
 pub enum BinaryOp {
     Add, Sub, Mul, Div, Pow
 }
@@ -28,7 +28,7 @@ impl fmt::Display for BinaryOp {
 
 
 #[pyclass(eq, eq_int)]
-#[derive(Eq, PartialEq, Clone)]
+#[derive(Eq, PartialEq, Clone, Hash)]
 pub enum UnaryOp {
     Neg,
     Diff,
