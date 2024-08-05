@@ -7,7 +7,7 @@ use crate::experiments::simulation::{
     collision::struct_collision
 };
 use crate::experiments::{
-    expdata::ExpData,
+    expdata::{ExpData, Diff},
     expstructure::{ExpStructure, Objstructure},
     objects::obj::DATA,
 };
@@ -138,16 +138,18 @@ impl Knowledge {
                     Err(_) => {
                         let obj = context.get_obj(*id);
                         let expr = self.concepts.get(name).unwrap();
+                        let d = DATA::Mk { obj: obj.obj_type.clone(), name: name.clone() };
                         match expr {
                             Expression::ObjAttrExp { objattrexp } => {
                                 let objsettings = vec![obj.clone()];
                                 let expdata = self.eval_objattr(objattrexp, objsettings);
-                                let d = DATA::Mk { obj: obj.obj_type.clone(), name: name.clone() };
                                 context.get_mut_expdata().set_data(d, *id, expdata.clone());
                                 expdata
                             }
                             Expression::TExp { texp } => {
-                                self._eval(&texp.subst(*id), context)
+                                let expdata = self._eval(&texp.subst(*id), context);
+                                context.get_mut_expdata().set_data(d, *id, expdata.clone());
+                                expdata
                             }
                             _ => unimplemented!()
                         }
@@ -162,8 +164,18 @@ impl Knowledge {
             Exp::BinaryExp { op: BinaryOp::Div, ref left, ref right } => self._eval(&*left, context) / self._eval(&*right, context),
             Exp::BinaryExp { op: BinaryOp::Pow, ref left, ref right } => self._eval(&*left, context).pow(&self._eval(&*right, context)),
             Exp::DiffExp { ref left, ref right, ord} =>
-                self._eval(&*left, context).diff_n(&self._eval(&*right, context), *ord as usize),
+                (&self._eval(&*left, context)).diff_n(&self._eval(&*right, context), *ord as usize),
             _ => unimplemented!()
         }
+    }
+}
+
+pub fn apply_binary_op(op: BinaryOp, valuei: &ExpData, valuej: &ExpData) -> Option<ExpData> {
+    match op {
+        BinaryOp::Add => Some(valuei + valuej),
+        BinaryOp::Sub => Some(valuei - valuej),
+        BinaryOp::Mul => Some(valuei * valuej),
+        BinaryOp::Div => Some(valuei / valuej),
+        BinaryOp::Pow => Some(valuei.pow(valuej)),
     }
 }

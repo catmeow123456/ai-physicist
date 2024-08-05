@@ -4,6 +4,7 @@ use std::hash::{DefaultHasher, Hash, Hasher};
 
 use crate::ast::MeasureType;
 use super::objects::obj::{ObjType, DATA, ATTR};
+use super::expdata::ExpData;
 use super::expstructure::{ExpStructure, Parastructure, Objstructure, ExpConfig, DataStructOfExpData, DataStruct};
 
 #[pymethods]
@@ -49,6 +50,21 @@ impl ExpStructure {
     }
     pub fn collect_expdata(&mut self, measuretype: MeasureType) -> DataStructOfExpData {
         self.get_expdata(measuretype).clone()
+    }
+}
+
+#[pymethods]
+impl DataStruct {
+    fn __str__(&self) -> String {
+        format!("{}", self)
+    }
+    fn fetch_data(&self, name: &str, id: i32) -> Option<ExpData> {
+        for ((data, data_id), value) in self.iter() {
+            if *data.name() == name.to_string() && *data_id == id {
+                return Some(value.clone());
+            }
+        }
+        None
     }
 }
 

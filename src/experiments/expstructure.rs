@@ -185,6 +185,17 @@ impl DataStruct {
     }
 }
 
+impl fmt::Display for DataStruct {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "[DataStruct] data:").unwrap();
+        for key in self.data.keys() {
+            write!(f, " {}[{}],", key.0, key.1).unwrap();
+        }
+        write!(f, ".").unwrap();
+        Result::Ok(())
+    }
+}
+
 #[pyclass]
 #[derive(Clone)]
 pub struct DataStructOfExpData {

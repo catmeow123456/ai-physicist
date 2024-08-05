@@ -92,7 +92,10 @@ impl ExpData {
                      &self.data.slice(s![.., x..y]).std_axis(ndarray::Axis(0), 0.0),
                      None)
     }
-    pub fn is_conserved(&self) -> bool {
+    pub fn is_conserved_piecewise(&self) -> bool {
+        if self.badpts.len() >= self.n / 4 {
+            return false
+        }
         for (x, y) in self.gen_domain() {
             if !is_conserved(&self.data.slice(s![.., x..y]).mean_axis(ndarray::Axis(0)).unwrap(),
                             &self.data.slice(s![.., x..y]).std_axis(ndarray::Axis(0), 0.0),
@@ -102,7 +105,22 @@ impl ExpData {
         }
         true
     }
+    pub fn is_conserved(&self) -> bool {
+        if self.badpts.len() >= self.n / 4 {
+            return false
+        }
+        let mut mean_vec = vec![];
+        let mut std_vec = vec![];
+        for (x, y) in self.gen_domain() {
+            mean_vec.append(&mut self.data.slice(s![.., x..y]).mean_axis(ndarray::Axis(0)).unwrap().to_vec());
+            std_vec.append(&mut self.data.slice(s![.., x..y]).std_axis(ndarray::Axis(0), 0.0).to_vec());
+        }
+        is_conserved(&Array1::from(mean_vec), &Array1::from(std_vec), None)
+    }
     pub fn is_zero(&self) -> bool {
+        if self.badpts.len() >= self.n / 4 {
+            return false
+        }
         for (x, y) in self.gen_domain() {
             if !is_zero(&self.data.slice(s![.., x..y]).mean_axis(ndarray::Axis(0)).unwrap(),
                         &self.data.slice(s![.., x..y]).std_axis(ndarray::Axis(0), 0.0),
@@ -200,6 +218,11 @@ impl fmt::Display for ExpData {
 // Operator overloading
 //
 
+pub trait Diff<Rhs = Self> {
+    type Output;
+    fn diff(&self, other: Rhs) -> Self::Output;
+    fn diff_n(&self, other: Rhs, n: usize) -> Self::Output;
+}
 
 // implement the Add trait for ExpData
 impl Add for ExpData{
@@ -281,6 +304,21 @@ impl Neg for ExpData {
     }
 }
 
+impl Diff for &ExpData {
+    type Output = ExpData;
+    fn diff(&self, other: &ExpData) -> ExpData {
+        self.diff_tau() / other.diff_tau()
+    }
+    fn diff_n(&self, other: &ExpData, n: usize) -> ExpData {
+        assert!(n > 0 && n < 5);
+        if n == 1 {
+            self.diff(other)
+        } else {
+            (&self.diff(other)).diff_n(other, n-1)
+        }
+    }
+}
+
 impl ExpData {
     pub fn pow(&self, other: &ExpData) -> ExpData {
         let mut res: Array2<f64> = self.data.clone();
@@ -354,19 +392,7 @@ impl ExpData {
         ExpData::new(data)
         // npsd_expdata(self, 1, 5)
     }
-    pub fn diff(&self, other: &ExpData) -> ExpData {
-        self.diff_tau() / other.diff_tau()
-    }
-    pub fn diff_n(&self, other: &ExpData, n: usize) -> ExpData {
-        assert!(n > 0 && n < 5);
-        if n == 1 {
-            self.diff(other)
-        } else {
-            self.diff(other).diff_n(other, n-1)
-        }
-    }
 }
-
 
 impl ExpData {
     pub fn mean(&self) -> Array1<f64> {
