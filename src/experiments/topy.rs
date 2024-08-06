@@ -36,6 +36,9 @@ impl ExpStructure {
         expdata.obj_id_map.clone()
     }
     fn data_info(&self) -> DataStruct{
+        if self.expdata_is_none() {
+            panic!("ExpData is None");
+        }
         let expdata = self.get_ref_expdata();
         // for (key, value) in expdata.data.iter() {
         //     println!("{}: {}", key.0, key.1);

@@ -4,7 +4,9 @@ use crate::r;
 use crate::ast::{UnaryOp, BinaryOp, Exp, SExp, ObjAttrExp, IExpConfig, Expression, MeasureType};
 use crate::experiments::simulation::{
     oscillation::struct_oscillation,
-    collision::struct_collision
+    collision::struct_collision,
+    motion::struct_motion,
+    motion0::struct_motion0,
 };
 use crate::experiments::{
     expdata::{ExpData, Diff},
@@ -26,6 +28,8 @@ impl Knowledge {
             experiments: HashMap::from([
                 (r!("oscillation"), struct_oscillation()),
                 (r!("collision"), struct_collision()),
+                (r!("motion"), struct_motion()),
+                (r!("motion0"), struct_motion0()),
             ]),
             concepts: HashMap::new(),
             objects: HashMap::new(),

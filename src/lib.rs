@@ -15,6 +15,8 @@ pub mod experiments{
         pub mod spring;
     }
     pub mod simulation{
+        pub mod motion0;
+        pub mod motion;
         pub mod collision;
         pub mod oscillation;
     }
@@ -43,6 +45,8 @@ fn ai_physicist(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<ExpData>()?;
     m.add_class::<Knowledge>()?;
     m.add_function(wrap_pyfunction!(search_relations, m)?)?;
+    m.add_function(wrap_pyfunction!(experiments::simulation::motion0::struct_motion0, m)?)?;
+    m.add_function(wrap_pyfunction!(experiments::simulation::motion::struct_motion, m)?)?;
     m.add_function(wrap_pyfunction!(experiments::simulation::collision::struct_collision, m)?)?;
     m.add_function(wrap_pyfunction!(experiments::simulation::oscillation::struct_oscillation, m)?)?;
     m.add_function(wrap_pyfunction!(experiments::simulation::collision::do_collision, m)?)?;
