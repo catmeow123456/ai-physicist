@@ -40,10 +40,20 @@ impl Knowledge {
             println!("{}", name);
         }
     }
+    fn fetch_experiments(&self) -> Vec<String> {
+        let mut res = vec![];
+        for (name, _) in self.experiments.iter() {
+            res.push(name.clone());
+        }
+        res
+    }
     fn list_concepts(&self) {
         for (name, expression) in self.concepts.iter() {
             println!("{} {}", name, expression);
         }
+    }
+    fn fetch_concepts(&self) -> HashMap<String, Expression> {
+        self.concepts.clone()
     }
     fn register_object(&mut self, name: String, obj: Objstructure) {
         self.objects.insert(name, obj);
@@ -53,6 +63,9 @@ impl Knowledge {
     }
     fn register_expression(&mut self, name: String, exp: Expression) {
         self.concepts.insert(name, exp);
+    }
+    fn get_expstruct_pure(&self, name: String) -> ExpStructure {
+        self.experiments.get(&name).unwrap().clone()
     }
     fn get_expstructure(&self, expconfig: &IExpConfig, objsettings: Vec<Objstructure> ) -> ExpStructure {
         match expconfig {
