@@ -153,13 +153,16 @@ pub struct DataStruct {
     data: HashMap<(DATA, i32), ExpData>,
 }
 impl DataStruct {
-    fn new(data: HashMap<(DATA, i32), ExpData>) -> Self {
+    pub fn new(data: HashMap<(DATA, i32), ExpData>) -> Self {
         DataStruct {
             data
         }
     }
     pub fn set_data(&mut self, data: DATA, id: i32, expdata: ExpData) {
         self.data.insert((data, id), expdata);
+    }
+    pub fn reset_data(&mut self, data: DATA, id: i32) {
+        self.data.remove(&(data, id));
     }
     pub fn get_data(&self) -> &HashMap<(DATA, i32), ExpData> {
         &self.data

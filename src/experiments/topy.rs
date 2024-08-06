@@ -37,7 +37,7 @@ impl ExpStructure {
     }
     fn data_info(&self) -> DataStruct{
         if self.expdata_is_none() {
-            panic!("ExpData is None");
+            panic!("The expdata has not been collected yet.");
         }
         let expdata = self.get_ref_expdata();
         // for (key, value) in expdata.data.iter() {
@@ -68,6 +68,16 @@ impl DataStruct {
             }
         }
         None
+    }
+    #[staticmethod]
+    fn empty() -> Self {
+        DataStruct::new(HashMap::new())
+    }
+    fn add_data(&mut self, data: DATA, data_id: i32, expdata: ExpData) {
+        self.set_data(data, data_id, expdata);
+    }
+    fn remove_data(&mut self, data: DATA, data_id: i32) {
+        self.reset_data(data, data_id);
     }
 }
 
