@@ -1,4 +1,5 @@
-use std::fmt;
+use std::fmt::{self, write};
+use std::collections::{HashMap, HashSet};
 use pyo3::prelude::*;
 
 #[pyclass(eq, eq_int)]
@@ -73,7 +74,19 @@ pub enum Exp {
     DiffExp {left: Box<Exp>, right: Box<Exp>, ord: i32},
     ExpWithMeasureType {exp: Box<Exp>, measuretype: Box<MeasureType>},
 }
+#[pymethods]
 impl Exp {
+    fn __str__(&self) -> String {
+        format!("{}", self)
+    }
+    #[staticmethod]
+    pub fn new_variable(name: String, id: i32) -> Self {
+        if id == 0 {
+            Exp::Variable {name}
+        } else {
+            Exp::VariableId {name, id}
+        }
+    }
     pub fn subst(&self, oid: i32, nid: i32) -> Self{
         match self {
             Exp::Number {num} => Exp::Number {num: *num},
@@ -93,6 +106,65 @@ impl Exp {
             Exp::ExpWithMeasureType {exp, measuretype} => Exp::ExpWithMeasureType {exp: Box::new(exp.subst(oid, nid)), measuretype: measuretype.clone()},
         }
     }
+    pub fn subst_by_dict(&self, sub_dict: HashMap<i32, i32>) -> Self {
+        self.substs(&sub_dict)
+    }
+    pub fn get_allids(&self) -> HashSet<i32> {
+        match self {
+            Exp::VariableId {name:_, id} => HashSet::from([*id]),
+            Exp::UnaryExp {op:_, exp} => exp.get_allids(),
+            Exp::BinaryExp {left, op:_, right} => {
+                let left = left.get_allids();
+                let right = right.get_allids();
+                let res: HashSet<i32> = left.union(&right).cloned().collect();
+                res
+            },
+            Exp::DiffExp { left, right, ord:_ } => {
+                let left = left.get_allids();
+                let right = right.get_allids();
+                let res: HashSet<i32> = left.union(&right).cloned().collect();
+                res
+            },
+            Exp::ExpWithMeasureType {exp, measuretype:_} => exp.get_allids(),
+            _ => HashSet::new(),
+        }
+    }
+}
+impl Exp {
+    pub fn substs(&self, sub_dict: &HashMap<i32, i32>) -> Self {
+        match self {
+            Exp::Number {num} => Exp::Number {num: *num},
+            Exp::Variable {name} => Exp::Variable {name: name.clone()},
+            Exp::VariableId {name, id} => {
+                match sub_dict.get(id) {
+                    Some(nid) => Exp::VariableId {name: name.clone(), id: *nid},
+                    None => self.clone(),
+                }
+            }
+            Exp::UnaryExp {op, exp} =>
+                Exp::UnaryExp {op: op.clone(), exp: Box::new(exp.substs(sub_dict))},
+            Exp::BinaryExp {left, op, right} => {
+                Exp::BinaryExp {
+                    left: Box::new(left.substs(sub_dict)),
+                    op: op.clone(),
+                    right: Box::new(right.substs(sub_dict))
+                }
+            },
+            Exp::DiffExp {left, right, ord} => {
+                Exp::DiffExp {
+                    left: Box::new(left.substs(sub_dict)),
+                    right: Box::new(right.substs(sub_dict)),
+                    ord: *ord
+                }
+            },
+            Exp::ExpWithMeasureType {exp, measuretype} => {
+                Exp::ExpWithMeasureType {
+                    exp: Box::new(exp.substs(sub_dict)),
+                    measuretype: measuretype.clone()
+                }
+            },
+        }
+    }
 }
 
 #[pyclass(eq)]
@@ -106,16 +178,44 @@ pub enum SExp {
 #[derive(Clone, PartialEq)]
 pub enum TExp {
     // {ObjStructure} -> ExpConfig -> MeasureData -> ExpData
+    Mk0 {exp: Box<Exp>},
     Mk {objtype: String, exp: Box<Exp>, id: i32},
+    Mksucc {objtype: String, texp: Box<TExp>, id: i32},
 }
 impl TExp {
-    pub fn subst(&self, nid: i32) -> Exp {
+    fn _subst(&self, idlist: Vec<i32>, sub_dict: HashMap<i32, i32>) -> Exp {
+        let mut idlist = idlist;
+        let nid = idlist.pop().unwrap();
+        let mut sub_dict = sub_dict;
         match self {
+            TExp::Mk0 {exp} => {
+                let ref exp = **exp;
+                assert_eq!(idlist.len(), 0);
+                exp.substs(&sub_dict)
+            }
             TExp::Mk {objtype: _, exp, id} => {
                 let ref exp = **exp;
-                exp.subst(*id, nid)
+                assert_eq!(idlist.len(), 0);
+                sub_dict.insert(*id, nid);
+                exp.substs(&sub_dict)
             }
-        }        
+            TExp::Mksucc {objtype: _, texp, id} => {
+                let ref texp = **texp;
+                sub_dict.insert(*id, nid);
+                texp._subst(idlist, sub_dict)
+            }
+        }
+    }
+}
+#[pymethods]
+impl TExp {
+    fn __str__(&self) -> String {
+        format!("{}", self)
+    }
+    pub fn subst(&self, idlist: Vec<i32>) -> Exp {
+        let mut idlist = idlist;
+        idlist.reverse();
+        self._subst(idlist, HashMap::new())
     }
 }
 
@@ -126,6 +226,19 @@ pub enum IExpConfig {
     From { name: String },
     Mk { objtype: String, expconfig: Box<IExpConfig>, id: i32},
     Mkfix { object: String, expconfig: Box<IExpConfig>, id: i32},
+}
+#[pymethods]
+impl IExpConfig {
+    fn __str__(&self) -> String {
+        format!("{}", self)
+    }
+    pub fn get_expname(&self) -> String {
+        match self {
+            IExpConfig::From {name} => name.clone(),
+            IExpConfig::Mk {objtype: _, expconfig, id: _} => expconfig.get_expname(),
+            IExpConfig::Mkfix {object: _, expconfig, id: _} => expconfig.get_expname(),
+        }
+    }
 }
 
 #[pyclass(eq)]
@@ -175,7 +288,9 @@ impl fmt::Display for SExp {
 impl fmt::Display for TExp {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
+            TExp::Mk0 { exp } => write!(f, "|- {}", exp),
             TExp::Mk {objtype, exp, id} => write!(f, "({}->{}) |- {}", id, objtype, exp),
+            TExp::Mksucc {objtype, texp, id} => write!(f, "({}->{}) {}", id, objtype, texp),
         }
     }
 }

@@ -11,6 +11,7 @@ name = "ai_physicist"
 crate-type = ["cdylib"]
 
 [dependencies]
+itertools = "0.13.0"
 lalrpop-util = { version = "0.20.2", features = ["lexer"] }
 ndarray = "0.15.6"
 ndarray-linalg = { version = "0.16.0", features = ["openblas"] }

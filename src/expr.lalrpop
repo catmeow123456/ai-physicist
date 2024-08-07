@@ -32,6 +32,7 @@ pub SExp: Box<SExp> = {
 }
 pub TExp: Box<TExp> = {
   "(" <id:Number> "->" <objtype:Ident> ")" "|-" <exp: Exp> => Box::new(TExp::Mk{ <> }),
+  "(" <id:Number> "->" <objtype:Ident> ")" <texp: TExp> => Box::new(TExp::Mksucc{ <> }),
 }
 
 

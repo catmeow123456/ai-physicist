@@ -1,7 +1,8 @@
+use itertools::Itertools;
 use pyo3::prelude::*;
 use std::collections::HashMap;
 use crate::r;
-use crate::ast::{UnaryOp, BinaryOp, Exp, SExp, ObjAttrExp, IExpConfig, Expression, MeasureType};
+use crate::ast::{UnaryOp, BinaryOp, Exp, SExp, TExp, ObjAttrExp, IExpConfig, Expression, MeasureType};
 use crate::experiments::simulation::{
     oscillation::struct_oscillation,
     collision::struct_collision,
@@ -134,6 +135,51 @@ impl Knowledge {
             }
         }
     }
+    pub fn generalize(&self, sexp: &SExp) -> TExp {
+        match sexp {
+            SExp::Mk { expconfig, exp } => {
+                let ref expname = expconfig.get_expname();
+                let ref exp = **exp;
+                let ref expstructure = *self.experiments.get(expname).unwrap();
+                let mut vec = vec![];
+                for item in exp.get_allids() {vec.push(item);}
+                let n = vec.len();
+                assert!(n > 0);
+                let perm = (1..(n+1)).permutations(n);
+                let mut nexp = exp.clone();
+                let mut nexp_subs_dict: HashMap<i32, i32> = HashMap::new();
+                for p in perm {
+                    let mut subst_dict: HashMap<i32, i32> = HashMap::new();
+                    for (i, j) in vec.iter().zip(p) {
+                        subst_dict.insert(*i, j as i32);
+                    }
+                    let new_exp = exp.substs(&subst_dict);
+                    if nexp_subs_dict.is_empty() || format!("{}", new_exp) < format!("{}", nexp) {
+                        nexp = new_exp;
+                        nexp_subs_dict = subst_dict;
+                    }
+                }
+                // println!("nexp = {}", nexp);
+                // println!("nexp_subs_dict = {:?}", nexp_subs_dict);
+                let mut id_objtype_map: HashMap<i32, String> = HashMap::new();
+                for (i, j) in nexp_subs_dict.iter() {
+                    let obj = expstructure.get_obj(*i);
+                    id_objtype_map.insert(*j, obj.obj_type.to_string());
+                }
+                let mut texp_res = TExp::Mk0 { exp: Box::new(nexp) };
+                for i in (1..(n+1)).rev() {
+                    // println!("--{}, ", i);
+                    let objtype = id_objtype_map.get(&(i as i32)).unwrap();
+                    texp_res = TExp::Mksucc {
+                        objtype: objtype.clone(),
+                        texp: Box::new(texp_res),
+                        id: i as i32,
+                    };
+                }
+                texp_res
+            }
+        }
+    }
 }
 
 impl Knowledge {
@@ -164,7 +210,7 @@ impl Knowledge {
                                 expdata
                             }
                             Expression::TExp { texp } => {
-                                let expdata = self._eval(&texp.subst(*id), context);
+                                let expdata = self._eval(&texp.subst(vec![*id]), context);
                                 context.get_mut_expdata().set_data(d, *id, expdata.clone());
                                 expdata
                             }

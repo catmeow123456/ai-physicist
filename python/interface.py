@@ -1,6 +1,8 @@
 #%%
 from typing import List, Dict
 from ai_physicist import (
+    SExp,
+    IExpConfig,
     Knowledge,      # .fetch_concepts()  .list_concepts()  .list_experiments()
                     # .get_expstruct_pure(name: str)
     Expression,
@@ -31,5 +33,9 @@ class Theorist:
     def register_expr(self, name: str, definition: str):
         expr = sentence.parse(definition)
         self.K.register_expression(name, expr)
+
+    def generalize(self, exp_name: str, exp: str) -> Expression:
+        sexp = SExp.Mk(IExpConfig.From(exp_name), sentence.parse_exp(exp))
+        return Expression.TExp(self.K.generalize(sexp))
 
 # %%

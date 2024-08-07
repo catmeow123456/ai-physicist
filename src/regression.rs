@@ -9,7 +9,7 @@ pub fn search_relations(fn_list: &DataStruct) -> Vec<(Exp, ExpData)> {
     let mut list: Vec<(Exp, ExpData)> = vec![];
     for ((data, id), value) in fn_list.iter() {
         if !value.is_conserved() {
-            list.push((Exp::VariableId { name: data.name().clone(), id: *id }, value.clone()));
+            list.push((Exp::new_variable(data.name().clone(), *id), value.clone()));
         }
     }
     search_relations_aux(&list)

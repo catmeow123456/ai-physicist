@@ -1,17 +1,17 @@
 use pyo3::prelude::*;
 use lalrpop_util::lalrpop_mod;
 lalrpop_mod!(expr);
-use crate::ast::{Exp, SExp, Expression};
+use crate::ast::{Exp, SExp, TExp, Expression};
 // mod ast;
 
 #[pymethods]
-impl Exp {
+impl SExp {
     fn __str__(&self) -> String {
         format!("{}", self)
     }
 }
 #[pymethods]
-impl SExp {
+impl Expression {
     fn __str__(&self) -> String {
         format!("{}", self)
     }
@@ -43,6 +43,11 @@ pub fn parse_sexp(input: &str) -> PyResult<SExp> {
     let res: Box<SExp> = expr::SExpParser::new().parse(input).unwrap();
     Ok(*res)
 }
+#[pyfunction]
+pub fn parse_texp(input: &str) -> PyResult<TExp> {
+    let res: Box<TExp> = expr::TExpParser::new().parse(input).unwrap();
+    Ok(*res)
+}
 
 
 #[pymodule]
@@ -52,6 +57,7 @@ pub fn register_sentence(m: &Bound<'_, PyModule>) -> PyResult<()> {
     child_module.add_function(wrap_pyfunction!(parse_str, m)?)?;
     child_module.add_function(wrap_pyfunction!(parse_exp, m)?)?;
     child_module.add_function(wrap_pyfunction!(parse_sexp, m)?)?;
+    child_module.add_function(wrap_pyfunction!(parse_texp, m)?)?;
     m.add_submodule(&child_module)?;
     Ok(())
 }
