@@ -1,5 +1,5 @@
 use pyo3::prelude::*;
-use crate::ast::MeasureType;
+use crate::ast::{MeasureType, TExp, Exp};
 use rand::Rng;
 use rand_distr::{Distribution, Normal};
 use std::{fmt, collections::HashMap};
@@ -150,21 +150,21 @@ impl MeasureType {
 #[pyclass]
 #[derive(Clone)]
 pub struct DataStruct {
-    data: HashMap<(DATA, i32), ExpData>,
+    data: HashMap<Exp, ExpData>,
 }
 impl DataStruct {
-    pub fn new(data: HashMap<(DATA, i32), ExpData>) -> Self {
+    pub fn new(data: HashMap<Exp, ExpData>) -> Self {
         DataStruct {
             data
         }
     }
-    pub fn set_data(&mut self, data: DATA, id: i32, expdata: ExpData) {
-        self.data.insert((data, id), expdata);
+    pub fn set_data(&mut self, exp: Exp, expdata: ExpData) {
+        self.data.insert(exp, expdata);
     }
-    pub fn reset_data(&mut self, data: DATA, id: i32) {
-        self.data.remove(&(data, id));
+    pub fn reset_data(&mut self, exp: Exp) {
+        self.data.remove(&exp);
     }
-    pub fn get_data(&self) -> &HashMap<(DATA, i32), ExpData> {
+    pub fn get_data(&self) -> &HashMap<Exp, ExpData> {
         &self.data
     }
     pub fn get_data_by_key(&self, data: DATA, id: i32) -> Result<&ExpData, String> {
@@ -259,7 +259,7 @@ pub struct ExpConfig {
     pub spdim: usize,
     exp_para: HashMap<String, Parastructure>,
     obj_info: HashMap<String, Objstructure>,
-    data_info: HashMap<String, Vec<DATA>>,
+    data_info: Vec<(TExp, Vec<String>)>,
     // auto generated
     pub obj_id_map: HashMap<String, (ObjType, i32)>,
     obj_name_map: HashMap<i32, (ObjType, String)>,
@@ -269,7 +269,7 @@ impl ExpConfig {
     pub fn new(name: String, spdim: usize,
            exp_para: HashMap<String, Parastructure>,
            obj_info: HashMap<String, Objstructure>,
-           data_info: HashMap<String, Vec<DATA>>) -> Self {
+           data_info: Vec<(TExp, Vec<String>)>) -> Self {
         let mut obj_id_map: HashMap<String, (ObjType, i32)> = HashMap::new();
         let mut obj_info_dict: HashMap<ObjType, HashMap<i32, String>> = HashMap::new();
         let mut obj_name_map: HashMap<i32, (ObjType, String)> = HashMap::new();
@@ -337,10 +337,17 @@ impl ExpConfig {
         }
     }
     pub fn create_data_struct_of_do_experiment(&self, t_num: usize) -> DataStructOfDoExperiment {
-        for (obj_name, data_names) in self.data_info.iter() {
-            let obj_type = self.obj_id_map.get(obj_name).unwrap().clone().0;
-            for data in data_names {
-                assert_eq!(data.obj(), &obj_type);
+        for (data_texp, obj_names) in self.data_info.iter() {
+            let mut texp_temp = data_texp;
+            for obj_name in obj_names {
+                let obj_type = self.obj_id_map.get(obj_name).unwrap().clone().0;
+                match texp_temp {
+                    TExp::Mksucc { objtype, texp, id:_ } => {
+                        assert_eq!(*objtype, obj_type.to_string());
+                        texp_temp = texp;
+                    }
+                    _ => panic!("DataStructOfDoExperiment: TExp not match, the data info dict has a wrong format."),
+                }
             }
         }
         DataStructOfDoExperiment::new(

@@ -1,3 +1,5 @@
+use crate::r;
+use crate::ast::TExp;
 use std::collections::HashMap;
 use super::super::expstructure::Objstructure;
 use super::obj::ObjType::Clock;
@@ -13,6 +15,5 @@ impl Objstructure {
 }
 
 impl DATA {
-    pub fn time() -> Self { DATA::new(Clock, "t") }
-    pub fn _time() { DATA::data(["Clock"], "t") }
+    pub fn time() -> TExp { DATA::data(vec![r!("Clock")], r!("t")) }
 }

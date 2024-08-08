@@ -91,12 +91,12 @@ impl fmt::Display for ATTR {
 
 use crate::ast::{Exp, TExp};
 impl DATA{
-    pub fn data(obj_types: [String], name: String) -> TExp {
+    pub fn data(obj_types: Vec<String>, name: String) -> TExp {
         let n = obj_types.len();
-        let exp = Exp::new_variable_ids(name, 1..(n+1));
-        let mut texp = TExp::Mk0 { exp: exp }
+        let exp = Exp::new_variable_ids(name, (1..(n+1)).map(|x| x as i32).collect());
+        let mut texp = TExp::Mk0 { exp: Box::new(exp) };
         for i in 0..n {
-            texp = TExp::Mksucc { objtype: obj_types[i], texp: Box::new(texp), id: i+1 }
+            texp = TExp::Mksucc { objtype: obj_types[i].clone(), texp: Box::new(texp), id: i as i32+1 }
         }
         texp
     }
