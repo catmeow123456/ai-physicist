@@ -232,22 +232,16 @@ pub enum TExp {
 }
 impl TExp {
     fn _subst(&self, idlist: Vec<i32>, sub_dict: HashMap<i32, i32>) -> Exp {
-        let mut idlist = idlist;
-        let nid = idlist.pop().unwrap();
-        let mut sub_dict = sub_dict;
         match self {
             TExp::Mk0 {exp} => {
                 let ref exp = **exp;
                 assert_eq!(idlist.len(), 0);
                 exp.substs(&sub_dict)
             }
-            // TExp::Mk {objtype: _, exp, id} => {
-            //     let ref exp = **exp;
-            //     assert_eq!(idlist.len(), 0);
-            //     sub_dict.insert(*id, nid);
-            //     exp.substs(&sub_dict)
-            // }
             TExp::Mksucc {objtype: _, texp, id} => {
+                let mut sub_dict = sub_dict;
+                let mut idlist = idlist;
+                let nid = idlist.pop().unwrap();
                 let ref texp = **texp;
                 sub_dict.insert(*id, nid);
                 texp._subst(idlist, sub_dict)
@@ -419,16 +413,17 @@ impl TExp {
     fn _aux_print(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             TExp::Mk0 {exp:_} => Ok(()),
-            // TExp::Mk {objtype, exp, id} => write!(f, "({}->{}) {}", id, objtype, exp),
-            TExp::Mksucc {objtype, texp, id} =>
-                write!(f, "{}({}->{}) ", id, objtype, texp),
+            TExp::Mksucc {objtype, texp, id} => {
+                texp._aux_print(f)?;
+                write!(f, "({}->{}) ", id, objtype)
+            },
         }
     }
 }
 impl fmt::Display for TExp {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         self._aux_print(f)?;
-        write!(f, "{}", self.get_exp())
+        write!(f, "|- {}", self.get_exp())
     }
 }
 impl fmt::Display for IExpConfig {

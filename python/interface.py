@@ -35,7 +35,6 @@ class Theorist:
         self.K.register_expression(name, expr)
 
     def generalize(self, exp_name: str, exp: str) -> Expression:
-        sexp = SExp.Mk(IExpConfig.From(exp_name), sentence.parse_exp(exp))
-        return Expression.TExp(self.K.generalize(sexp))
+        return Expression.TExp(self.K.generalize(sentence.parse_exp(exp), exp_name))
 
 # %%
