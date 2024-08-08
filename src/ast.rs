@@ -412,10 +412,10 @@ impl fmt::Display for SExp {
 impl TExp {
     fn _aux_print(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            TExp::Mk0 {exp:_} => Ok(()),
+            TExp::Mk0 {exp:_} => write!(f, "|-"),
             TExp::Mksucc {objtype, texp, id} => {
-                texp._aux_print(f)?;
-                write!(f, "({}->{}) ", id, objtype)
+                write!(f, "({}->{}) ", id, objtype)?;
+                texp._aux_print(f)
             },
         }
     }
@@ -423,7 +423,7 @@ impl TExp {
 impl fmt::Display for TExp {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         self._aux_print(f)?;
-        write!(f, "|- {}", self.get_exp())
+        write!(f, " {}", self.get_exp())
     }
 }
 impl fmt::Display for IExpConfig {
