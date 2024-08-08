@@ -14,4 +14,5 @@ impl Objstructure {
 
 impl DATA {
     pub fn time() -> Self { DATA::new(Clock, "t") }
+    pub fn _time() { DATA::data(["Clock"], "t") }
 }

@@ -31,4 +31,6 @@ impl ATTR {
 impl DATA {
     pub fn posx() -> Self { DATA::new(MassPoint,"posx") }
     pub fn posy() -> Self { DATA::new(MassPoint,"posy") }
+    pub fn _posx() { DATA::data("MassPoint", "posx") }
+    pub fn _posy() { DATA::data("MassPoint", "posy") }
 }
