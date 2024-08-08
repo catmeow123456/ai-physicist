@@ -5,12 +5,6 @@ use crate::ast::{Exp, SExp, TExp, Expression};
 // mod ast;
 
 #[pymethods]
-impl SExp {
-    fn __str__(&self) -> String {
-        format!("{}", self)
-    }
-}
-#[pymethods]
 impl Expression {
     fn __str__(&self) -> String {
         format!("{}", self)

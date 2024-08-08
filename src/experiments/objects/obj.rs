@@ -6,6 +6,16 @@ pub enum ObjType {
     MassPoint,
     Spring,
 }
+impl ObjType {
+    pub fn from_str(s: &str) -> Option<ObjType> {
+        match s {
+            "Clock" => Some(ObjType::Clock),
+            "MassPoint" => Some(ObjType::MassPoint),
+            "Spring" => Some(ObjType::Spring),
+            _ => None,
+        }
+    }
+}
 use std::fmt;
 impl fmt::Display for ObjType {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {

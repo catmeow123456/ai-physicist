@@ -31,7 +31,8 @@ pub SExp: Box<SExp> = {
   <expconfig: ExpConfig> "|-" <exp: Exp> => Box::new(SExp::Mk{ <> }),
 }
 pub TExp: Box<TExp> = {
-  "(" <id:Number> "->" <objtype:Ident> ")" "|-" <exp: Exp> => Box::new(TExp::Mk{ <> }),
+  // "(" <id:Number> "->" <objtype:Ident> ")" "|-" <exp: Exp> => Box::new(TExp::Mk{ <> }),
+  "|-" <exp: Exp> => Box::new(TExp::Mk0{ <> }),
   "(" <id:Number> "->" <objtype:Ident> ")" <texp: TExp> => Box::new(TExp::Mksucc{ <> }),
 }
 
@@ -94,7 +95,8 @@ WithExp: Box<Exp> = {
 
 
 Identid: Box<Exp> = {
-  <name: Ident>"["<id: Number>"]" => Box::new(Exp::VariableId{ <> }),
+  // <name: Ident>"["<id: Number>"]" => Box::new(Exp::VariableId{ <> }),
+  <name: Ident>"["<ids: IntVecConst>"]" => Box::new(Exp::VariableIds{ <> }),
 }
 
 Number: i32 = <num: IntConst> => <>;
@@ -103,6 +105,14 @@ Number: i32 = <num: IntConst> => <>;
 // 一对尖括号在此处指代的是正则表达式匹配到的字符串 (&str)
 Ident: String = r"[_a-zA-Z][_a-zA-Z0-9]*" => <>.to_string();
 
+IntVecConst: Vec<i32> = {
+  <num: IntConst> => vec![<>],
+  <numlist: IntVecConst> "," <num: IntConst> => {
+    let mut numlist = numlist;
+    numlist.push(num);
+    numlist
+  },
+}
 
 // 对整数字面量的处理方式: 把匹配到的字符串按对应进制转换成数字
 IntConst: i32 = {

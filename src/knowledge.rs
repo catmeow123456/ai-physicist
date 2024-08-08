@@ -1,6 +1,7 @@
 use itertools::Itertools;
 use pyo3::prelude::*;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
+use crate::experiments::objects::obj::ObjType;
 use crate::r;
 use crate::ast::{UnaryOp, BinaryOp, Exp, SExp, TExp, ObjAttrExp, IExpConfig, Expression, MeasureType};
 use crate::experiments::simulation::{
@@ -95,14 +96,12 @@ impl Knowledge {
     pub fn eval_objattr(&self, objattrexp: &ObjAttrExp, objsettings: Vec<Objstructure>) -> ExpData {
         match objattrexp {
             ObjAttrExp::From { sexp } => {
-                let ref sexp = **sexp;
+                let sexp = sexp.as_ref();
                 match sexp {
                     SExp::Mk { expconfig, exp } => {
-                        let ref expconfig = **expconfig;
+                        let expconfig = expconfig.as_ref();
                         let mut data = self.get_expstructure(expconfig, objsettings);
-                        // let data = data.get_expdata(MeasureType::default());
-                        let ref exp = **exp;
-                        // Ok(eval(exp, data))
+                        let exp = exp.as_ref();
                         self.eval(exp, &mut data)
                     }
                 }
@@ -127,7 +126,7 @@ impl Knowledge {
         match exp0 {
             Exp::ExpWithMeasureType { exp, measuretype } => {
                 assert!(**measuretype == data.measuretype);
-                let ref exp = **exp;
+                let exp = exp.as_ref();
                 self._eval(exp, context)
             }
             _ => {
@@ -135,50 +134,118 @@ impl Knowledge {
             }
         }
     }
-    pub fn generalize(&self, sexp: &SExp) -> TExp {
+    pub fn generalize_sexp(&self, sexp: &SExp) -> TExp {
         match sexp {
             SExp::Mk { expconfig, exp } => {
-                let ref expname = expconfig.get_expname();
-                let ref exp = **exp;
-                let ref expstructure = *self.experiments.get(expname).unwrap();
-                let mut vec = vec![];
-                for item in exp.get_allids() {vec.push(item);}
-                let n = vec.len();
-                assert!(n > 0);
-                let perm = (1..(n+1)).permutations(n);
-                let mut nexp = exp.clone();
-                let mut nexp_subs_dict: HashMap<i32, i32> = HashMap::new();
-                for p in perm {
-                    let mut subst_dict: HashMap<i32, i32> = HashMap::new();
-                    for (i, j) in vec.iter().zip(p) {
-                        subst_dict.insert(*i, j as i32);
-                    }
-                    let new_exp = exp.substs(&subst_dict);
-                    if nexp_subs_dict.is_empty() || format!("{}", new_exp) < format!("{}", nexp) {
-                        nexp = new_exp;
-                        nexp_subs_dict = subst_dict;
-                    }
-                }
-                // println!("nexp = {}", nexp);
-                // println!("nexp_subs_dict = {:?}", nexp_subs_dict);
-                let mut id_objtype_map: HashMap<i32, String> = HashMap::new();
-                for (i, j) in nexp_subs_dict.iter() {
-                    let obj = expstructure.get_obj(*i);
-                    id_objtype_map.insert(*j, obj.obj_type.to_string());
-                }
-                let mut texp_res = TExp::Mk0 { exp: Box::new(nexp) };
-                for i in (1..(n+1)).rev() {
-                    // println!("--{}, ", i);
-                    let objtype = id_objtype_map.get(&(i as i32)).unwrap();
-                    texp_res = TExp::Mksucc {
-                        objtype: objtype.clone(),
-                        texp: Box::new(texp_res),
-                        id: i as i32,
-                    };
-                }
-                texp_res
+                self.generalize(exp.as_ref(), expconfig.get_expname())
             }
         }
+    }
+    pub fn generalize(&self, expr: &Exp, exp_name: String) -> TExp {
+        let ref expstructure = *self.experiments.get(&exp_name).unwrap();
+        let mut vec = vec![];
+        for item in expr.get_allids() {vec.push(item);}
+        let n = vec.len();
+        assert!(n > 0);
+        let perm = (1..(n+1)).permutations(n);
+        let mut nexp = expr.clone();
+        let mut nexp_subs_dict: HashMap<i32, i32> = HashMap::new();
+        for p in perm {
+            let mut subst_dict: HashMap<i32, i32> = HashMap::new();
+            for (i, j) in vec.iter().zip(p) {
+                subst_dict.insert(*i, j as i32);
+            }
+            let new_exp = expr.substs(&subst_dict);
+            if nexp_subs_dict.is_empty() || format!("{}", new_exp) < format!("{}", nexp) {
+                nexp = new_exp;
+                nexp_subs_dict = subst_dict;
+            }
+        }
+        // println!("nexp = {}", nexp);
+        // println!("nexp_subs_dict = {:?}", nexp_subs_dict);
+        let mut id_objtype_map: HashMap<i32, String> = HashMap::new();
+        for (i, j) in nexp_subs_dict.iter() {
+            let obj = expstructure.get_obj(*i);
+            id_objtype_map.insert(*j, obj.obj_type.to_string());
+        }
+        let mut texp_res = TExp::Mk0 { exp: Box::new(nexp) };
+        for i in (1..(n+1)).rev() {
+            // println!("--{}, ", i);
+            let objtype = id_objtype_map.get(&(i as i32)).unwrap();
+            texp_res = TExp::Mksucc {
+                objtype: objtype.clone(),
+                texp: Box::new(texp_res),
+                id: i as i32,
+            };
+        }
+        texp_res
+    }
+    pub fn specialize(&self, texp: &TExp, exp_name: String) -> Vec<Exp> {
+        let vec_map = self._get_all_possible_map(&texp.get_objtype_id_map(), exp_name);
+        let mut res: Vec<Exp> = vec![];
+        for dict in vec_map.iter() {
+            let new_exp = texp.substs(dict);
+            res.push(new_exp);
+        }
+        res
+    }
+    pub fn specialize_concept(&self, concept_name: String, exp_name: String) -> Vec<Exp> {
+        let concept = self.concepts.get(&concept_name).unwrap();
+        match concept {
+            Expression::ObjAttrExp { objattrexp } => {
+                let vec_map = self._get_all_possible_map(&objattrexp.get_objtype_id_map(), exp_name);
+                let preids = objattrexp.get_preids();
+                let mut exp_list = vec![];
+                for dict in vec_map.iter() {
+                    let mut ids = vec![];
+                    for id in preids.iter() {
+                        ids.push(*dict.get(id).unwrap());
+                    }
+                    exp_list.push(Exp::new_variable_ids(concept_name.clone(), ids));
+                }
+                unimplemented!()
+            }
+            Expression::TExp { texp } => {
+                let vec_map = self._get_all_possible_map(&texp.get_objtype_id_map(), exp_name);
+                let preids = texp.get_preids();
+                let mut exp_list = vec![];
+                for dict in vec_map.iter() {
+                    let mut ids = vec![];
+                    for id in preids.iter() {
+                        ids.push(*dict.get(id).unwrap());
+                    }
+                    exp_list.push(Exp::new_variable_ids(concept_name.clone(), ids));
+                }
+                exp_list
+            }
+            _ => unimplemented!()
+        }
+    }
+}
+impl Knowledge {
+    fn _get_all_possible_map(&self, objtype_id_map: &HashMap<String, HashSet<i32>>, exp_name: String) -> Vec<HashMap<i32, i32>> {
+        let ref expstructure = *self.experiments.get(&exp_name).unwrap();
+        let mut vec_map: Vec<HashMap<i32, i32>> = vec![];
+        vec_map.push(HashMap::new());
+        for (objtype, ids) in objtype_id_map.iter() {
+            let choose_ids = expstructure.get_obj_ids(ObjType::from_str(objtype).unwrap());
+            let perm = choose_ids.iter().permutations(ids.len());
+            let mut vec_map_of_objtype = vec![];
+            for p in perm {
+                let dict: HashMap<i32, i32> = ids.iter().zip(p).map(|(a, b)| (*a, *b as i32)).collect();
+                vec_map_of_objtype.push(dict);
+            }
+            let mut vec_map_new: Vec<HashMap<i32, i32>> = vec![];
+            for dict in vec_map.iter() {
+                for dict_objtype in vec_map_of_objtype.iter() {
+                    let mut new_dict = dict.clone();
+                    new_dict.extend(dict_objtype.clone());
+                    vec_map_new.push(new_dict);
+                }
+            }
+            vec_map = vec_map_new;
+        }
+        vec_map
     }
 }
 
@@ -194,24 +261,53 @@ impl Knowledge {
                 assert_eq!(name, &"t".to_string());
                 data.get_data_by_name_id(name, 0).unwrap().clone()
             }
-            Exp::VariableId { name, id } => {
-                let res = data.get_data_by_name_id(name, *id);
-                match res {
-                    Ok(data) => data.clone(),
-                    Err(_) => {
-                        let obj = context.get_obj(*id);
+            // Exp::VariableId { name, id } => {
+            // }
+            Exp::VariableIds { name, ids } => {
+                match ids.len() {
+                    0 => {
+                        assert_eq!(name, &"t".to_string());
+                        data.get_data_by_name_id(name, 0).unwrap().clone()
+                    }
+                    1 => {
+                        let id = ids[0];
+                        let res = data.get_data_by_name_id(name, id);
+                        match res {
+                            Ok(data) => data.clone(),
+                            Err(_) => {
+                                let obj = context.get_obj(id);
+                                let expr = self.concepts.get(name).unwrap();
+                                let d = DATA::Mk { obj: obj.obj_type.clone(), name: name.clone() };
+                                match expr {
+                                    Expression::ObjAttrExp { objattrexp } => {
+                                        let objsettings = vec![obj.clone()];
+                                        let expdata = self.eval_objattr(objattrexp, objsettings);
+                                        context.get_mut_expdata().set_data(d, id, expdata.clone());
+                                        expdata
+                                    }
+                                    Expression::TExp { texp } => {
+                                        let expdata = self._eval(&texp.subst(vec![id]), context);
+                                        context.get_mut_expdata().set_data(d, id, expdata.clone());
+                                        expdata
+                                    }
+                                    _ => unimplemented!()
+                                }
+                            }
+                        }
+                    }
+                    _ => {
                         let expr = self.concepts.get(name).unwrap();
-                        let d = DATA::Mk { obj: obj.obj_type.clone(), name: name.clone() };
                         match expr {
                             Expression::ObjAttrExp { objattrexp } => {
-                                let objsettings = vec![obj.clone()];
-                                let expdata = self.eval_objattr(objattrexp, objsettings);
-                                context.get_mut_expdata().set_data(d, *id, expdata.clone());
+                                let mut objs = vec![];
+                                for id in ids.iter() {
+                                    objs.push(context.get_obj(*id).clone());
+                                }
+                                let expdata = self.eval_objattr(objattrexp, objs);
                                 expdata
                             }
                             Expression::TExp { texp } => {
-                                let expdata = self._eval(&texp.subst(vec![*id]), context);
-                                context.get_mut_expdata().set_data(d, *id, expdata.clone());
+                                let expdata = self._eval(&texp.subst(ids.clone()), context);
                                 expdata
                             }
                             _ => unimplemented!()

@@ -374,6 +374,9 @@ impl ExpStructure {
     pub fn get_obj(&self, id: i32) -> &Objstructure {
         self.exp_config.get_obj(id)
     }
+    pub fn get_obj_ids(&self, obj_type: ObjType) -> Vec<i32> {
+        self.exp_config.obj_info_dict.get(&obj_type).unwrap().keys().cloned().collect()
+    }
     pub fn set_obj(&mut self, id: i32, obj: Objstructure) {
         if self.datastructofdata.is_some() {
             self.datastructofdata = None;
