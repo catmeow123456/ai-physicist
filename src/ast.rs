@@ -62,14 +62,22 @@ impl MeasureType {
     }
 }
 
+
 #[pyclass(eq)]
-#[derive(Clone, PartialEq)]
-pub enum Exp {
-    // ExpConfig -> MeasureData -> ExpData
+#[derive(Clone, PartialEq, Eq, Hash)]
+pub enum AtomExp {
     Number {num: i32},
     Variable {name: String},
     VariableId {name: String, id: i32},
     VariableIds {name: String, ids: Vec<i32>},
+}
+
+
+#[pyclass(eq)]
+#[derive(Clone, PartialEq)]
+pub enum Exp {
+    // ExpConfig -> MeasureData -> ExpData
+    Atom {atom: Box<AtomExp>},
     UnaryExp {op: UnaryOp, exp: Box<Exp>},
     BinaryExp {left: Box<Exp>, op: BinaryOp, right: Box<Exp>},
     DiffExp {left: Box<Exp>, right: Box<Exp>, ord: i32},
@@ -86,14 +94,6 @@ impl Exp {
             Exp::Variable {name}
         } else {
             Exp::VariableId {name, id}
-        }
-    }
-    #[staticmethod]
-    pub fn new_variable_ids(name: String, ids: Vec<i32>) -> Self {
-        if ids.len() == 0 {
-            Exp::Variable {name}
-        } else {
-            Exp::VariableIds {name, ids}
         }
     }
     pub fn subst(&self, oid: i32, nid: i32) -> Self{
@@ -254,6 +254,13 @@ impl TExp {
             TExp::Mksucc { objtype:_, texp, id:_ } => texp.substs(sub_dict)
         }
     }
+    pub fn to_atomexp(&self, ids: Vec<i32>) -> AtomExp {
+        let x = self.subst(ids);
+        match x {
+            Exp::Atom {atom} => *atom,
+            _ => panic!("Error: TExp to AtomExp Failed"),
+        }
+    }
 }
 #[pymethods]
 impl TExp {
@@ -373,13 +380,25 @@ pub enum Expression {
     ObjAttrExp {objattrexp: Box<ObjAttrExp>},
 }
 
-impl fmt::Display for Exp {
+#[pymethods]
+impl AtomExp {
+    #[staticmethod]
+    pub fn new_variable_ids(name: String, ids: Vec<i32>) -> Self {
+        if ids.len() == 0 {
+            AtomExp::Variable {name}
+        } else {
+            AtomExp::VariableIds {name, ids}
+        }
+    }
+}
+
+impl fmt::Display for AtomExp {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            Exp::Number {num} => write!(f, "{}", num),
-            Exp::Variable {name} => write!(f, "{}", name),
-            Exp::VariableId {name, id} => write!(f, "{}[{}]", name, id),
-            Exp::VariableIds {name, ids} => {
+            AtomExp::Number {num} => write!(f, "{}", num),
+            AtomExp::Variable {name} => write!(f, "{}", name),
+            AtomExp::VariableId {name, id} => write!(f, "{}[{}]", name, id),
+            AtomExp::VariableIds {name, ids} => {
                 if ids.len() == 0 {
                     write!(f, "{}", name)
                 } else {
@@ -387,6 +406,13 @@ impl fmt::Display for Exp {
                     write!(f, "{}[{}]", name, str_list.join(", "))
                 }
             },
+        }
+    }
+}
+impl fmt::Display for Exp {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            Exp::Atom {atom} => write!(f, "{}", atom),
             Exp::UnaryExp {op, exp} =>
                 match op {
                     UnaryOp::Neg => write!(f, "-{}", exp),

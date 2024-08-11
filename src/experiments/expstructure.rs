@@ -1,5 +1,5 @@
 use pyo3::prelude::*;
-use crate::ast::{MeasureType, TExp, Exp};
+use crate::ast::{AtomExp, Exp, MeasureType, TExp};
 use rand::Rng;
 use rand_distr::{Distribution, Normal};
 use std::{fmt, collections::HashMap};
@@ -100,7 +100,7 @@ impl fmt::Display for Objstructure {
 pub struct DataStructOfDoExperiment {
     n: usize,
     obj_id_map: HashMap<String, (ObjType, i32)>,
-    data: HashMap<(DATA, i32), Array1<f64>>,
+    data: HashMap<AtomExp, Array1<f64>>,
 }
 impl DataStructOfDoExperiment {
     fn new(n: usize,
@@ -112,12 +112,15 @@ impl DataStructOfDoExperiment {
             data: HashMap::new(),
         }
     }
-    pub fn add_data(&mut self, name: &str, data_name: &DATA, data: &Array1<f64>) {
+    pub fn add_data(&mut self, key: (TExp, Vec<String>), data: &Array1<f64>) {
         assert_eq!(data.len(), self.n);
-        let obj_id = self.obj_id_map.get(name).unwrap().1;
-        self.data.insert((data_name.clone(), obj_id), data.clone());
+        let mut obj_ids = vec![];
+        for obj_name in key.1.iter() {
+            obj_ids.push(self.obj_id_map.get(obj_name).unwrap().1);
+        }
+        self.data.insert(key.0.to_atomexp(obj_ids), data.clone());
     }
-    fn get_data(&self) -> &HashMap<(DATA, i32), Array1<f64>> {
+    fn get_data(&self) -> &HashMap<AtomExp, Array1<f64>> {
         &self.data
     }
 }
@@ -150,40 +153,30 @@ impl MeasureType {
 #[pyclass]
 #[derive(Clone)]
 pub struct DataStruct {
-    data: HashMap<Exp, ExpData>,
+    data: HashMap<AtomExp, ExpData>,
 }
 impl DataStruct {
-    pub fn new(data: HashMap<Exp, ExpData>) -> Self {
+    pub fn new(data: HashMap<AtomExp, ExpData>) -> Self {
         DataStruct {
             data
         }
     }
-    pub fn set_data(&mut self, exp: Exp, expdata: ExpData) {
-        self.data.insert(exp, expdata);
+    pub fn set_data(&mut self, atom: AtomExp, expdata: ExpData) {
+        self.data.insert(atom, expdata);
     }
-    pub fn reset_data(&mut self, exp: Exp) {
-        self.data.remove(&exp);
+    pub fn reset_data(&mut self, atom: AtomExp) {
+        self.data.remove(&atom);
     }
-    pub fn get_data(&self) -> &HashMap<Exp, ExpData> {
+    pub fn get_data(&self) -> &HashMap<AtomExp, ExpData> {
         &self.data
     }
-    pub fn get_data_by_key(&self, data: DATA, id: i32) -> Result<&ExpData, String> {
-        for ((data_, id_), value) in self.data.iter() {
-            if *data_ == data && *id_ == id {
-                return Ok(value);
-            }
+    pub fn get_data_by_key(&self, atom: AtomExp) -> Result<&ExpData, String> {
+        match self.data.get(&atom) {
+            Some(value) => Ok(value),
+            None => Err(format!("Data {} not found", atom)),
         }
-        Err(format!("Data {} not found", data.name()))
     }
-    pub fn get_data_by_name_id(&self, name: &str, id: i32) -> Result<&ExpData, String> {
-        for ((data, id_), value) in self.data.iter() {
-            if data.name() == name && *id_ == id {
-                return Ok(value);
-            }
-        }
-        Err(format!("Data {} not found", name))
-    }
-    pub fn iter(&self) -> std::collections::hash_map::Iter<(DATA, i32), ExpData> {
+    pub fn iter(&self) -> std::collections::hash_map::Iter<AtomExp, ExpData> {
         self.data.iter()
     }
 }
@@ -192,14 +185,9 @@ impl fmt::Display for DataStruct {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "[DataStruct] data:").unwrap();
         for key in self.data.keys() {
-            if key.1 == 0 {
-                write!(f, " {},", key.0).unwrap();
-            } else {
-                write!(f, " {}[{}],", key.0, key.1).unwrap();
-            }
+            write!(f, "{},", key)?;
         }
-        write!(f, ".").unwrap();
-        Result::Ok(())
+        write!(f, ".")
     }
 }
 

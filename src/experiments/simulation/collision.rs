@@ -54,9 +54,9 @@ pub fn struct_collision() -> ExpStructure {
         let data_x1: Array1<f64> = t.mapv(|t| if t < t_collision {x1 + v1 * t} else {x1 + v1 * t_collision + vn1 * (t - t_collision)});
         let data_x2: Array1<f64> = t.mapv(|t| if t < t_collision {x2 + v2 * t} else {x2 + v2 * t_collision + vn2 * (t - t_collision)});
         let mut data_struct = exp_config.create_data_struct_of_do_experiment(t_num);
-        data_struct.add_data("Clock", &DATA::time(), &add_errors(&t, error));
-        data_struct.add_data("MPa", &DATA::posx(), &add_errors(&data_x1, error));
-        data_struct.add_data("MPb", &DATA::posx(), &add_errors(&data_x2, error));
+        data_struct.add_data((DATA::time(), vec![r!("Clock")]), &add_errors(&t, error));
+        data_struct.add_data((DATA::posx(), vec![r!("MPa")]), &add_errors(&data_x1, error));
+        data_struct.add_data((DATA::posx(), vec![r!("MPb")]), &add_errors(&data_x2, error));
         data_struct
     };
     ExpStructure::new(exp_config, do_experiment)

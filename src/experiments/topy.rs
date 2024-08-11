@@ -2,7 +2,7 @@ use pyo3::prelude::*;
 use std::collections::HashMap;
 use std::hash::{DefaultHasher, Hash, Hasher};
 
-use crate::ast::MeasureType;
+use crate::ast::{MeasureType, TExp};
 use super::objects::obj::{ObjType, DATA, ATTR};
 use super::expdata::ExpData;
 use super::expstructure::{ExpStructure, Parastructure, Objstructure, ExpConfig, DataStructOfExpData, DataStruct};
@@ -108,7 +108,9 @@ impl ATTR {
 #[pymethods]
 impl ExpConfig {
     #[new]
-    fn __new__(name: &str, spdim: usize, exp_para: HashMap<String, Parastructure>, obj_info: HashMap<String, Objstructure>, data_info: HashMap<String, Vec<DATA>>) -> Self {
+    fn __new__(name: &str, spdim: usize, exp_para: HashMap<String, Parastructure>,
+               obj_info: HashMap<String, Objstructure>,
+               data_info: Vec<(TExp, Vec<String>)>) -> Self {
         ExpConfig::new(name.to_string(), spdim, exp_para, obj_info, data_info)
     }
 }
