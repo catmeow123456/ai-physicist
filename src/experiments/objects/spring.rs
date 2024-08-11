@@ -1,3 +1,5 @@
+use crate::r;
+use crate::ast::TExp;
 use std::collections::HashMap;
 use crate::experiments::expstructure::{
     Parastructure, Objstructure
@@ -29,6 +31,6 @@ impl ATTR {
     pub fn freel() -> Self { ATTR::new(Spring, "freel") }
 }
 impl DATA {
-    pub fn posl() -> Self { DATA::new(Spring, "posl") }
-    pub fn posr() -> Self { DATA::new(Spring, "posr") }
+    pub fn posl() -> TExp { DATA::data(vec![r!("Spring")], r!("posl")) }
+    pub fn posr() -> TExp { DATA::data(vec![r!("Spring")], r!("posr")) }
 }

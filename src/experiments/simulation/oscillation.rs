@@ -25,11 +25,12 @@ pub fn struct_oscillation() -> ExpStructure {
         (r!("SPb"), default_spring_struct),
         (r!("Clock"), Objstructure::clock()),
     ]);
-    let data_info = HashMap::from([
-        (r!("MPa"), vec![DATA::posx()]),
-        (r!("SPb"), vec![DATA::posl(), DATA::posr()]),
-        (r!("Clock"), vec![DATA::time()]),
-    ]);
+    let data_info = vec![
+        (DATA::posx(), vec![r!("MPa")]),
+        (DATA::posl(), vec![r!("SPb")]),
+        (DATA::posr(), vec![r!("SPb")]),
+        (DATA::time(), vec![r!("Clock")]),
+    ];
     let exp_config = ExpConfig::new(name, spdim, exp_para, obj_info, data_info);
     let do_experiment: DoExpType = |t_end: f64, t_num: usize, error: f64, exp_config: &ExpConfig| {
         let x1 = exp_config.para("posl");
@@ -48,10 +49,10 @@ pub fn struct_oscillation() -> ExpStructure {
             &sp2_l - sp2_length_value + (v2 / omega) * (omega * &t).mapv(|x| x.sin()) + (x2 - x1 + sp2_length_value) * (omega * &t).mapv(|x| x.cos())
         };
         let mut data_struct = exp_config.create_data_struct_of_do_experiment(t_num);
-        data_struct.add_data("Clock", &DATA::time(), &add_errors(&t, error));
-        data_struct.add_data("MPa", &DATA::posx(), &add_errors(&sp2_r, error));
-        data_struct.add_data("SPb", &DATA::posr(), &add_errors(&sp2_r, error));
-        data_struct.add_data("SPb", &DATA::posl(), &add_errors(&sp2_l, error));
+        data_struct.add_data((DATA::time(), vec![r!("Clock")]), &add_errors(&t, error));
+        data_struct.add_data((DATA::posx(), vec![r!("MPa")]), &add_errors(&sp2_r, error));
+        data_struct.add_data((DATA::posr(), vec![r!("SPb")]), &add_errors(&sp2_r, error));
+        data_struct.add_data((DATA::posl(), vec![r!("SPb")]), &add_errors(&sp2_l, error));
         data_struct
     };
     ExpStructure::new(exp_config, do_experiment)

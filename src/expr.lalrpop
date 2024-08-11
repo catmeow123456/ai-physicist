@@ -43,8 +43,7 @@ MeasureType: Box<MeasureType> = {
 }
 
 PrimaryExp: Box<Exp> = {
-  <atom: AtomExp> => <>,
-  <exp: Identid> => <>,
+  <atom: AtomExp> => Box::new(Exp::Atom{ <> }),
   "(" <exp: Exp> ")" => <>,
 }
 
@@ -59,9 +58,9 @@ PowExp: Box<Exp> = {
     Box::new(Exp::DiffExp{ left: left, right: right, ord: ord })
   },
   <primaryexp: PrimaryExp> "'" =>
-    Box::new(Exp::DiffExp{ left: primaryexp, right: Box::new(Exp::Variable{ name: "t".to_string() }), ord: 1 }),
+    Box::new(Exp::DiffExp{ left: primaryexp, right: Box::new(Exp::get_t()), ord: 1 }),
   <primaryexp: PrimaryExp> "''" =>
-    Box::new(Exp::DiffExp{ left: primaryexp, right: Box::new(Exp::Variable{ name: "t".to_string() }), ord: 2 }),
+    Box::new(Exp::DiffExp{ left: primaryexp, right: Box::new(Exp::get_t()), ord: 2 }),
 }
 
 UnaryExp: Box<Exp> = {
@@ -95,11 +94,7 @@ WithExp: Box<Exp> = {
 AtomExp: Box<AtomExp> = {
   <num: Number> => Box::new(AtomExp::Number{ <> }),
   <name: Ident> => Box::new(AtomExp::Variable{ <> }),
-}
-
-Identid: Box<Exp> = {
-  // <name: Ident>"["<id: Number>"]" => Box::new(Exp::VariableId{ <> }),
-  <name: Ident>"["<ids: IntVecConst>"]" => Box::new(Exp::VariableIds{ <> }),
+  <name: Ident>"["<ids: IntVecConst>"]" => Box::new(AtomExp::VariableIds{ <> }),
 }
 
 Number: i32 = <num: IntConst> => <>;

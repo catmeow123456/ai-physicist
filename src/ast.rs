@@ -1,3 +1,4 @@
+use crate::r;
 use std::fmt::{self};
 use std::collections::{HashMap, HashSet};
 use pyo3::prelude::*;
@@ -68,7 +69,6 @@ impl MeasureType {
 pub enum AtomExp {
     Number {num: i32},
     Variable {name: String},
-    VariableId {name: String, id: i32},
     VariableIds {name: String, ids: Vec<i32>},
 }
 
@@ -89,36 +89,25 @@ impl Exp {
         format!("{}", self)
     }
     #[staticmethod]
-    pub fn new_variable(name: String, id: i32) -> Self {
-        if id == 0 {
-            Exp::Variable {name}
+    pub fn new_variable(name: String) -> Self {
+        Exp::Atom {atom: Box::new(AtomExp::new_variable(name))}
+    }
+    #[staticmethod]
+    pub fn get_t() -> Self {
+        Exp::Atom {atom: Box::new(AtomExp::get_t()) }
+    }
+    #[staticmethod]
+    pub fn new_variable_ids(name: String, ids: Vec<i32>) -> Self {
+        if ids.len() == 0 {
+            Exp::Atom {atom: Box::new(AtomExp::Variable {name})}
         } else {
-            Exp::VariableId {name, id}
+            Exp::Atom {atom: Box::new(AtomExp::VariableIds {name, ids})}
         }
     }
     pub fn subst(&self, oid: i32, nid: i32) -> Self{
         match self {
-            Exp::Number {num} => Exp::Number {num: *num},
-            Exp::Variable {name} => Exp::Variable {name: name.clone()},
-            Exp::VariableId {name, id} => {
-                if *id == oid {
-                    Exp::VariableId {name: name.clone(), id: nid}
-                } else {
-                    self.clone()
-                }
-            }
-            Exp::VariableIds { name, ids } => {
-                let ids = ids.clone();
-                let mut res = Vec::new();
-                for id in ids.iter() {
-                    if *id == oid {
-                        res.push(nid);
-                    } else {
-                        res.push(*id);
-                    }
-                }
-                Exp::VariableIds {name: name.clone(), ids: res}
-            }
+            Exp::Atom { atom } =>
+                Exp::Atom {atom: Box::new(atom.subst(oid, nid))},
             Exp::UnaryExp {op, exp} =>
                 Exp::UnaryExp {op: op.clone(), exp: Box::new(exp.subst(oid, nid))},
             Exp::BinaryExp {left, op, right} =>
@@ -132,8 +121,7 @@ impl Exp {
     }
     pub fn get_allids(&self) -> HashSet<i32> {
         match self {
-            Exp::VariableId { name:_, id} => HashSet::from([*id]),
-            Exp::VariableIds { name:_, ids } => HashSet::from_iter(ids.iter().cloned()),
+            Exp::Atom { atom } => atom.get_allids(),
             Exp::UnaryExp { op:_, exp} => exp.get_allids(),
             Exp::BinaryExp { left, op:_, right} => {
                 let left = left.get_allids();
@@ -148,33 +136,14 @@ impl Exp {
                 res
             },
             Exp::ExpWithMeasureType {exp, measuretype:_} => exp.get_allids(),
-            Exp::Number { num:_ } => HashSet::new(),
-            Exp::Variable { name:_ } => HashSet::new(),
         }
     }
 }
 impl Exp {
     pub fn substs(&self, sub_dict: &HashMap<i32, i32>) -> Self {
         match self {
-            Exp::Number {num} => Exp::Number {num: *num},
-            Exp::Variable {name} => Exp::Variable {name: name.clone()},
-            Exp::VariableId {name, id} => {
-                match sub_dict.get(id) {
-                    Some(nid) => Exp::VariableId {name: name.clone(), id: *nid},
-                    None => self.clone(),
-                }
-            }
-            Exp::VariableIds {name, ids} => {
-                let ids = ids.clone();
-                let mut res = Vec::new();
-                for id in ids.iter() {
-                    match sub_dict.get(id) {
-                        Some(nid) => res.push(*nid),
-                        None => res.push(*id),
-                    }
-                }
-                Exp::VariableIds {name: name.clone(), ids: res}
-            }
+            Exp::Atom { atom } =>
+                Exp::Atom {atom: Box::new(atom.substs(sub_dict.clone()))},
             Exp::UnaryExp {op, exp} =>
                 Exp::UnaryExp {op: op.clone(), exp: Box::new(exp.substs(sub_dict))},
             Exp::BinaryExp {left, op, right} => {
@@ -390,6 +359,76 @@ impl AtomExp {
             AtomExp::VariableIds {name, ids}
         }
     }
+    #[staticmethod]
+    pub fn new_variable(name: String) -> Self {
+        AtomExp::Variable {name}
+    }
+    #[staticmethod]
+    pub fn get_t() -> Self {
+        AtomExp::VariableIds { name: r!("t"), ids: vec![0] }
+    }
+    pub fn get_name(&self) -> String {
+        match self {
+            AtomExp::Number {num:_} => "".to_string(),
+            AtomExp::Variable {name} => name.clone(),
+            AtomExp::VariableIds {name, ids:_} => name.clone(),
+        }
+    }
+    pub fn get_vec_ids(&self) -> Vec<i32> {
+        match self {
+            AtomExp::Number {num:_} => vec![],
+            AtomExp::Variable {name:_} => vec![],
+            AtomExp::VariableIds {name:_, ids} => ids.clone(),
+        }
+    }
+    pub fn get_allids(&self) -> HashSet<i32> {
+        match self {
+            AtomExp::Number {num:_} => HashSet::new(),
+            AtomExp::Variable {name:_} => HashSet::new(),
+            AtomExp::VariableIds {name:_ , ids} => {
+                let mut res = HashSet::new();
+                for id in ids.iter() {
+                    res.insert(*id);
+                }
+                res
+            },
+        }
+    }
+    pub fn subst(&self, oid: i32, nid: i32) -> Self {
+        match self {
+            AtomExp::Number {num} => AtomExp::Number {num: *num},
+            AtomExp::Variable {name} => AtomExp::Variable {name: name.clone()},
+            AtomExp::VariableIds {name, ids} => {
+                let ids = ids.clone();
+                let mut res = Vec::new();
+                for id in ids.iter() {
+                    if *id == oid {
+                        res.push(nid);
+                    } else {
+                        res.push(*id);
+                    }
+                }
+                AtomExp::VariableIds {name: name.clone(), ids: res}
+            }
+        }
+    }
+    pub fn substs(&self, sub_dict: HashMap<i32, i32>) -> Self {
+        match self {
+            AtomExp::Number {num} => AtomExp::Number {num: *num},
+            AtomExp::Variable {name} => AtomExp::Variable {name: name.clone()},
+            AtomExp::VariableIds {name, ids} => {
+                let ids = ids.clone();
+                let mut res = Vec::new();
+                for id in ids.iter() {
+                    match sub_dict.get(id) {
+                        Some(nid) => res.push(*nid),
+                        None => res.push(*id),
+                    }
+                }
+                AtomExp::VariableIds {name: name.clone(), ids: res}
+            }
+        }
+    }
 }
 
 impl fmt::Display for AtomExp {
@@ -397,7 +436,6 @@ impl fmt::Display for AtomExp {
         match self {
             AtomExp::Number {num} => write!(f, "{}", num),
             AtomExp::Variable {name} => write!(f, "{}", name),
-            AtomExp::VariableId {name, id} => write!(f, "{}[{}]", name, id),
             AtomExp::VariableIds {name, ids} => {
                 if ids.len() == 0 {
                     write!(f, "{}", name)

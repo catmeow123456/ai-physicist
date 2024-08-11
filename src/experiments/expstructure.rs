@@ -1,12 +1,11 @@
 use pyo3::prelude::*;
-use crate::ast::{AtomExp, Exp, MeasureType, TExp};
+use crate::ast::{AtomExp, MeasureType, TExp};
 use rand::Rng;
 use rand_distr::{Distribution, Normal};
 use std::{fmt, collections::HashMap};
 use ndarray::{ArrayBase, Array1, Array2, Dimension, OwnedRepr};
 use super::expdata::ExpData;
 use super::objects::obj::{ObjType, ATTR};
-use super::objects::obj::DATA;
 
 pub type DoExpType = fn(f64,usize,f64,&ExpConfig) -> DataStructOfDoExperiment;
 
@@ -116,7 +115,14 @@ impl DataStructOfDoExperiment {
         assert_eq!(data.len(), self.n);
         let mut obj_ids = vec![];
         for obj_name in key.1.iter() {
-            obj_ids.push(self.obj_id_map.get(obj_name).unwrap().1);
+            let id = self.obj_id_map.get(obj_name).unwrap().1;
+            // let ref obj_type = self.obj_id_map.get(obj_name).unwrap().0;
+            // if id == 0 {
+            //     assert_eq!(*obj_type, ObjType::Clock);
+            //     assert_eq!(key.1.len(), 1);
+            //     continue;
+            // }
+            obj_ids.push(id);
         }
         self.data.insert(key.0.to_atomexp(obj_ids), data.clone());
     }
@@ -170,9 +176,9 @@ impl DataStruct {
     pub fn get_data(&self) -> &HashMap<AtomExp, ExpData> {
         &self.data
     }
-    pub fn get_data_by_key(&self, atom: AtomExp) -> Result<&ExpData, String> {
-        match self.data.get(&atom) {
-            Some(value) => Ok(value),
+    pub fn get_data_by_key(&self, atom: &AtomExp) -> Result<ExpData, String> {
+        match self.get_data().get(&atom) {
+            Some(value) => Ok(value.clone()),
             None => Err(format!("Data {} not found", atom)),
         }
     }
@@ -206,17 +212,14 @@ impl DataStructOfExpData {
             data
         }
     }
-    pub fn set_data(&mut self, data: DATA, id: i32, expdata: ExpData) {
-        self.data.set_data(data, id, expdata);
+    pub fn set_data(&mut self, atom: AtomExp, expdata: ExpData) {
+        self.data.set_data(atom, expdata);
     }
     pub fn get_data(&self) -> &DataStruct {
         &self.data
     }
-    pub fn get_t(&self) -> &ExpData {
-        self.data.get_data_by_key(DATA::time(), 0).unwrap()
-    }
-    pub fn get_data_by_name_id(&self, name: &str, id: i32) -> Result<&ExpData, String> {
-        self.data.get_data_by_name_id(name, id)
+    pub fn get_t(&self) -> ExpData {
+        self.data.get_data_by_key(&AtomExp::get_t()).unwrap()
     }
     pub fn plot_expdata(&self, name: &str) {
         // plot the arr
@@ -226,7 +229,7 @@ impl DataStructOfExpData {
         for ith in 0..repeat_time {
             let t= t.data.row(ith).to_vec();
             for (key, value) in self.data.iter() {
-                if key.0 == DATA::time() {
+                if key.get_name() == "t" {
                     continue;
                 }
                 let x = value.data.row(ith).to_vec();
@@ -392,7 +395,7 @@ impl ExpStructure {
         let error = measuretype.error();
         let data_struct = doexp(t_end, t_num, 0.0, &self.exp_config);
         let data = data_struct.get_data();
-        let mut multi_data: HashMap<(DATA, i32), ExpData> = HashMap::new();
+        let mut multi_data: HashMap<AtomExp, ExpData> = HashMap::new();
         for (name, data) in data.iter() {
             let mut idata: Array2<f64> = Array2::zeros((repeat_time, t_num));
             for i in 0..repeat_time {

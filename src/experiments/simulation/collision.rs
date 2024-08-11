@@ -32,11 +32,11 @@ pub fn struct_collision() -> ExpStructure {
         (r!("MPb"), default_mass_struct),
         (r!("Clock"), Objstructure::clock()),
     ]);
-    let data_info = Vec::from([
+    let data_info = vec![
         (DATA::posx(), vec![r!("MPa")]),
         (DATA::posx(), vec![r!("MPb")]),
         (DATA::time(), vec![r!("Clock")]),
-    ]);
+    ];
     let exp_config = ExpConfig::new(name, spdim, exp_para, obj_info, data_info);
     let do_experiment: DoExpType = |t_end: f64, t_num: usize, error: f64, exp_config: &ExpConfig| {
         let x1 = exp_config.para("x1");

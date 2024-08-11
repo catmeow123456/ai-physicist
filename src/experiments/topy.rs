@@ -2,7 +2,7 @@ use pyo3::prelude::*;
 use std::collections::HashMap;
 use std::hash::{DefaultHasher, Hash, Hasher};
 
-use crate::ast::{MeasureType, TExp};
+use crate::ast::{AtomExp, MeasureType, TExp};
 use super::objects::obj::{ObjType, DATA, ATTR};
 use super::expdata::ExpData;
 use super::expstructure::{ExpStructure, Parastructure, Objstructure, ExpConfig, DataStructOfExpData, DataStruct};
@@ -62,22 +62,17 @@ impl DataStruct {
         format!("{}", self)
     }
     fn fetch_data(&self, name: &str, id: i32) -> Option<ExpData> {
-        for ((data, data_id), value) in self.iter() {
-            if *data.name() == name.to_string() && *data_id == id {
-                return Some(value.clone());
-            }
-        }
-        None
+        self.get_data().get(&AtomExp::new_variable_ids(name.to_string(), vec![id])).cloned()
     }
     #[staticmethod]
     fn empty() -> Self {
         DataStruct::new(HashMap::new())
     }
-    fn add_data(&mut self, data: DATA, data_id: i32, expdata: ExpData) {
-        self.set_data(data, data_id, expdata);
+    fn add_data(&mut self, atom: AtomExp, expdata: ExpData) {
+        self.set_data(atom, expdata);
     }
-    fn remove_data(&mut self, data: DATA, data_id: i32) {
-        self.reset_data(data, data_id);
+    fn remove_data(&mut self, atom: AtomExp) {
+        self.reset_data(atom);
     }
 }
 

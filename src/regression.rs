@@ -7,9 +7,9 @@ use crate::knowledge::apply_binary_op;
 #[pyfunction]
 pub fn search_relations(fn_list: &DataStruct) -> Vec<(Exp, ExpData)> {
     let mut list: Vec<(Exp, ExpData)> = vec![];
-    for ((data, id), value) in fn_list.iter() {
+    for (atom, value) in fn_list.iter() {
         if !value.is_conserved() {
-            list.push((Exp::new_variable(data.name().clone(), *id), value.clone()));
+            list.push((Exp::Atom { atom: Box::new(atom.clone()) }, value.clone()));
         }
     }
     search_relations_aux(&list)

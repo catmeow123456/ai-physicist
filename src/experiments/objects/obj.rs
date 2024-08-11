@@ -1,5 +1,4 @@
 use pyo3::prelude::*;
-use crate::ast::AtomExp;
 #[pyclass(eq, eq_int)]
 #[derive(Clone, PartialEq, Eq, Hash, Debug)]
 pub enum ObjType {
@@ -92,10 +91,13 @@ impl fmt::Display for ATTR {
 
 use crate::ast::{Exp, TExp};
 impl DATA{
+    pub fn data_global(name: String) -> TExp {
+        TExp::Mk0 { exp: Box::new(Exp::new_variable(name)) }
+    }
     pub fn data(obj_types: Vec<String>, name: String) -> TExp {
         let n = obj_types.len();
-        let atom = AtomExp::new_variable_ids(name, (1..(n+1)).map(|x| x as i32).collect());
-        let mut texp = TExp::Mk0 { exp: Box::new(Exp::Atom { atom: Box::new(atom) }) };
+        let atom = Exp::new_variable_ids(name, (1..(n+1)).map(|x| x as i32).collect());
+        let mut texp = TExp::Mk0 { exp: Box::new(atom) };
         for i in 0..n {
             texp = TExp::Mksucc { objtype: obj_types[i].clone(), texp: Box::new(texp), id: i as i32+1 }
         }
