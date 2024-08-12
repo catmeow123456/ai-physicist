@@ -340,18 +340,23 @@ impl ExpData {
         let mut comparedata: Array2<f64> = Array::zeros((self.repeat_time, self.n));
         let mean: Array1<f64> = self.mean();
         let std: Array1<f64> = self.std();
+        for x in self.badpts.iter() {
+            for j in 0..self.repeat_time {
+                data[[j,*x]] = NAN;
+            }
+        }
         for (x, y) in self.gen_domain() {
-            if self.is_conserved_slice(x, y) {
-                for i in x..y {
-                    for j in 0..self.repeat_time {
-                        data[[j,i]] = 0.;
-                    }
-                }
-            } else
             if x as i32 > y as i32 - 10 {
                 for i in x..y {
                     for j in 0..self.repeat_time {
                         data[[j,i]] = NAN;
+                    }
+                }
+            } else
+            if self.is_conserved_slice(x, y) {
+                for i in x..y {
+                    for j in 0..self.repeat_time {
+                        data[[j,i]] = 0.;
                     }
                 }
             } else {
