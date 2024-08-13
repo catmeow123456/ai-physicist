@@ -31,9 +31,15 @@ pub SExp: Box<SExp> = {
   <expconfig: ExpConfig> "|-" <exp: Exp> => Box::new(SExp::Mk{ <> }),
 }
 pub TExp: Box<TExp> = {
-  // "(" <id:Number> "->" <objtype:Ident> ")" "|-" <exp: Exp> => Box::new(TExp::Mk{ <> }),
   "|-" <exp: Exp> => Box::new(TExp::Mk0{ <> }),
-  "(" <id:Number> "->" <objtype:Ident> ")" <texp: TExp> => Box::new(TExp::Mksucc{ <> }),
+  // "(" <id:Number> "->" <objtype:Ident> ")" <texp: TExp> => Box::new(TExp::Mksucc{ <> }),
+  <inttoidentvec: IntToIdentVec> "|-" <exp: Exp> => {
+    let mut texp = TExp::Mk0{ exp };
+    for (id, objtype) in inttoidentvec {
+      texp = TExp::Mksucc{ id, objtype, texp: Box::new(texp) };
+    }
+    Box::new(texp)
+  },
 }
 
 
@@ -102,6 +108,19 @@ Number: i32 = <num: IntConst> => <>;
 // 如果匹配到标识符, 就返回这个字符串
 // 一对尖括号在此处指代的是正则表达式匹配到的字符串 (&str)
 Ident: String = r"[_a-zA-Z][_a-zA-Z0-9]*" => <>.to_string();
+
+IntToIdent: (i32, String) = {
+  "(" <id:IntConst> "->" <objtype:Ident> ")" => (id, objtype),
+}
+
+IntToIdentVec: Vec<(i32, String)> = {
+  <inttoident: IntToIdent> => vec![<>],
+  <inttoidentvec: IntToIdentVec> <inttoident: IntToIdent> => {
+    let mut inttoidentvec = inttoidentvec;
+    inttoidentvec.push(inttoident);
+    inttoidentvec
+  },
+}
 
 IntVecConst: Vec<i32> = {
   <num: IntConst> => vec![<>],

@@ -274,12 +274,14 @@ impl ExpConfig {
         hash_vec.sort_by(|a, b| (a.0).cmp(b.0));
         for (name, obj) in hash_vec.iter() {
             let obj_type = obj.obj_type.clone();
-            if obj_type == ObjType::Clock {
-                continue;
-            }
-            let obj_id = obj_id_map.len() as i32;
-            obj_id_map.insert((*name).clone(), (obj_type.clone(), obj_id));
-            obj_name_map.insert(obj_id, (obj_type.clone(), (*name).clone()));
+            let obj_id = if obj_type == ObjType::Clock {
+                0
+            } else {
+                let id = obj_id_map.len() as i32;
+                obj_id_map.insert((*name).clone(), (obj_type.clone(), id));
+                obj_name_map.insert(id, (obj_type.clone(), (*name).clone()));
+                id
+            };
             if !obj_info_dict.contains_key(&obj.obj_type) {
                 obj_info_dict.insert(obj_type, HashMap::new());
             }

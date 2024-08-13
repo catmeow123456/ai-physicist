@@ -9,6 +9,18 @@ impl Expression {
     fn __str__(&self) -> String {
         format!("{}", self)
     }
+    fn unwrap_texp(&self) -> TExp {
+        match self {
+            Expression::TExp {texp} => *texp.clone(),
+            _ => panic!("Not a TExp"),
+        }
+    }
+    fn unwrap_sexp(&self) -> SExp {
+        match self {
+            Expression::SExp {sexp} => *sexp.clone(),
+            _ => panic!("Not a SExp"),
+        }
+    }
 }
 
 // Function for parsing a string into an expression

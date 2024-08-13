@@ -213,6 +213,7 @@ impl TExp {
                 let nid = idlist.pop().unwrap();
                 let ref texp = **texp;
                 sub_dict.insert(*id, nid);
+                // println!("debug {} {}", id, nid);
                 texp._subst(idlist, sub_dict)
             }
         }
@@ -476,10 +477,10 @@ impl fmt::Display for SExp {
 impl TExp {
     fn _aux_print(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            TExp::Mk0 {exp:_} => write!(f, "|-"),
+            TExp::Mk0 {exp:_} => Ok(()),
             TExp::Mksucc {objtype, texp, id} => {
-                write!(f, "({}->{}) ", id, objtype)?;
-                texp._aux_print(f)
+                texp._aux_print(f)?;
+                write!(f, "({}->{}) ", id, objtype)
             },
         }
     }
@@ -487,7 +488,7 @@ impl TExp {
 impl fmt::Display for TExp {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         self._aux_print(f)?;
-        write!(f, " {}", self.get_exp())
+        write!(f, "|- {}", self.get_exp())
     }
 }
 impl fmt::Display for IExpConfig {

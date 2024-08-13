@@ -168,9 +168,9 @@ impl Knowledge {
             id_objtype_map.insert(*j, obj.obj_type.to_string());
         }
         let mut texp_res = TExp::Mk0 { exp: Box::new(nexp) };
-        for i in (1..(n+1)).rev() {
-            // println!("--{}, ", i);
+        for i in 1..(n+1) {
             let objtype = id_objtype_map.get(&(i as i32)).unwrap();
+            // println!("--({}->{}), ", i, objtype);
             texp_res = TExp::Mksucc {
                 objtype: objtype.clone(),
                 texp: Box::new(texp_res),
