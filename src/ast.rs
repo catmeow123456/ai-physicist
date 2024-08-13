@@ -88,6 +88,12 @@ impl Exp {
     fn __str__(&self) -> String {
         format!("{}", self)
     }
+    fn unwrap_atom(&self) -> AtomExp {
+        match self {
+            Exp::Atom {atom} => *atom.clone(),
+            _ => panic!("Error: unwrap_atom failed"),
+        }
+    }
     #[staticmethod]
     pub fn new_variable(name: String) -> Self {
         Exp::Atom {atom: Box::new(AtomExp::new_variable(name))}
@@ -352,6 +358,9 @@ pub enum Expression {
 
 #[pymethods]
 impl AtomExp {
+    fn __str__(&self) -> String {
+        format!("{}", self)
+    }
     #[staticmethod]
     pub fn new_variable_ids(name: String, ids: Vec<i32>) -> Self {
         if ids.len() == 0 {

@@ -22,7 +22,7 @@ s.random_settings()
 s.collect_expdata(MeasureType.default())
 theorist.eval("MP1[1]", s)
 print(str(s.data_info()))
-res = search_relations(s.data_info()) 
+res = search_relations(s.data_info())
 print(res)
 
 texp = sentence.parse("(1->MassPoint)(2->MassPoint)|-posx[1]-posx[2]")

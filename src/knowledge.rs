@@ -56,6 +56,9 @@ impl Knowledge {
     fn fetch_concepts(&self) -> HashMap<String, Expression> {
         self.concepts.clone()
     }
+    fn fetch_concept_by_name(&self, name: String) -> Expression {
+        self.concepts.get(&name).unwrap().clone()
+    }
     fn register_object(&mut self, name: String, obj: Objstructure) {
         self.objects.insert(name, obj);
     }
@@ -188,7 +191,7 @@ impl Knowledge {
         }
         res
     }
-    pub fn specialize_concept(&self, concept_name: String, exp_name: String) -> Vec<Exp> {
+    pub fn specialize_concept(&self, concept_name: String, exp_name: String) -> Vec<AtomExp> {
         let concept = self.concepts.get(&concept_name).unwrap();
         match concept {
             Expression::ObjAttrExp { objattrexp } => {
@@ -200,7 +203,7 @@ impl Knowledge {
                     for id in preids.iter() {
                         ids.push(*dict.get(id).unwrap());
                     }
-                    exp_list.push(Exp::new_variable_ids(concept_name.clone(), ids));
+                    exp_list.push(AtomExp::new_variable_ids(concept_name.clone(), ids));
                 }
                 unimplemented!()
             }
@@ -213,7 +216,7 @@ impl Knowledge {
                     for id in preids.iter() {
                         ids.push(*dict.get(id).unwrap());
                     }
-                    exp_list.push(Exp::new_variable_ids(concept_name.clone(), ids));
+                    exp_list.push(AtomExp::new_variable_ids(concept_name.clone(), ids));
                 }
                 exp_list
             }
