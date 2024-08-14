@@ -49,7 +49,10 @@ impl Knowledge {
         res
     }
     fn list_concepts(&self) {
-        for (name, expression) in self.concepts.iter() {
+        // enumerate self.concepts by order of name
+        let mut vec: Vec<_> = self.concepts.iter().collect();
+        vec.sort_by(|a, b| a.0.cmp(b.0));
+        for (name, expression) in vec.iter() {
             println!("{} {}", name, expression);
         }
     }

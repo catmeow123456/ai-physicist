@@ -39,7 +39,7 @@ class Theorist:
         self.K.register_expression(name, expr)
     def auto_name(self) -> str:
         self.id += 1
-        return f"EXPR{self.id}"
+        return "C_{:02d}".format(self.id)
 
     def generalize(self, exp_name: str, exp: str) -> Expression:
         return Expression.TExp(self.K.generalize(sentence.parse_exp(exp), exp_name))
