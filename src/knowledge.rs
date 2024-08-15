@@ -1,6 +1,7 @@
 use itertools::Itertools;
 use pyo3::prelude::*;
 use std::collections::{HashMap, HashSet};
+use crate::exprcharacter::{KeyState, KeyValueHashed};
 use crate::experiments::objects::obj::ObjType;
 use crate::r;
 use crate::ast::{UnaryOp, BinaryOp, AtomExp, Exp, SExp, TExp, ObjAttrExp, IExpConfig, Expression, MeasureType};
@@ -14,11 +15,16 @@ use crate::experiments::{
     expdata::{ExpData, Diff},
     expstructure::{ExpStructure, Objstructure},
 };
+
 #[pyclass]
 pub struct Knowledge {
     experiments: HashMap<String, ExpStructure>,
-    concepts: HashMap<String, Expression>,
+    pub concepts: HashMap<String, Expression>,
     objects: HashMap<String, Objstructure>,
+    // key is used to calculate the Expr's characteristic value.
+    // to classify wheather two Exprs are the same.
+    // for example, 1 + x and 2x + 1 - x are the same.
+    pub key: KeyState,
 }
 
 #[pymethods]
@@ -34,6 +40,7 @@ impl Knowledge {
             ]),
             concepts: HashMap::new(),
             objects: HashMap::new(),
+            key: KeyState::new(None),
         }
     }
     fn list_experiments(&self) {
@@ -69,6 +76,18 @@ impl Knowledge {
         self.experiments.insert(name, exp);
     }
     fn register_expression(&mut self, name: String, exp: Expression) {
+        match &exp {
+            Expression::TExp { texp } => {
+                let (kv, kvh, subs_dict) = self.eval_concept_keyvaluehashed(&exp);
+                if kvh.is_none() || kvh.is_const() || self.key.contains_key(&kvh) {
+                    return;
+                }
+                let ids: Vec<_> = texp.get_preids().iter().map(|x| *subs_dict.get(&x).unwrap()).collect();
+                let atom = AtomExp::new_variable_ids(name.clone(), ids);
+                self.key.insert(atom, kv, kvh);
+            },
+            _ => ()
+        };
         self.concepts.insert(name, exp);
     }
     fn get_expstruct_pure(&self, name: String) -> ExpStructure {
@@ -138,6 +157,9 @@ impl Knowledge {
                 self._eval(exp0, context)
             }
         }
+    }
+    pub fn eval_expr_key(&mut self, exp: &Expression) -> KeyValueHashed {
+        self.eval_concept_keyvaluehashed(exp).1
     }
     pub fn generalize_sexp(&self, sexp: &SExp) -> TExp {
         match sexp {
@@ -298,11 +320,8 @@ impl Knowledge {
             }
             Exp::UnaryExp { op: UnaryOp::Neg, ref exp } => -self._eval(&*exp, context),
             Exp::UnaryExp { op: UnaryOp::Diff, ref exp } => self._eval(&*exp, context).diff_tau(),
-            Exp::BinaryExp { op: BinaryOp::Add, ref left, ref right } => self._eval(&*left, context) + self._eval(&*right, context),
-            Exp::BinaryExp { op: BinaryOp::Sub, ref left, ref right } => self._eval(&*left, context) - self._eval(&*right, context),
-            Exp::BinaryExp { op: BinaryOp::Mul, ref left, ref right } => self._eval(&*left, context) * self._eval(&*right, context),
-            Exp::BinaryExp { op: BinaryOp::Div, ref left, ref right } => self._eval(&*left, context) / self._eval(&*right, context),
-            Exp::BinaryExp { op: BinaryOp::Pow, ref left, ref right } => self._eval(&*left, context).pow(&self._eval(&*right, context)),
+            Exp::BinaryExp { op, ref left, ref right } => 
+                apply_binary_op(op, &self._eval(&*left, context), &self._eval(&*right, context)).unwrap(),
             Exp::DiffExp { ref left, ref right, ord} =>
                 (&self._eval(&*left, context)).diff_n(&self._eval(&*right, context), *ord as usize),
             _ => unimplemented!()
@@ -310,7 +329,7 @@ impl Knowledge {
     }
 }
 
-pub fn apply_binary_op(op: BinaryOp, valuei: &ExpData, valuej: &ExpData) -> Option<ExpData> {
+pub fn apply_binary_op(op: &BinaryOp, valuei: &ExpData, valuej: &ExpData) -> Option<ExpData> {
     match op {
         BinaryOp::Add => Some(valuei + valuej),
         BinaryOp::Sub => Some(valuei - valuej),

@@ -30,7 +30,7 @@ fn search_relations_aux(list: &Vec<(Exp, ExpData)>) -> Vec<(Exp, ExpData)> {
                     right: Box::new(jd.clone()),
                     op: op.clone()
                 };
-                if let Some(value) = apply_binary_op(op.clone(), valuei, valuej) {
+                if let Some(value) = apply_binary_op(&op, valuei, valuej) {
                     if value.is_conserved() {
                         relation_list.push((exp, value));
                     }
