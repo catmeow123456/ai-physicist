@@ -19,7 +19,9 @@ fn random_mod_ne_zero(p_mod: i32) -> i32 {
         x
     }
 }
-
+const VALUE_LEN: usize = 6;
+const P_MOD: i32 = 1e9 as i32 + 7;
+const DIFF_TIMES: usize = 4;
 pub struct KeyState {
     key_len: usize,
     p_mod: i32,
@@ -31,9 +33,9 @@ impl KeyState {
         Self {
             key_len: match n {
                 Some(n) => n,
-                None => 10
+                None => VALUE_LEN
             },
-            p_mod: 1e9 as i32 + 7,
+            p_mod: P_MOD,
             key: HashMap::new(),
             table: HashMap::new()
         }
@@ -72,9 +74,9 @@ impl KeyState {
         KeyValue::const_value(value, self.key_len, self.p_mod)
     }
 }
-// 默认取 value_len=10 ，p_mod=1e9+7 ，KeyValue 可视作 p_mod 域上的多项式（关于 t 的函数）
+// 默认取 value_len=6 ，p_mod=1e9+7 ，KeyValue 可视作 p_mod 域上的多项式（关于 t 的函数）
 // 那么可以对它做加法、乘法、除法、求导等操作，计算结果是 Expr 的特征值
-// 计算过程中需要保留 value_len+5 次以内的多项式系数，并允许最多 5 次求导。
+// 计算过程中需要保留 value_len+4 次以内的多项式系数，并允许最多 4 次求导。
 #[derive(Clone)]
 pub struct KeyValue {
     value_len: usize,
@@ -109,25 +111,25 @@ impl KeyValueHashed {
 }
 impl KeyValue {
     fn new(value: Vec<i32>, value_len: usize, p_mod: i32, diff_times: usize) -> Self {
-        assert!(diff_times <= 5);
-        assert!(value.len() == value_len + 5 - diff_times);
+        assert!(diff_times <= DIFF_TIMES);
+        assert!(value.len() == value_len + DIFF_TIMES - diff_times);
         Self { value_len, p_mod, value: Some(value), diff_times }
     }
     fn none(value_len: usize, p_mod: i32) -> Self {
         Self { value_len, p_mod, value: None, diff_times: 0 }
     }
     fn get_len(&self) -> usize {
-        self.value_len + 5 - self.diff_times
+        self.value_len + DIFF_TIMES - self.diff_times
     }
     fn const_value(value: i32, value_len: usize, p_mod: i32) -> Self {
         assert!(value >=0 && value < p_mod);
-        let mut v: Vec<i32> = vec![0; value_len+5];
+        let mut v: Vec<i32> = vec![0; value_len+DIFF_TIMES];
         v[0] = random_mod_ne_zero(value);
         Self::new(v, value_len, p_mod, 0)
     }
     fn random_value(value_len: usize, p_mod: i32) -> Self {
         // generate a random vec of key_len length
-        let value: Vec<i32> = (0..(value_len+5)).map(|_| {
+        let value: Vec<i32> = (0..(value_len+DIFF_TIMES)).map(|_| {
             random_mod_ne_zero(p_mod)
         }).collect();
         Self::new(value, value_len, p_mod, 0)
@@ -142,7 +144,7 @@ impl KeyValue {
     }
     fn diff_tau(&self) -> Self {
         if self.value.is_none() { return Self::none(self.value_len, self.p_mod); }
-        if self.diff_times == 5 { return Self::none(self.value_len, self.p_mod); }
+        if self.diff_times == DIFF_TIMES { return Self::none(self.value_len, self.p_mod); }
         let n = self.get_len();
         let mut res = vec![0; n-1];
         let v = self.value.as_ref().unwrap();
@@ -237,7 +239,7 @@ impl Diff for KeyValue {
         assert!(self.p_mod == other.p_mod);
         assert!(self.value_len == other.value_len);
         if self.value.is_none() || other.value.is_none() { return Self::none(self.value_len, self.p_mod); }
-        if self.diff_times == 5 || other.diff_times == 5 { return Self::none(self.value_len, self.p_mod); }
+        if self.diff_times == DIFF_TIMES || other.diff_times == DIFF_TIMES { return Self::none(self.value_len, self.p_mod); }
         let s1 = self.diff_tau();
         let s2 = other.diff_tau();
         s1 / s2
