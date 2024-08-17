@@ -23,3 +23,5 @@ knowledge.print_concepts()
 print("Round 5")
 exp = work_at_exp(knowledge, "oscillation")
 knowledge.print_concepts()
+#%% print conclusions
+knowledge.print_conclusions()

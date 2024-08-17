@@ -5,6 +5,7 @@ import ai_physicist as aiphy
 #   .fetch_concepts()  .list_concepts()  .list_experiments()
 #   .get_expstruct_pure(name: str)
 from ai_physicist import (
+    Proposition,
     Exp,
     SExp,
     TExp,
@@ -25,15 +26,14 @@ from ai_physicist import (
 class Knowledge:
     K: aiphy.Knowledge
     id: int = 0
+    conclusion_id: int = 0
     def default() -> "Knowledge":
         obj = object.__new__(Knowledge)
         obj.K = aiphy.Knowledge.default()
-        obj.id = 0
         return obj
     def empty() -> "Knowledge":
         obj = object.__new__(Knowledge)
         obj.K = aiphy.Knowledge()
-        obj.id = 0
         return obj
     def fetch_exps(self) -> List[str]:
         return self.K.fetch_experiments()
@@ -46,12 +46,22 @@ class Knowledge:
     def eval(self, expr: str, expstruct: ExpStructure) -> ExpData:
         return self.K.eval(sentence.parse_exp(expr), expstruct)
 
-    def register_expr(self, name: str, definition: str):
-        expr = sentence.parse(definition)
+    def register_expr(self, definition: str, name: str = None):
+        if name is None:
+            name = self.auto_name()
+        expr: Expression = sentence.parse(definition)
         self.K.register_expression(name, expr)
+    def register_conclusion(self, definition: str, name: str = None):
+        if name is None:
+            name = self.auto_conclusion_name()
+        prop: Proposition = sentence.parse_proposition(definition)
+        self.K.register_conclusion(name, prop)
     def auto_name(self) -> str:
         self.id += 1
         return "C_{:02d}".format(self.id)
+    def auto_conclusion_name(self) -> str:
+        self.conclusion_id += 1
+        return "R_{:02d}".format(self.conclusion_id)
 
     def generalize(self, exp_name: str, exp: str) -> Expression:
         return Expression.TExp(self.K.generalize(sentence.parse_exp(exp), exp_name))
@@ -63,5 +73,7 @@ class Knowledge:
         return self.K.specialize_concept(concept_name, exp_name)
     def print_concepts(self):
         self.K.list_concepts()
+    def print_conclusions(self):
+        self.K.list_conclusions()
 
 # %%

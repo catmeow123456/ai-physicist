@@ -19,6 +19,12 @@ pub enum Proposition {
     Eq {left: Box<Exp>, right: Box<Exp>},
     Not {prop: Box<Proposition>},
 }
+#[pymethods]
+impl Proposition {
+    fn __str__(&self) -> String {
+        format!("{}", self)
+    }
+}
 
 #[pyclass(eq, eq_int)]
 #[derive(Eq, PartialEq, Clone, Hash)]

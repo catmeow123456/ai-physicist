@@ -1,6 +1,6 @@
-from typing import Dict
+from typing import Dict, List, Tuple
 from interface import Knowledge
-from interface import search_relations, ExpStructure, MeasureType, Exp, AtomExp, ExpData, DataStruct, Expression
+from interface import search_relations, ExpStructure, MeasureType, Proposition, Exp, AtomExp, ExpData, DataStruct, Expression
 
 class Theorist:
     general: Knowledge
@@ -30,8 +30,14 @@ def work_at_exp(knowledge: Knowledge, exp_name: str) -> ExpStructure:
             knowledge.eval(str(i), exp)
     data_info: DataStruct = exp.data_info()
     print(data_info)
-    res: list[tuple[Exp, ExpData]] = search_relations(data_info)
-    for i in res:
-        expr: Expression = knowledge.generalize(exp_name, str(i[0]))
-        knowledge.register_expr(knowledge.auto_name(), str(expr))
+    res: List[Tuple[Exp, ExpData]] = search_relations(data_info)
+    for (expr, expdata) in res:
+        if expdata.is_zero():
+            prop = Proposition.IsZero(expr)
+            knowledge.register_conclusion(str(prop))
+        elif expdata.is_conserved():
+            prop = Proposition.IsConserved(expr)
+            knowledge.register_conclusion(str(prop))
+        expression: Expression = knowledge.generalize(exp_name, str(expr))
+        knowledge.register_expr(str(expression))
     return exp

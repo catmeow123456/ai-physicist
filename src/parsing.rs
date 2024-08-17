@@ -2,7 +2,7 @@ use crate::r;
 use pyo3::prelude::*;
 use lalrpop_util::lalrpop_mod;
 lalrpop_mod!(expr);
-use crate::ast::{Exp, SExp, TExp, ObjAttrExp, Expression};
+use crate::ast::{Proposition, Exp, SExp, TExp, ObjAttrExp, Expression};
 // mod ast;
 
 #[pymethods]
@@ -43,6 +43,12 @@ impl Expression {
             _ => panic!("Not an ObjAttrExp"),
         }
     }
+    fn unwrap_proposition(&self) -> Proposition {
+        match self {
+            Expression::Proposition {prop} => *prop.clone(),
+            _ => panic!("Not a Proposition"),
+        }
+    }
 }
 
 // Function for parsing a string into an expression
@@ -77,6 +83,17 @@ pub fn parse_texp(input: &str) -> PyResult<TExp> {
     let res: Box<TExp> = expr::TExpParser::new().parse(input).unwrap();
     Ok(*res)
 }
+#[pyfunction]
+pub fn parse_objattrexp(input: &str) -> PyResult<ObjAttrExp> {
+    let res: Box<ObjAttrExp> = expr::ObjAttrExpParser::new().parse(input).unwrap();
+    Ok(*res)
+}
+#[pyfunction]
+pub fn parse_proposition(input: &str) -> PyResult<Proposition> {
+    // println!("Parsing proposition: {}", input);
+    let res: Box<Proposition> = expr::PropositionParser::new().parse(input).unwrap();
+    Ok(*res)
+}
 
 
 #[pymodule]
@@ -87,6 +104,8 @@ pub fn register_sentence(m: &Bound<'_, PyModule>) -> PyResult<()> {
     child_module.add_function(wrap_pyfunction!(parse_exp, m)?)?;
     child_module.add_function(wrap_pyfunction!(parse_sexp, m)?)?;
     child_module.add_function(wrap_pyfunction!(parse_texp, m)?)?;
+    child_module.add_function(wrap_pyfunction!(parse_objattrexp, m)?)?;
+    child_module.add_function(wrap_pyfunction!(parse_proposition, m)?)?;
     m.add_submodule(&child_module)?;
     Ok(())
 }

@@ -64,20 +64,29 @@ impl Knowledge {
             println!("{}", name);
         }
     }
+    fn list_concepts(&self) {
+        // enumerate self.concepts by order of name
+        let mut vec: Vec<_> = self.concepts.iter().collect();
+        vec.sort_by(|a, b| a.0.cmp(b.0));
+        for (name, expression) in vec.iter() {
+            println!("{}: {}", name, expression);
+        }
+    }
+    fn list_conclusions(&self) {
+        // enumerate self.concepts by order of name
+        let mut vec: Vec<_> = self.conclusions.iter().collect();
+        vec.sort_by(|a, b| a.0.cmp(b.0));
+        for (name, prop) in vec.iter() {
+            println!("{}: {}", name, prop);
+        }
+    }
+    #[inline]
     fn fetch_experiments(&self) -> Vec<String> {
         let mut res = vec![];
         for (name, _) in self.experiments.iter() {
             res.push(name.clone());
         }
         res
-    }
-    fn list_concepts(&self) {
-        // enumerate self.concepts by order of name
-        let mut vec: Vec<_> = self.concepts.iter().collect();
-        vec.sort_by(|a, b| a.0.cmp(b.0));
-        for (name, expression) in vec.iter() {
-            println!("{} {}", name, expression);
-        }
     }
     #[inline]
     fn fetch_concepts(&self) -> HashMap<String, Expression> {
@@ -88,6 +97,10 @@ impl Knowledge {
         self.concepts.get(&name).unwrap().clone()
     }
     #[inline]
+    fn fetch_conclusions(&self) -> HashMap<String, Proposition> {
+        self.conclusions.clone()
+    }
+    #[inline]
     fn register_object(&mut self, name: String, obj: Objstructure) {
         self.objects.insert(name, obj);
     }
@@ -95,6 +108,7 @@ impl Knowledge {
     fn register_experiment(&mut self, name: String, exp: ExpStructure) {
         self.experiments.insert(name, exp);
     }
+    #[inline]
     fn register_expression(&mut self, name: String, exp: Expression) {
         match &exp {
             Expression::TExp { texp } => {
@@ -109,6 +123,10 @@ impl Knowledge {
             _ => ()
         };
         self.concepts.insert(name, exp);
+    }
+    #[inline]
+    fn register_conclusion(&mut self, name: String, prop: Proposition) {
+        self.conclusions.insert(name, prop);
     }
     #[inline]
     fn get_expstruct_pure(&self, name: String) -> ExpStructure {
