@@ -1,5 +1,6 @@
 pub mod macros;
 pub mod ast;
+pub mod ast_display;
 pub mod exprcharacter;
 pub mod parsing;
 pub mod knowledge;
