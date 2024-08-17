@@ -4,7 +4,7 @@ use std::collections::{HashMap, HashSet};
 use crate::exprcharacter::{KeyState, KeyValue, KeyValueHashed};
 use crate::experiments::objects::obj::ObjType;
 use crate::r;
-use crate::ast::{UnaryOp, BinaryOp, AtomExp, Exp, SExp, TExp, ObjAttrExp, IExpConfig, Expression, MeasureType};
+use crate::ast::{Proposition, UnaryOp, BinaryOp, AtomExp, Exp, SExp, TExp, ObjAttrExp, IExpConfig, Expression, MeasureType};
 use crate::experiments::simulation::{
     oscillation::struct_oscillation,
     collision::struct_collision,
@@ -20,11 +20,15 @@ use crate::experiments::{
 pub struct Knowledge {
     experiments: HashMap<String, ExpStructure>,
     pub concepts: HashMap<String, Expression>,
+    // concepts only support two kinds of Expression: ObjAttrExp and TExp.
     objects: HashMap<String, Objstructure>,
-    // key is used to calculate the Expr's characteristic value.
-    // to classify wheather two Exprs are the same.
-    // for example, 1 + x and 2x + 1 - x are the same.
+    // key is used to calculate the Concept's Expression characteristic value.
+    // to classify wheather two Concepts are the same.
+    // for example, 1 + x and 2x + 1 - x are the same (under simplification).
+    // for example, v[1] - x[2] and v[2] - x[1] are the same (under permutation of index).
     pub key: KeyState,
+    // conclusions:
+    conclusions: HashMap<String, Proposition>,
 }
 
 #[pymethods]
@@ -36,6 +40,7 @@ impl Knowledge {
             concepts: HashMap::new(),
             objects: HashMap::new(),
             key: KeyState::new(None),
+            conclusions: HashMap::new(),
         }
     }
 
@@ -51,6 +56,7 @@ impl Knowledge {
             concepts: HashMap::new(),
             objects: HashMap::new(),
             key: KeyState::new(None),
+            conclusions: HashMap::new(),
         }
     }
     fn list_experiments(&self) {
@@ -73,15 +79,19 @@ impl Knowledge {
             println!("{} {}", name, expression);
         }
     }
+    #[inline]
     fn fetch_concepts(&self) -> HashMap<String, Expression> {
         self.concepts.clone()
     }
+    #[inline]
     fn fetch_concept_by_name(&self, name: String) -> Expression {
         self.concepts.get(&name).unwrap().clone()
     }
+    #[inline]
     fn register_object(&mut self, name: String, obj: Objstructure) {
         self.objects.insert(name, obj);
     }
+    #[inline]
     fn register_experiment(&mut self, name: String, exp: ExpStructure) {
         self.experiments.insert(name, exp);
     }
@@ -100,6 +110,7 @@ impl Knowledge {
         };
         self.concepts.insert(name, exp);
     }
+    #[inline]
     fn get_expstruct_pure(&self, name: String) -> ExpStructure {
         self.experiments.get(&name).unwrap().clone()
     }
@@ -168,6 +179,7 @@ impl Knowledge {
             }
         }
     }
+    #[inline]
     pub fn eval_expr_key(&mut self, exp: &Expression) -> KeyValueHashed {
         self.eval_concept_keyvaluehashed(exp).1
     }
@@ -258,6 +270,7 @@ impl Knowledge {
             _ => unimplemented!()
         }
     }
+    #[inline]
     fn eval_exp_hashvalue(&mut self, exp: &Exp) -> KeyValue {
         self.eval_keyvalue(exp)
     }

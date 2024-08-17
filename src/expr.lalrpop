@@ -17,11 +17,21 @@ pub Expression: Box<Expression> = {
   <sexp: SExp> => Box::new(Expression::SExp{ <> }),
   <texp: TExp> => Box::new(Expression::TExp{ <> }),
   <objattrexp: ObjAttrExp> => Box::new(Expression::ObjAttrExp{ <> }),
+  <prop: Proposition> => Box::new(Expression::Proposition{ <> }),
 }
 pub ObjAttrExp: Box<ObjAttrExp> = {
   "[" <sexp: SExp> "]" => Box::new(ObjAttrExp::From{ <> }),
 }
 pub Exp: Box<Exp> = <addexp: AddExp> => <>;
+pub PrimaryProposition: Box<Proposition> = {
+  "(" <proposition: Proposition> ")" => <>,
+}
+pub Proposition: Box<Proposition> = {
+  <exp: Exp> "is" "conserved" => Box::new(Proposition::IsConserved{ <> }),
+  <exp: Exp> "is" "zero" => Box::new(Proposition::IsZero{ <> }),
+  <left: Exp> "=" <right: Exp> => Box::new(Proposition::Eq{ <> }),
+  "not" <prop: PrimaryProposition> => Box::new(Proposition::Not{ <> }),
+}
 pub ExpConfig: Box<IExpConfig> = {
   "#"<name: Ident> => Box::new(IExpConfig::From{ name: name }),
   <expconfig: ExpConfig>"("<id:Number>"->"<objtype:Ident>")" => Box::new(IExpConfig::Mk{ <> }),

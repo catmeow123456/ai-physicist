@@ -167,21 +167,26 @@ impl DataStruct {
             data
         }
     }
+    #[inline]
     pub fn set_data(&mut self, atom: AtomExp, expdata: ExpData) {
         self.data.insert(atom, expdata);
     }
+    #[inline]
     pub fn reset_data(&mut self, atom: AtomExp) {
         self.data.remove(&atom);
     }
+    #[inline]
     pub fn get_data(&self) -> &HashMap<AtomExp, ExpData> {
         &self.data
     }
+    #[inline]
     pub fn get_data_by_key(&self, atom: &AtomExp) -> Result<ExpData, String> {
         match self.get_data().get(&atom) {
             Some(value) => Ok(value.clone()),
             None => Err(format!("Data {} not found", atom)),
         }
     }
+    #[inline]
     pub fn iter(&self) -> std::collections::hash_map::Iter<AtomExp, ExpData> {
         self.data.iter()
     }
@@ -212,12 +217,15 @@ impl DataStructOfExpData {
             data
         }
     }
+    #[inline]
     pub fn set_data(&mut self, atom: AtomExp, expdata: ExpData) {
         self.data.set_data(atom, expdata);
     }
+    #[inline]
     pub fn get_data(&self) -> &DataStruct {
         &self.data
     }
+    #[inline]
     pub fn get_t(&self) -> ExpData {
         self.data.get_data_by_key(&AtomExp::get_t()).unwrap()
     }
@@ -298,12 +306,15 @@ impl ExpConfig {
             obj_info_dict
         }
     }
+    #[inline]
     pub fn para(&self, para_name: &str) -> f64 {
         self.exp_para.get(para_name).unwrap().real_value()
     }
+    #[inline]
     pub fn obj(&self, obj_name: &str) -> &Objstructure {
         self.obj_info.get(obj_name).unwrap()
     }
+    #[inline]
     pub fn obj_para(&self, obj_name: &str, para_name: &ATTR) -> f64 {
         self.obj_info.get(obj_name).unwrap().get_para_real_value(para_name)
     }
@@ -313,10 +324,12 @@ impl ExpConfig {
             println!("{}: {}", key, obj);
         }
     }
+    #[inline]
     fn get_obj(&self, id: i32) -> &Objstructure {
         let name = &self.obj_name_map.get(&id).unwrap().1;
         self.obj_info.get(name).unwrap()
     }
+    #[inline]
     fn set_obj(&mut self, id: i32, obj: Objstructure) {
         let name = self.obj_info_dict.get(&obj.obj_type).unwrap().get(&id).unwrap();
         self.obj_info.insert(name.clone(), obj);
@@ -365,15 +378,19 @@ impl ExpStructure {
             datastructofdata: None,
         }
     }
+    #[inline]
     pub fn name(&self) -> &str {
         &self.exp_config.name
     }
+    #[inline]
     pub fn print_obj_info(&self) {
         self.exp_config.print_obj_info();
     }
+    #[inline]
     pub fn get_obj(&self, id: i32) -> &Objstructure {
         self.exp_config.get_obj(id)
     }
+    #[inline]
     pub fn get_obj_ids(&self, obj_type: ObjType) -> Vec<i32> {
         self.exp_config.obj_info_dict.get(&obj_type).unwrap().keys().cloned().collect()
     }
@@ -423,15 +440,19 @@ impl ExpStructure {
         }
         self.get_ref_expdata()
     }
+    #[inline]
     pub fn expdata_is_none(&self) -> bool {
         self.datastructofdata.is_none()
     }
+    #[inline]
     pub fn get_ref_expdata(&self) -> &DataStructOfExpData {
         self.datastructofdata.as_ref().unwrap()
     }
+    #[inline]
     pub fn get_mut_expdata(&mut self) -> &mut DataStructOfExpData {
         self.datastructofdata.as_mut().unwrap()
     }
+    #[inline]
     pub fn get_ref_expconfig(&self) -> &ExpConfig {
         &self.exp_config
     }

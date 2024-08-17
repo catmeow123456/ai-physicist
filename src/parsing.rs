@@ -16,6 +16,7 @@ impl Expression {
             Expression::SExp {sexp: _} => r!("SExp"),
             Expression::TExp {texp: _} => r!("TExp"),
             Expression::ObjAttrExp {objattrexp: _} => r!("ObjAttrExp"),
+            Expression::Proposition {prop: _} => r!("Proposition"),
         }
     }
     fn unwrap_exp(&self) -> Exp {
@@ -58,6 +59,7 @@ fn parse_str(input: &str) -> PyResult<String> {
         Expression::SExp {sexp} => Ok(format!("{}", *sexp)),
         Expression::TExp {texp} => Ok(format!("{}", *texp)),
         Expression::ObjAttrExp {objattrexp} => Ok(format!("{}", *objattrexp)),
+        Expression::Proposition {prop} => Ok(format!("{}", *prop)),
     }
 }
 #[pyfunction]

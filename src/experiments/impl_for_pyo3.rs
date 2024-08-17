@@ -1,4 +1,4 @@
-use crate::ast::{Exp, IExpConfig, SExp, TExp, AtomExp, ObjAttrExp, MeasureType};
+use crate::ast::{Exp, IExpConfig, SExp, TExp, AtomExp, Proposition, ObjAttrExp, MeasureType};
 use pyo3::prelude::*;
 use pyo3::callback::IntoPyCallbackOutput;
 
@@ -10,6 +10,20 @@ impl FromPyObject<'_> for Box<Exp> {
     }
 }
 impl IntoPyCallbackOutput<*mut pyo3::ffi::PyObject> for Box<Exp>
+{
+    #[inline]
+    fn convert(self, py: Python<'_>) -> PyResult<*mut pyo3::ffi::PyObject> {
+        Ok(self.into_py(py).as_ptr())
+    }
+}
+impl FromPyObject<'_> for Box<Proposition> {
+    fn extract_bound(ob: &Bound<'_, PyAny>) -> PyResult<Self> {
+        let x = ob.extract::<Proposition>()?;
+        // println!("Extracted: {}", x);
+        Ok(Box::new(x))
+    }
+}
+impl IntoPyCallbackOutput<*mut pyo3::ffi::PyObject> for Box<Proposition>
 {
     #[inline]
     fn convert(self, py: Python<'_>) -> PyResult<*mut pyo3::ffi::PyObject> {

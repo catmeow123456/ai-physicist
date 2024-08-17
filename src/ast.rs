@@ -11,6 +11,15 @@ pub enum Func {
     Forall,
 }
 
+#[pyclass(eq)]
+#[derive(Clone, PartialEq)]
+pub enum Proposition {
+    IsConserved {exp: Box<Exp>},
+    IsZero {exp: Box<Exp>},
+    Eq {left: Box<Exp>, right: Box<Exp>},
+    Not {prop: Box<Proposition>},
+}
+
 #[pyclass(eq, eq_int)]
 #[derive(Eq, PartialEq, Clone, Hash)]
 pub enum BinaryOp {
@@ -359,6 +368,7 @@ pub enum Expression {
     SExp {sexp: Box<SExp>},
     TExp {texp: Box<TExp>},
     ObjAttrExp {objattrexp: Box<ObjAttrExp>},
+    Proposition {prop: Box<Proposition>},
 }
 
 #[pymethods]
@@ -523,11 +533,22 @@ impl fmt::Display for Expression {
             Expression::SExp {sexp} => write!(f, "{}", sexp),
             Expression::TExp {texp} => write!(f, "{}", texp),
             Expression::ObjAttrExp {objattrexp} => write!(f, "{}", objattrexp),
+            Expression::Proposition {prop} => write!(f, "{}", prop),
         }
     }
 }
 impl fmt::Display for MeasureType {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "[t_end={}, n={}, repeat_time={}, error={}]", self.t_end, self.n, self.repeat_time, self.error)
+    }
+}
+impl fmt::Display for Proposition {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            Proposition::IsConserved {exp} => write!(f, "{} is conserved", exp),
+            Proposition::IsZero {exp} => write!(f, "{} is zero", exp),
+            Proposition::Eq {left, right} => write!(f, "{} = {}", left, right),
+            Proposition::Not {prop} => write!(f, "not ({})", prop),
+        }
     }
 }

@@ -227,12 +227,14 @@ pub trait Diff<Rhs = Self> {
 // implement the Add trait for ExpData
 impl Add for ExpData{
     type Output = ExpData;
+    #[inline]
     fn add(self, other: ExpData) -> ExpData {
         ExpData::new(&self.data + &other.data)
     }
 }
 impl Add for &ExpData {
     type Output = ExpData;
+    #[inline]
     fn add(self, other: &ExpData) -> ExpData {
         ExpData::new(&self.data + &other.data)
     }
@@ -241,12 +243,14 @@ impl Add for &ExpData {
 // implement the Sub trait for ExpData
 impl Sub for ExpData {
     type Output = ExpData;
+    #[inline]
     fn sub(self, other: ExpData) -> ExpData {
         ExpData::new(&self.data - &other.data)
     }
 }
 impl Sub for &ExpData {
     type Output = ExpData;
+    #[inline]
     fn sub(self, other: &ExpData) -> ExpData {
         ExpData::new(&self.data - &other.data)
     }
@@ -255,12 +259,14 @@ impl Sub for &ExpData {
 // implement the Mul trait for ExpData
 impl Mul for ExpData {
     type Output = ExpData;
+    #[inline]
     fn mul(self, other: ExpData) -> ExpData {
         ExpData::new(&self.data * &other.data)
     }
 }
 impl Mul for &ExpData {
     type Output = ExpData;
+    #[inline]
     fn mul(self, other: &ExpData) -> ExpData {
         ExpData::new(&self.data * &other.data)
     }
@@ -269,6 +275,7 @@ impl Mul for &ExpData {
 // implement the Div trait for ExpData
 impl Div for ExpData {
     type Output = ExpData;
+    #[inline]
     fn div(self, other: ExpData) -> ExpData {
         if self.is_zero() {
             ExpData::zero(self.n, self.repeat_time)
@@ -280,6 +287,7 @@ impl Div for ExpData {
 }
 impl Div for &ExpData {
     type Output = ExpData;
+    #[inline]
     fn div(self, other: &ExpData) -> ExpData {
         if self.is_zero() {
             ExpData::zero(self.n, self.repeat_time)
@@ -292,6 +300,7 @@ impl Div for &ExpData {
 
 // implement the AddAssign trait for ExpData
 impl AddAssign for ExpData {
+    #[inline]
     fn add_assign(&mut self, other: ExpData) {
         self.data += &other.data;
     }
@@ -299,6 +308,7 @@ impl AddAssign for ExpData {
 
 impl Neg for ExpData {
     type Output = ExpData;
+    #[inline]
     fn neg(self) -> ExpData {
         ExpData::new(-&self.data)
     }
@@ -306,9 +316,11 @@ impl Neg for ExpData {
 
 impl Diff for &ExpData {
     type Output = ExpData;
+    #[inline]
     fn diff(&self, other: &ExpData) -> ExpData {
         self.diff_tau() / other.diff_tau()
     }
+    #[inline]
     fn diff_n(&self, other: &ExpData, n: usize) -> ExpData {
         assert!(n > 0 && n < 5);
         if n == 1 {
@@ -400,9 +412,11 @@ impl ExpData {
 }
 
 impl ExpData {
+    #[inline]
     pub fn mean(&self) -> Array1<f64> {
         self.data.mean_axis(ndarray::Axis(0)).unwrap()
     }
+    #[inline]
     pub fn std(&self) -> Array1<f64> {
         self.data.std_axis(ndarray::Axis(0), 0.0)
     }
