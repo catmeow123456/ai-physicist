@@ -356,29 +356,29 @@ impl Knowledge {
     }
     fn eval_keyvalue(&mut self, exp0: &Exp) -> KeyValue {
         match exp0 {
+            Exp::Number { num } => {
+                self.key.gen_const_value(*num)
+            },
             Exp::ExpWithMeasureType { exp, measuretype: _ } => {
                 self.eval_keyvalue(exp)
             },
-            Exp::Atom { atom } => match atom.as_ref() {
-                AtomExp::Number { num } => self.key.gen_const_value(*num),
-                _ => {
-                    let expr = self.concepts.get(&atom.get_name());
-                    if let Some(expr) = expr {
-                        match expr {
-                            Expression::ObjAttrExp { objattrexp: _ } => {
-                                self.key.get_or_insert_const(atom)
-                            },
-                            Expression::TExp { texp } => {
-                                let texp_new = texp.subst(atom.get_vec_ids());
-                                self.eval_keyvalue(&texp_new)
-                            }
-                            _ => {
-                                unimplemented!()
-                            }
+            Exp::Atom { atom } => {
+                let expr = self.concepts.get(&atom.get_name());
+                if let Some(expr) = expr {
+                    match expr {
+                        Expression::ObjAttrExp { objattrexp: _ } => {
+                            self.key.get_or_insert_const(atom)
+                        },
+                        Expression::TExp { texp } => {
+                            let texp_new = texp.subst(atom.get_vec_ids());
+                            self.eval_keyvalue(&texp_new)
                         }
-                    } else {
-                        self.key.get_or_insert(atom)
+                        _ => {
+                            unimplemented!()
+                        }
                     }
+                } else {
+                    self.key.get_or_insert(atom)
                 }
             },
             Exp::BinaryExp { left, op, right } => {

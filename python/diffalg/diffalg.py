@@ -1,4 +1,3 @@
-import re
 from diffalg.expr_manipulate import sympify
 from diffalg.mapleIO import mapleIO
 import sympy as sp

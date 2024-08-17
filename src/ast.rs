@@ -67,7 +67,6 @@ impl MeasureType {
 #[pyclass(eq)]
 #[derive(Clone, PartialEq, Eq, Hash)]
 pub enum AtomExp {
-    Number {num: i32},
     Variable {name: String},
     VariableIds {name: String, ids: Vec<i32>},
 }
@@ -77,6 +76,7 @@ pub enum AtomExp {
 #[derive(Clone, PartialEq)]
 pub enum Exp {
     // ExpConfig -> MeasureData -> ExpData
+    Number {num: i32},
     Atom {atom: Box<AtomExp>},
     UnaryExp {op: UnaryOp, exp: Box<Exp>},
     BinaryExp {left: Box<Exp>, op: BinaryOp, right: Box<Exp>},
@@ -112,6 +112,8 @@ impl Exp {
     }
     pub fn subst(&self, oid: i32, nid: i32) -> Self{
         match self {
+            Exp::Number { num } =>
+                Exp::Number {num: *num},
             Exp::Atom { atom } =>
                 Exp::Atom {atom: Box::new(atom.subst(oid, nid))},
             Exp::UnaryExp {op, exp} =>
@@ -127,6 +129,7 @@ impl Exp {
     }
     pub fn get_allids(&self) -> HashSet<i32> {
         match self {
+            Exp::Number { num: _ } => HashSet::new(),
             Exp::Atom { atom } => atom.get_allids(),
             Exp::UnaryExp { op:_, exp} => exp.get_allids(),
             Exp::BinaryExp { left, op:_, right} => {
@@ -148,6 +151,8 @@ impl Exp {
 impl Exp {
     pub fn substs(&self, sub_dict: &HashMap<i32, i32>) -> Self {
         match self {
+            Exp::Number { num } =>
+                Exp::Number {num: *num},
             Exp::Atom { atom } =>
                 Exp::Atom {atom: Box::new(atom.substs(sub_dict.clone()))},
             Exp::UnaryExp {op, exp} =>
@@ -379,21 +384,18 @@ impl AtomExp {
     }
     pub fn get_name(&self) -> String {
         match self {
-            AtomExp::Number {num:_} => "".to_string(),
             AtomExp::Variable {name} => name.clone(),
             AtomExp::VariableIds {name, ids:_} => name.clone(),
         }
     }
     pub fn get_vec_ids(&self) -> Vec<i32> {
         match self {
-            AtomExp::Number {num:_} => vec![],
             AtomExp::Variable {name:_} => vec![],
             AtomExp::VariableIds {name:_, ids} => ids.clone(),
         }
     }
     pub fn get_allids(&self) -> HashSet<i32> {
         match self {
-            AtomExp::Number {num:_} => HashSet::new(),
             AtomExp::Variable {name:_} => HashSet::new(),
             AtomExp::VariableIds {name:_ , ids} => {
                 let mut res = HashSet::new();
@@ -406,7 +408,6 @@ impl AtomExp {
     }
     pub fn subst(&self, oid: i32, nid: i32) -> Self {
         match self {
-            AtomExp::Number {num} => AtomExp::Number {num: *num},
             AtomExp::Variable {name} => AtomExp::Variable {name: name.clone()},
             AtomExp::VariableIds {name, ids} => {
                 let ids = ids.clone();
@@ -424,7 +425,6 @@ impl AtomExp {
     }
     pub fn substs(&self, sub_dict: HashMap<i32, i32>) -> Self {
         match self {
-            AtomExp::Number {num} => AtomExp::Number {num: *num},
             AtomExp::Variable {name} => AtomExp::Variable {name: name.clone()},
             AtomExp::VariableIds {name, ids} => {
                 let ids = ids.clone();
@@ -444,7 +444,6 @@ impl AtomExp {
 impl fmt::Display for AtomExp {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            AtomExp::Number {num} => write!(f, "{}", num),
             AtomExp::Variable {name} => write!(f, "{}", name),
             AtomExp::VariableIds {name, ids} => {
                 if ids.len() == 0 {
@@ -460,14 +459,15 @@ impl fmt::Display for AtomExp {
 impl fmt::Display for Exp {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            Exp::Atom {atom} => write!(f, "{}", atom),
-            Exp::UnaryExp {op, exp} =>
+            Exp::Number { num } => write!(f, "{}", num),
+            Exp::Atom { atom } => write!(f, "{}", atom),
+            Exp::UnaryExp { op, exp } =>
                 match op {
                     UnaryOp::Neg => write!(f, "-{}", exp),
                     UnaryOp::Diff => write!(f, "D.{}", exp),
                 }
-            Exp::BinaryExp {left, op, right} => write!(f, "({} {} {})", left, op, right),
-            Exp::DiffExp {left, right, ord} => 
+            Exp::BinaryExp { left, op, right } => write!(f, "({} {} {})", left, op, right),
+            Exp::DiffExp { left, right, ord } => 
                 match ord {
                     1 => write!(f, "D[{}]/D[{}]", left, right),
                     _ => write!(f, "D^{}[{}]/D[{}]^{}", ord, left, right,ord),

@@ -1,13 +1,28 @@
+use crate::r;
 use pyo3::prelude::*;
 use lalrpop_util::lalrpop_mod;
 lalrpop_mod!(expr);
-use crate::ast::{Exp, SExp, TExp, Expression};
+use crate::ast::{Exp, SExp, TExp, ObjAttrExp, Expression};
 // mod ast;
 
 #[pymethods]
 impl Expression {
     fn __str__(&self) -> String {
         format!("{}", self)
+    }
+    fn get_type(&self) -> String {
+        match self {
+            Expression::Exp {exp: _} => r!("Exp"),
+            Expression::SExp {sexp: _} => r!("SExp"),
+            Expression::TExp {texp: _} => r!("TExp"),
+            Expression::ObjAttrExp {objattrexp: _} => r!("ObjAttrExp"),
+        }
+    }
+    fn unwrap_exp(&self) -> Exp {
+        match self {
+            Expression::Exp {exp} => *exp.clone(),
+            _ => panic!("Not an Exp"),
+        }
     }
     fn unwrap_texp(&self) -> TExp {
         match self {
@@ -19,6 +34,12 @@ impl Expression {
         match self {
             Expression::SExp {sexp} => *sexp.clone(),
             _ => panic!("Not a SExp"),
+        }
+    }
+    fn unwrap_objattrexp(&self) -> ObjAttrExp {
+        match self {
+            Expression::ObjAttrExp {objattrexp} => *objattrexp.clone(),
+            _ => panic!("Not an ObjAttrExp"),
         }
     }
 }

@@ -49,6 +49,7 @@ MeasureType: Box<MeasureType> = {
 }
 
 PrimaryExp: Box<Exp> = {
+  <num: Number> => Box::new(Exp::Number{ <> }),
   <atom: AtomExp> => Box::new(Exp::Atom{ <> }),
   "(" <exp: Exp> ")" => <>,
 }
@@ -98,7 +99,6 @@ WithExp: Box<Exp> = {
 }
 
 AtomExp: Box<AtomExp> = {
-  <num: Number> => Box::new(AtomExp::Number{ <> }),
   <name: Ident> => Box::new(AtomExp::Variable{ <> }),
   <name: Ident>"["<ids: IntVecConst>"]" => Box::new(AtomExp::VariableIds{ <> }),
 }

@@ -283,37 +283,38 @@ impl Knowledge {
         let n = data.measuretype.n();
         let repeat_time = data.measuretype.repeat_time();
         match exp0 {
-            Exp::Atom { atom } => match atom.as_ref() {
-                AtomExp::Number { num } => {
-                    ExpData::from_elem(*num as f64, n, repeat_time)
-                },
-                _ => {
-                    let atom = atom.as_ref();
-                    // println!("atom = {}", atom);
-                    let expdata = data.get_data().get_data_by_key(atom);
-                    match expdata {
-                        Ok(expdata) => expdata,
-                        Err(_) => {
-                            // println!("{} {}", atom, atom.get_name());
-                            let expr = self.concepts.get(&atom.get_name()).unwrap();
-                            match expr {
-                                Expression::ObjAttrExp { objattrexp } => {
-                                    let mut objs = vec![];
-                                    for id in atom.get_allids().iter() {
-                                        objs.push(context.get_obj(*id).clone());
-                                    }
-                                    let expdata = self.eval_objattr(objattrexp, objs);
-                                    context.get_mut_expdata().set_data(atom.clone(), expdata.clone());
-                                    expdata
+            Exp::ExpWithMeasureType { exp: _, measuretype: _ } => {
+                panic!("ExpWithMeasureType should be handled in eval");
+            }
+            Exp::Number { num } => {
+                ExpData::from_elem(*num as f64, n, repeat_time)
+            }
+            Exp::Atom { atom } => {
+                let atom = atom.as_ref();
+                // println!("atom = {}", atom);
+                let expdata = data.get_data().get_data_by_key(atom);
+                match expdata {
+                    Ok(expdata) => expdata,
+                    Err(_) => {
+                        // println!("{} {}", atom, atom.get_name());
+                        let expr = self.concepts.get(&atom.get_name()).unwrap();
+                        match expr {
+                            Expression::ObjAttrExp { objattrexp } => {
+                                let mut objs = vec![];
+                                for id in atom.get_allids().iter() {
+                                    objs.push(context.get_obj(*id).clone());
                                 }
-                                Expression::TExp { texp } => {
-                                    let texp_new = texp.subst(atom.get_vec_ids());
-                                    let expdata = self._eval(&texp_new, context);
-                                    context.get_mut_expdata().set_data(atom.clone(), expdata.clone());
-                                    expdata
-                                }
-                                _ => unimplemented!()
+                                let expdata = self.eval_objattr(objattrexp, objs);
+                                context.get_mut_expdata().set_data(atom.clone(), expdata.clone());
+                                expdata
                             }
+                            Expression::TExp { texp } => {
+                                let texp_new = texp.subst(atom.get_vec_ids());
+                                let expdata = self._eval(&texp_new, context);
+                                context.get_mut_expdata().set_data(atom.clone(), expdata.clone());
+                                expdata
+                            }
+                            _ => unimplemented!()
                         }
                     }
                 }
@@ -324,7 +325,6 @@ impl Knowledge {
                 apply_binary_op(op, &self._eval(&*left, context), &self._eval(&*right, context)).unwrap(),
             Exp::DiffExp { ref left, ref right, ord} =>
                 (&self._eval(&*left, context)).diff_n(&self._eval(&*right, context), *ord as usize),
-            _ => unimplemented!()
         }
     }
 }
