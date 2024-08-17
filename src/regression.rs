@@ -18,19 +18,36 @@ pub fn search_relations(fn_list: &DataStruct) -> Vec<(Exp, ExpData)> {
 fn search_relations_aux(list: &Vec<(Exp, ExpData)>) -> Vec<(Exp, ExpData)> {
     let mut relation_list = vec![];
     for i in 0..list.len() {
-        for j in 0..i {
+        for j in 0..list.len() {
+            if i == j {
+                continue;
+            }
             let (ref id, ref valuei) = list[i];
             let (ref jd, ref valuej) = list[j];
             if valuei.badpts.len() >= valuei.n / 4 || valuej.badpts.len() >= valuej.n / 4 {
                 continue;
             }
-            for op in vec![BinaryOp::Add, BinaryOp::Sub, BinaryOp::Mul, BinaryOp::Div] {
+            if j < i {
+                for op in vec![BinaryOp::Add, BinaryOp::Sub, BinaryOp::Mul] {
+                    let exp = Exp::BinaryExp {
+                        left: Box::new(id.clone()),
+                        right: Box::new(jd.clone()),
+                        op: op.clone()
+                    };
+                    if let Some(value) = apply_binary_op(&op, valuei, valuej) {
+                        if value.is_conserved() {
+                            relation_list.push((exp, value));
+                        }
+                    }
+                }
+            }
+            {
                 let exp = Exp::BinaryExp {
                     left: Box::new(id.clone()),
                     right: Box::new(jd.clone()),
-                    op: op.clone()
+                    op: BinaryOp::Div
                 };
-                if let Some(value) = apply_binary_op(&op, valuei, valuej) {
+                if let Some(value) = apply_binary_op(&BinaryOp::Div, valuei, valuej) {
                     if value.is_conserved() {
                         relation_list.push((exp, value));
                     }

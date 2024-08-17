@@ -2,6 +2,7 @@ use crate::r;
 use std::fmt::{self};
 use std::collections::{HashMap, HashSet};
 use pyo3::prelude::*;
+use crate::complexity::Complexity;
 
 #[pyclass(eq, eq_int)]
 #[derive(Eq, PartialEq, Clone)]
@@ -108,6 +109,10 @@ impl Exp {
             Exp::Atom {atom} => *atom.clone(),
             _ => panic!("Error: unwrap_atom failed"),
         }
+    }
+    #[getter]
+    fn get_complexity(&self) -> i32 {
+        self.complexity()
     }
     #[staticmethod]
     pub fn new_variable(name: String) -> Self {

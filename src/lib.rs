@@ -4,6 +4,7 @@ pub mod exprcharacter;
 pub mod parsing;
 pub mod knowledge;
 pub mod regression;
+pub mod complexity;
 pub mod experiments{
     pub mod impl_for_pyo3;
     pub mod topy;

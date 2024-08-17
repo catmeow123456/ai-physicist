@@ -25,7 +25,7 @@ from ai_physicist import (
 # %%
 class Knowledge:
     K: aiphy.Knowledge
-    id: int = 0
+    concept_id: int = 0
     conclusion_id: int = 0
     def default() -> "Knowledge":
         obj = object.__new__(Knowledge)
@@ -46,25 +46,30 @@ class Knowledge:
     def eval(self, expr: str, expstruct: ExpStructure) -> ExpData:
         return self.K.eval(sentence.parse_exp(expr), expstruct)
 
-    def register_expr(self, definition: str, name: str = None):
+    def register_expr(self, definition: str, name: str = None) -> str:
         if name is None:
-            name = self.auto_name()
+            name = self.auto_concept_name()
         expr: Expression = sentence.parse(definition)
         self.K.register_expression(name, expr)
-    def register_conclusion(self, definition: str, name: str = None):
+        return name
+    def register_conclusion(self, definition: str, name: str = None) -> str:
         if name is None:
             name = self.auto_conclusion_name()
         prop: Proposition = sentence.parse_proposition(definition)
         self.K.register_conclusion(name, prop)
-    def auto_name(self) -> str:
-        self.id += 1
-        return "C_{:02d}".format(self.id)
+        return name
+    def auto_concept_name(self) -> str:
+        self.concept_id += 1
+        return "C_{:02d}".format(self.concept_id)
     def auto_conclusion_name(self) -> str:
         self.conclusion_id += 1
         return "R_{:02d}".format(self.conclusion_id)
 
     def generalize(self, exp_name: str, exp: str) -> Expression:
-        return Expression.TExp(self.K.generalize(sentence.parse_exp(exp), exp_name))
+        try:
+            return Expression.TExp(self.K.generalize(sentence.parse_exp(exp), exp_name))
+        except:
+            print("Failed to generalize", exp_name, exp)
     def specialize(self, texp: str, exp_name: str) -> List[Expression]:
         return self.K.specialize(sentence.parse_texp(texp), exp_name)
     def fetch_concept_texp(self, concept_name: str) -> TExp:

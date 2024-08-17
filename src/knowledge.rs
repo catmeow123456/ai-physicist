@@ -101,6 +101,10 @@ impl Knowledge {
         self.conclusions.clone()
     }
     #[inline]
+    fn fetch_conclusion_by_name(&self, name: String) -> Proposition {
+        self.conclusions.get(&name).unwrap().clone()
+    }
+    #[inline]
     fn register_object(&mut self, name: String, obj: Objstructure) {
         self.objects.insert(name, obj);
     }
@@ -127,6 +131,10 @@ impl Knowledge {
     #[inline]
     fn register_conclusion(&mut self, name: String, prop: Proposition) {
         self.conclusions.insert(name, prop);
+    }
+    #[inline]
+    fn remove_conclusion(&mut self, name: String) {
+        self.conclusions.remove(&name);
     }
     #[inline]
     fn get_expstruct_pure(&self, name: String) -> ExpStructure {
@@ -289,8 +297,12 @@ impl Knowledge {
         }
     }
     #[inline]
-    fn eval_exp_hashvalue(&mut self, exp: &Exp) -> KeyValue {
+    fn eval_exp_keyvalue(&mut self, exp: &Exp) -> KeyValue {
         self.eval_keyvalue(exp)
+    }
+    #[inline]
+    fn eval_exp_keyvaluehashed(&mut self, exp: &Exp) -> KeyValueHashed {
+        self.eval_keyvalue(exp).to_hashed()
     }
 }
 impl Knowledge {

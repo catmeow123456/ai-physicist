@@ -109,13 +109,17 @@ pub struct KeyValueHashed {
     p_mod: i32,
     value: Option<Vec<i32>>
 }
+#[pymethods]
 impl KeyValueHashed {
+    #[staticmethod]
     fn none(value_len: usize, p_mod: i32) -> Self {
         Self { value_len, p_mod, value: None }
     }
+    #[getter]
     pub fn is_none(&self) -> bool {
         self.value.is_none()
     }
+    #[getter]
     pub fn is_const(&self) -> bool {
         if self.value.is_none() { return false; }
         let v = self.value.as_ref().unwrap();
@@ -123,6 +127,9 @@ impl KeyValueHashed {
             if v[i] != 0 { return false; }
         }
         true
+    }
+    pub fn get_data(&self) -> Vec<i32> {
+        self.value.as_ref().unwrap().clone()
     }
 }
 impl KeyValue {
@@ -150,7 +157,7 @@ impl KeyValue {
         }).collect();
         Self::new(value, value_len, p_mod, 0)
     }
-    fn to_hashed(&self) -> KeyValueHashed {
+    pub fn to_hashed(&self) -> KeyValueHashed {
         let s = self.value.as_ref().unwrap()[0..self.value_len].to_vec();
         KeyValueHashed {
             value_len: self.value_len,
