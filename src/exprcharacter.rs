@@ -1,5 +1,5 @@
 use itertools::Itertools;
-use pyo3::pyclass;
+use pyo3::prelude::*;
 use std::collections::HashMap;
 use std::cmp::{min, max};
 use crate::ast::{
@@ -77,6 +77,7 @@ impl KeyState {
 // 默认取 value_len=6 ，p_mod=1e9+7 ，KeyValue 可视作 p_mod 域上的多项式（关于 t 的函数）
 // 那么可以对它做加法、乘法、除法、求导等操作，计算结果是 Expr 的特征值
 // 计算过程中需要保留 value_len+4 次以内的多项式系数，并允许最多 4 次求导。
+#[pyclass]
 #[derive(Clone)]
 pub struct KeyValue {
     value_len: usize,
@@ -84,6 +85,21 @@ pub struct KeyValue {
     value: Option<Vec<i32>>,
     diff_times: usize
 }
+#[pymethods]
+impl KeyValue {
+    fn is_none(&self) -> bool {
+        self.value.is_none()
+    }
+    fn is_const(&self) -> bool {
+        if self.value.is_none() { return false; }
+        let v = self.value.as_ref().unwrap();
+        for i in 1..self.value_len {
+            if v[i] != 0 { return false; }
+        }
+        true
+    }
+}
+
 // KeyValueHashed 结构与 KeyValue 一样，但它是一个不可计算的哈希值，用于比较两个 KeyValue 是否相等。
 // 只保留了 value_len 次以内的多项式系数。
 #[pyclass(eq)]
@@ -155,6 +171,22 @@ impl KeyValue {
             res, self.value_len, self.p_mod,
             self.diff_times + 1
         )
+    }
+    fn powi(&self, n: i32) -> KeyValue {
+        if n == 0 {
+            KeyValue::const_value(1, self.value_len, self.p_mod)
+        } else 
+        if n == 1 {
+            self.clone()
+        } else {
+            let t = self.powi(n / 2);
+            let t2 = t.clone() * t;
+            if n % 2 == 0 {
+                t2
+            } else {
+                t2 * self.clone()
+            }
+        }
     }
 }
 // implement add operation
@@ -303,7 +335,13 @@ pub fn apply_binary_op(op: &BinaryOp, valuei: KeyValue, valuej: KeyValue) -> Key
         BinaryOp::Sub => valuei - valuej,
         BinaryOp::Mul => valuei * valuej,
         BinaryOp::Div => valuei / valuej,
-        BinaryOp::Pow => KeyValue::none(valuei.value_len, valuei.p_mod),
+        BinaryOp::Pow => {
+            if valuej.is_const() {
+                valuei.powi(valuej.value.as_ref().unwrap()[0])
+            } else {
+                KeyValue::none(valuei.value_len, valuei.p_mod)
+            }
+        },
     }
 }
 
@@ -354,7 +392,7 @@ impl Knowledge {
             }
         }
     }
-    fn eval_keyvalue(&mut self, exp0: &Exp) -> KeyValue {
+    pub fn eval_keyvalue(&mut self, exp0: &Exp) -> KeyValue {
         match exp0 {
             Exp::Number { num } => {
                 self.key.gen_const_value(*num)

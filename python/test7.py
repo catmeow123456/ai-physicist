@@ -1,7 +1,7 @@
-from interface import Theorist
+from interface import Knowledge
 from ai_physicist import MeasureType
 from ai_physicist import Expression, AtomExp
-theorist = Theorist()
+theorist = Knowledge.default()
 print(theorist.fetch_exps())
 oscil = theorist.fetch_expstruct("oscillation")
 oscil.random_settings()

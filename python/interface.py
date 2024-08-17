@@ -1,13 +1,15 @@
 #%%
 from typing import List, Dict
+import ai_physicist as aiphy
+# aiphy.Knowledge: class
+#   .fetch_concepts()  .list_concepts()  .list_experiments()
+#   .get_expstruct_pure(name: str)
 from ai_physicist import (
     Exp,
     SExp,
     TExp,
     AtomExp,
     IExpConfig,
-    Knowledge,      # .fetch_concepts()  .list_concepts()  .list_experiments()
-                    # .get_expstruct_pure(name: str)
     Expression,
     DataStruct,
     ExpData,
@@ -20,15 +22,25 @@ from ai_physicist import (
     Objstructure    # .make_masspoint() .make_spring()
 )
 # %%
-class Theorist:
-    K: Knowledge
+class Knowledge:
+    K: aiphy.Knowledge
     id: int = 0
-    def __init__(self):
-        self.K = Knowledge()
+    def default() -> "Knowledge":
+        obj = object.__new__(Knowledge)
+        obj.K = aiphy.Knowledge.default()
+        obj.id = 0
+        return obj
+    def empty() -> "Knowledge":
+        obj = object.__new__(Knowledge)
+        obj.K = aiphy.Knowledge()
+        obj.id = 0
+        return obj
     def fetch_exps(self) -> List[str]:
         return self.K.fetch_experiments()
     def fetch_concepts(self) -> Dict[str, Expression]:
         return self.K.fetch_concepts()
+    def register_expstruct(self, name: str, expstruct: ExpStructure):
+        self.K.register_experiment(name, expstruct)
     def fetch_expstruct(self, name: str) -> ExpStructure:
         return self.K.get_expstruct_pure(name)
     def eval(self, expr: str, expstruct: ExpStructure) -> ExpData:

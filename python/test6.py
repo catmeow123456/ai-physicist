@@ -1,9 +1,9 @@
-from interface import Theorist
+from interface import Knowledge
 from ai_physicist import MeasureType
 from ai_physicist import search_relations
 from ai_physicist import sentence
 
-theorist = Theorist()
+theorist = Knowledge.default()
 theorist.fetch_exps()
 s = theorist.fetch_expstruct("motion0")
 s.random_settings()

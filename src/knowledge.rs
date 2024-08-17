@@ -1,7 +1,7 @@
 use itertools::Itertools;
 use pyo3::prelude::*;
 use std::collections::{HashMap, HashSet};
-use crate::exprcharacter::{KeyState, KeyValueHashed};
+use crate::exprcharacter::{KeyState, KeyValue, KeyValueHashed};
 use crate::experiments::objects::obj::ObjType;
 use crate::r;
 use crate::ast::{UnaryOp, BinaryOp, AtomExp, Exp, SExp, TExp, ObjAttrExp, IExpConfig, Expression, MeasureType};
@@ -31,6 +31,16 @@ pub struct Knowledge {
 impl Knowledge {
     #[new]
     pub fn new() -> Self {
+        Self {
+            experiments: HashMap::new(),
+            concepts: HashMap::new(),
+            objects: HashMap::new(),
+            key: KeyState::new(None),
+        }
+    }
+
+    #[staticmethod]
+    pub fn default() -> Self {
         Self {
             experiments: HashMap::from([
                 (r!("oscillation"), struct_oscillation()),
@@ -247,6 +257,9 @@ impl Knowledge {
             }
             _ => unimplemented!()
         }
+    }
+    fn eval_exp_hashvalue(&mut self, exp: &Exp) -> KeyValue {
+        self.eval_keyvalue(exp)
     }
 }
 impl Knowledge {

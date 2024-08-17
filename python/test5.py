@@ -1,6 +1,6 @@
 from ai_physicist import Knowledge, struct_collision
 from ai_physicist import sentence, Objstructure, search_relations
-KK = Knowledge()
+KK = Knowledge.default()
 KK.list_experiments()
 
 standard_sp = Objstructure.make_spring(1.8, 2.2, 6.0, 8.0)
