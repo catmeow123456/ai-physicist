@@ -10,7 +10,8 @@ impl Expression {
     fn __str__(&self) -> String {
         format!("{}", self)
     }
-    fn get_type(&self) -> String {
+    #[getter]
+    fn expr_type(&self) -> String {
         match self {
             Expression::Exp {exp: _} => r!("Exp"),
             Expression::SExp {sexp: _} => r!("SExp"),
@@ -94,7 +95,6 @@ pub fn parse_proposition(input: &str) -> PyResult<Proposition> {
     let res: Box<Proposition> = expr::PropositionParser::new().parse(input).unwrap();
     Ok(*res)
 }
-
 
 #[pymodule]
 pub fn register_sentence(m: &Bound<'_, PyModule>) -> PyResult<()> {

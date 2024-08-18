@@ -304,7 +304,39 @@ impl Knowledge {
     fn eval_exp_keyvaluehashed(&mut self, exp: &Exp) -> KeyValueHashed {
         self.eval_keyvalue(exp).to_hashed()
     }
-    fn raw_definition(&self, exp: &Exp) -> Exp {
+    fn raw_definition(&self, expression: &Expression) -> Expression {
+        match expression {
+            Expression::Exp { exp } => {
+                Expression::Exp { exp: Box::new(self.raw_definition_exp(exp)) }
+            }
+            Expression::Proposition { prop } => {
+                Expression::Proposition { prop: Box::new(self.raw_definition_prop(prop)) }
+            }
+            _ => unimplemented!()
+        }
+    }
+    fn raw_definition_prop(&self, prop: &Proposition) -> Proposition {
+        match prop {
+            Proposition::IsConserved { exp } => {
+                let exp = self.raw_definition_exp(exp);
+                Proposition::IsConserved { exp: Box::new(exp) }
+            }
+            Proposition::IsZero { exp } => {
+                let exp = self.raw_definition_exp(exp);
+                Proposition::IsZero { exp: Box::new(exp) }
+            }
+            Proposition::Eq { left, right } => {
+                let left = self.raw_definition_exp(left);
+                let right = self.raw_definition_exp(right);
+                Proposition::Eq { left: Box::new(left), right: Box::new(right) }
+            }
+            Proposition::Not { prop } => {
+                let prop = self.raw_definition_prop(prop);
+                Proposition::Not { prop: Box::new(prop) }
+            }
+        }
+    }
+    fn raw_definition_exp(&self, exp: &Exp) -> Exp {
         match exp {
             Exp::Number { num: _ } => {
                 exp.clone()
@@ -318,7 +350,7 @@ impl Knowledge {
                         }
                         Expression::TExp { texp } => {
                             let texp_new = texp.subst(atom.get_vec_ids());
-                            self.raw_definition(&texp_new)
+                            self.raw_definition_exp(&texp_new)
                         }
                         _ => unimplemented!()
                     }
@@ -327,28 +359,125 @@ impl Knowledge {
                 }
             }
             Exp::BinaryExp { left, op, right } => {
-                let left = self.raw_definition(&*left);
-                let right = self.raw_definition(&*right);
+                let left = self.raw_definition_exp(&*left);
+                let right = self.raw_definition_exp(&*right);
                 Exp::BinaryExp { left: Box::new(left), op: op.clone(), right: Box::new(right) }
             }
             Exp::UnaryExp { op, exp } => {
-                let exp = self.raw_definition(&*exp);
+                let exp = self.raw_definition_exp(&*exp);
                 Exp::UnaryExp { op: op.clone(), exp: Box::new(exp) }
             }
             Exp::DiffExp { left, right, ord } => {
-                let left = self.raw_definition(&*left);
-                let right = self.raw_definition(&*right);
+                let left = self.raw_definition_exp(&*left);
+                let right = self.raw_definition_exp(&*right);
                 Exp::DiffExp { left: Box::new(left), right: Box::new(right), ord: *ord }
             }
             Exp::ExpWithMeasureType { exp, measuretype } => {
-                let exp = self.raw_definition(&*exp);
+                let exp = self.raw_definition_exp(&*exp);
                 Exp::ExpWithMeasureType { exp: Box::new(exp), measuretype: measuretype.clone() }
             }
         }
     }
+
+    pub fn parse_atomexp_to_sympy_str(&self, input: &AtomExp, argument: String) -> String {
+        let res = match input {
+            AtomExp::Variable { name } => format!("{}", name),
+            AtomExp::VariableIds { name, ids } => {
+                if ids.len() == 0 {
+                    format!("{}", name)
+                } else {
+                    format!("{}_{}", name, ids.iter().map(|x| format!("{}", x)).collect::<Vec<String>>().join("_"))
+                }
+            }
+        };
+        let not_with_argument = self._made_of_obj_attr(&Exp::Atom { atom: Box::new(input.clone()) });
+        if res == argument || not_with_argument {
+            res
+        } else {
+            format!("{}({})", res, argument)
+        }
+    }
+
+    pub fn parse_exp_to_sympy_str(&self, input: &Exp, argument: String) -> String {
+        match input {
+            Exp::Number { num } => format!("{}", num),
+            Exp::Atom { atom } => self.parse_atomexp_to_sympy_str(atom.as_ref(), argument),
+            Exp::UnaryExp { op, exp } => {
+                match op {
+                    UnaryOp::Neg => format!("-{}", self.parse_exp_to_sympy_str(exp.as_ref(), argument)),
+                    UnaryOp::Diff => {
+                        let s = self.parse_exp_to_sympy_str(exp.as_ref(), argument.clone());
+                        if s == argument { r!("1") } else { 
+                            format!("Derivative({}, {})", s, argument)
+                        }
+                    },
+                }
+            }
+            Exp::BinaryExp { left, op, right } => {
+                format!(
+                    "({} {} {})",
+                    self.parse_exp_to_sympy_str(left.as_ref(), argument.clone()),
+                    op,
+                    self.parse_exp_to_sympy_str(right.as_ref(), argument)
+                )
+            }
+            Exp::DiffExp { left, right, ord } => {
+                let left = self.parse_exp_to_sympy_str(left.as_ref(), argument.clone());
+                let right = self.parse_exp_to_sympy_str(right.as_ref(), argument.clone());
+                if right == argument { return format!("Derivative({}, {}, {})", left, right, *ord); }
+                let mut res = if left == argument {
+                    format!("(1 / Derivative({}, {}))", right, argument)
+                } else {
+                    format!("(Derivative({}, {}) / Derivative({}, {}))", left, argument, right, argument)
+                };
+                for _ in 1..*ord {
+                    res = format!(
+                        "(Derivative({}, {}) / Derivative({}, {}))",
+                        res, argument, right, argument
+                    );
+                }
+                res
+            }
+            Exp::ExpWithMeasureType { exp, measuretype:_ } => {
+                self.parse_exp_to_sympy_str(exp.as_ref(), argument)
+            }
+        }
+    }
+
 }
 
 impl Knowledge {
+    // 一个表达式它只由 ObjAttrExp（内禀概念） 和 Number 构成，可以用于判断它显然是守恒的。
+    fn _made_of_obj_attr(&self, exp: &Exp) -> bool {
+        match exp {
+            Exp::Number { num: _ } => true,
+            Exp::Atom { atom } => {
+                let atom = atom.as_ref();
+                if let Some(expr) = self.concepts.get(&atom.get_name()) {
+                    match expr {
+                        Expression::ObjAttrExp { objattrexp: _ } => true,
+                        Expression::TExp { texp } => {
+                            let texp_new = texp.subst(atom.get_vec_ids());
+                            self._made_of_obj_attr(&texp_new)
+                        }
+                        _ => unimplemented!()
+                    }
+                } else {
+                    false
+                }
+            }
+            Exp::UnaryExp { op:_, exp } => self._made_of_obj_attr(&*exp),
+            Exp::BinaryExp { left, op:_, right } => {
+                self._made_of_obj_attr(&*left) && self._made_of_obj_attr(&*right)
+            }
+            Exp::DiffExp { left, right, ord:_ } => {
+                self._made_of_obj_attr(&*left) && self._made_of_obj_attr(&*right)
+            }
+            Exp::ExpWithMeasureType { exp, measuretype: _ } => {
+                self._made_of_obj_attr(&*exp)
+            }
+        }
+    }
     fn _get_all_possible_map(&self, objtype_id_map: &HashMap<String, HashSet<i32>>, exp_name: String) -> Vec<HashMap<i32, i32>> {
         let ref expstructure = *self.experiments.get(&exp_name).unwrap();
         for (objtype, ids) in objtype_id_map.iter() {

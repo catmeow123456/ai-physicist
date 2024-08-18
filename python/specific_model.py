@@ -1,5 +1,9 @@
-from typing import List, Tuple
-from interface import Knowledge, ExpStructure, Exp, AtomExp, Proposition, MeasureType
+import sympy as sp
+from typing import List, Tuple, Dict
+from interface import (
+    Knowledge,
+    ExpStructure, Exp, AtomExp, Proposition, MeasureType
+)
 
 class SpecificModel:
     exp_name: str
@@ -61,12 +65,58 @@ class SpecificModel:
         self.zero_list.append((name, zero_exp))
         return name
 
+    def conclusion_raw_complexity(self, prop: Proposition) -> int:
+        """
+        这个函数的目的是计算一个结论（ conclusion ）的 rawdefinition 的复杂度，以便在 reduce_conclusions 函数中进行排序
+        """
+        return self.knowledge.K.raw_definition_prop(prop).get_complexity()
+
+    def reduce_conclusions(self):
+        """
+        这个函数的目的是将当前实验中的所有的 conserved 和 zero 的表达式整理并取 minimal 表示
+        """
+        conclusions: Dict[str, Proposition] = self.knowledge.K.fetch_conclusions()
+        name_list: List[str] = list(conclusions.keys())
+        name_list = sorted(name_list, key=lambda x: self.conclusion_raw_complexity(conclusions[x]))
+        self.conserved_list = []
+        self.zero_list = []
+        for name in name_list:
+            prop = conclusions[name]
+            if prop.prop_type == "IsConserved":
+                self.conserved_list.append((name, prop.unwrap_exp))
+            elif prop.prop_type == "IsZero":
+                self.zero_list.append((name, prop.unwrap_exp))
+        # for name, prop in conclusions:
+        #     prop_type = prop.prop_type
+        #     if prop_type == "IsConserved":
+        #         pass
+        pass
+
     def print_conclusion(self):
         print(f"Exp's name = {self.exp_name}, conclusions:")
         self.knowledge.print_conclusions()
 
     def print_full_conclusion(self):
         for name, exp in self.conserved_list:
-            print(name, "conserved:", exp, "=", self.knowledge.K.raw_definition(exp))
+            print(name, "conserved:", exp, "=", self.knowledge.K.raw_definition_exp(exp))
         for name, exp in self.zero_list:
-            print(name, "zero:", exp, "=", self.knowledge.K.raw_definition(exp))
+            print(name, "zero:", exp, "=", self.knowledge.K.raw_definition_exp(exp))
+
+    def _sympy_of_raw_defi(self, exp: Exp) -> sp.Expr:
+        return sp.sympify(self.knowledge.K.parse_exp_to_sympy_str(
+            self.knowledge.K.raw_definition_exp(exp),
+            "t_0"
+        ))
+
+    def print_sympy_conclusion(self):
+        for name, exp in self.conserved_list:
+            print(name, "conserved:", exp, "=", self._sympy_of_raw_defi(exp))
+        for name, exp in self.zero_list:
+            print(name, "zero:", exp, "=", self._sympy_of_raw_defi(exp))
+    def list_sympy_conclusion(self) -> List[Tuple[str, sp.Expr]]:
+        res = []
+        for name, exp in self.conserved_list:
+            res.append((name, self._sympy_of_raw_defi(exp)))
+        for name, exp in self.zero_list:
+            res.append((name, self._sympy_of_raw_defi(exp)))
+        return res

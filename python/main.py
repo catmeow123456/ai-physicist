@@ -36,6 +36,7 @@ class Theorist:
                 name = spm.append_conserved_exp(expr)
             else:
                 raise ValueError("search_relations(data_info) returned an unexpected result")
+            self.specific[exp_name].reduce_conclusions()
             if name is not None:
                 expression: Expression = self.general.generalize(exp_name, str(expr))
                 self.general.register_expr(str(expression))

@@ -26,6 +26,26 @@ impl Proposition {
     fn __str__(&self) -> String {
         format!("{}", self)
     }
+    #[getter]
+    fn prop_type(&self) -> String {
+        match self {
+            Proposition::IsConserved {exp: _} => r!("IsConserved"),
+            Proposition::IsZero {exp: _} => r!("IsZero"),
+            Proposition::Eq {left: _, right: _} => r!("Eq"),
+            Proposition::Not {prop: _} => r!("Not"),
+        }
+    }
+    fn get_complexity(&self) -> i32 {
+        self.complexity()
+    }
+    #[getter]
+    fn unwrap_exp(&self) -> Exp {
+        match self {
+            Proposition::IsConserved {exp} => *exp.clone(),
+            Proposition::IsZero {exp} => *exp.clone(),
+            _ => panic!("Error: unwrap_exp failed"),
+        }
+    }
 }
 
 #[pyclass(eq, eq_int)]
