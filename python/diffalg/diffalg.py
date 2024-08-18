@@ -2,39 +2,27 @@ from diffalg.mapleIO import mapleIO
 import sympy as sp
 from typing import List, Dict, Union, Tuple, Literal
 
+def aux(s : sp.Symbol | sp.Function) -> str:
+    temp = str(s).replace(' ', '')
+    return (temp + '()') if s.is_Symbol else temp
 
 class DifferentialRing:
     # derivations define the arguments of the functions
     derivations: List[sp.Symbol]
     # blocks define the block order of the variables
     blocks: List[Tuple[str, List[Union[sp.Symbol, sp.Function]]]]
-    # some dictionaries to convert the names of the variables
-    _name_dict: Dict[str, str]  # {'pos' : 'pos(t)', 'posr' : 'posr(t)', 'mass' : 'mass'}
-    _name_dict_2: Dict[str, str]  # {'pos(t)' : 'pos', 'posr(t)' : 'posr', 'mass' : 'mass()'}
 
     def __init__(self, blocks: List[Tuple[str, List[Union[sp.Symbol, sp.Function]]]]):
         self.blocks = blocks
         derivs = set()
-        self._name_dict = {}
-        self._name_dict_2 = {}
         for item in blocks:
             assert item[0] in ['grlexA', 'grlexB', 'degrevlexA', 'degrevlexB', 'lex']
             # assert len(item[1]) > 0
             for var in item[1]:
-                if self._name_dict.__contains__(var.name):
-                    raise ValueError(f'Error! Variable {var.name} appears multiple times!')
                 temp = str(var).replace(' ', '')
-                self._name_dict[var.name] = temp
-                self._name_dict_2[var.name] = (temp + '()') if var.is_Symbol else temp
                 if var.is_Function:
                     derivs |= set(var.args)
         self.derivations = list(derivs)
-        for var in self.derivations:
-            if self._name_dict.__contains__(var.name):
-                raise ValueError(f'Error! Variable {self._name_dict[var.name]} in blocks contradicts with argument {var.name}')
-            temp = var.name.replace(' ', '')
-            self._name_dict[var.name] = temp
-            self._name_dict_2[var.name] = temp
 
     @classmethod
     def default(cls, vars: List[Union[sp.Symbol, sp.Function]]):
@@ -48,7 +36,7 @@ class DifferentialRing:
                                           ']' for block in self.blocks]) + ']'
         else:
             blocks_arg = '[' + ', '.join(['[' +
-                                          ','.join([self._name_dict_2[var.name] for var in block[1]]) +
+                                          ','.join([aux(var) for var in block[1]]) +
                                           ']' for block in self.blocks]) + ']'
         return f'DifferentialRing(blocks = {blocks_arg}, derivations = {derivs_arg})'
 
@@ -154,10 +142,9 @@ def eq_to_maple(ring: DifferentialRing, eq: sp.Expr, trans_table: Literal['ver1'
     if eq.is_Number:
         return str(eq)
     if eq.is_Symbol or eq.is_Function:
-        if trans_table == 'ver1':
-            return ring._name_dict[eq.name]
-        else:
-            return ring._name_dict_2[eq.name]
+        if trans_table == 'ver1' or eq in ring.derivations:
+            return str(eq)
+        return aux(eq)
     if eq.is_Add:
         return ' + '.join(['(' + eq_to_maple(ring, arg, trans_table) + ')' for arg in eq.args])
     if eq.is_Mul:
@@ -173,12 +160,7 @@ def eq_to_maple(ring: DifferentialRing, eq: sp.Expr, trans_table: Literal['ver1'
 
 def eq_from_maple(ring: DifferentialRing, eq: str, trans_table: Literal['ver1', 'ver2'] = 'ver1') -> sp.Expr:
     eq = eq.replace('diff', 'Derivative')
-    if trans_table == 'ver1':
-        for key, value in ring._name_dict.items():
-            eq = eq.replace(value, key)
-    else:
-        for key, value in ring._name_dict_2.items():
-            eq = eq.replace(value, key)
+    eq = eq.replace('()', '')
     eq = eq.replace('$', ',')
     return sp.sympify(eq)
 

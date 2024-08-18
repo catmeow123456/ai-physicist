@@ -4,6 +4,7 @@ from interface import (
     Knowledge,
     ExpStructure, Exp, AtomExp, Proposition, MeasureType
 )
+from diffalg.diffalg import DifferentialRing
 
 class SpecificModel:
     exp_name: str
@@ -80,16 +81,24 @@ class SpecificModel:
         name_list = sorted(name_list, key=lambda x: self.conclusion_raw_complexity(conclusions[x]))
         self.conserved_list = []
         self.zero_list = []
+        # 第一步：提取 DifferentialRing
+        all_symbols = set()
+        all_functions = set()
+        for value in conclusions.values():
+            all_symbols |= value.atoms(sp.Symbol)
+            all_functions |= value.atoms(sp.Function)
+        argument = sp.Symbol("t_0")
+        all_symbols.remove(argument)
+        diffring = DifferentialRing.default(list(all_symbols) + list(all_functions))
+        # 第二步：TODO 把无意义的 conclusion 去掉
+        # TODO
+        # 最后一步：更新 conserved_list 和 zero_list
         for name in name_list:
             prop = conclusions[name]
             if prop.prop_type == "IsConserved":
                 self.conserved_list.append((name, prop.unwrap_exp))
             elif prop.prop_type == "IsZero":
                 self.zero_list.append((name, prop.unwrap_exp))
-        # for name, prop in conclusions:
-        #     prop_type = prop.prop_type
-        #     if prop_type == "IsConserved":
-        #         pass
         pass
 
     def print_conclusion(self):
