@@ -1,4 +1,3 @@
-from diffalg.expr_manipulate import sympify
 from diffalg.mapleIO import mapleIO
 import sympy as sp
 from typing import List, Dict, Union, Tuple, Literal
@@ -181,7 +180,7 @@ def eq_from_maple(ring: DifferentialRing, eq: str, trans_table: Literal['ver1', 
         for key, value in ring._name_dict_2.items():
             eq = eq.replace(value, key)
     eq = eq.replace('$', ',')
-    return sympify(eq)
+    return sp.sympify(eq)
 
 def gb_from_maple(ring: DifferentialRing, gb: str) -> List[RegularDifferentialChain]:
     if gb == '[]':
