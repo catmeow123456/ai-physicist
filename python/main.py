@@ -1,7 +1,13 @@
 from typing import Dict, List, Tuple
 from specific_model import SpecificModel
 from interface import Knowledge
-from interface import search_relations, ExpStructure, MeasureType, Proposition, Exp, AtomExp, ExpData, DataStruct, Expression
+from interface import search_relations, DataStruct, ExpStructure, MeasureType, Proposition, Exp, AtomExp, ExpData, DataStruct, Expression
+
+
+def list_datainfo(data_info: DataStruct):
+    df = data_info.fetch_atomexps();
+    for i in df:
+        print(i)
 
 class Theorist:
     general: Knowledge
@@ -17,7 +23,10 @@ class Theorist:
     def theoretical_analysis(self, exp_name: str):
         assert(exp_name in self.specific)
         spm: SpecificModel = self.specific[exp_name]
-        data_info = spm.pick_relevant_exprs()
+        data_info: DataStruct = spm.pick_relevant_exprs()
+        # list_datainfo(data_info)
+        # for spe in specific_exprs:
+        #     print(f"eval({spe} = ", self.knowledge.K.eval_exp_keyvaluehashed(spe).get_data())
         res: List[Tuple[Exp, ExpData]] = search_relations(data_info)
         for (expr, expdata) in res:
             name: str = None

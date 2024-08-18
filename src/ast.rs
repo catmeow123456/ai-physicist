@@ -1,4 +1,5 @@
 use crate::r;
+use std::hash::{DefaultHasher, Hash, Hasher};
 use std::fmt::{self};
 use std::collections::{HashMap, HashSet};
 use pyo3::prelude::*;
@@ -386,6 +387,11 @@ pub enum Expression {
 impl AtomExp {
     fn __str__(&self) -> String {
         format!("{}", self)
+    }
+    fn __hash__(&self) -> u64 {
+        let mut s = DefaultHasher::new();
+        self.hash(&mut s);
+        s.finish()
     }
     #[staticmethod]
     pub fn new_variable_ids(name: String, ids: Vec<i32>) -> Self {

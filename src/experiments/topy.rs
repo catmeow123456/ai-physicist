@@ -1,5 +1,5 @@
 use pyo3::prelude::*;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::hash::{DefaultHasher, Hash, Hasher};
 
 use crate::ast::{AtomExp, MeasureType, TExp};
@@ -60,6 +60,9 @@ impl ExpStructure {
 impl DataStruct {
     fn __str__(&self) -> String {
         format!("{}", self)
+    }
+    fn fetch_atomexps(&self) -> HashSet<AtomExp> {
+        self.get_data().keys().cloned().collect()
     }
     fn fetch_data(&self, name: &str, id: i32) -> Option<ExpData> {
         self.get_data().get(&AtomExp::new_variable_ids(name.to_string(), vec![id])).cloned()

@@ -42,7 +42,7 @@ class Knowledge:
     def register_expstruct(self, name: str, expstruct: ExpStructure):
         self.K.register_experiment(name, expstruct)
     def fetch_expstruct(self, name: str) -> ExpStructure:
-        return self.K.get_expstruct_pure(name)
+        return self.K.fetch_expstruct(name)
     def eval(self, expr: str, expstruct: ExpStructure) -> ExpData:
         return self.K.eval(sentence.parse_exp(expr), expstruct)
 

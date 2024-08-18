@@ -392,7 +392,13 @@ impl ExpStructure {
     }
     #[inline]
     pub fn get_obj_ids(&self, obj_type: ObjType) -> Vec<i32> {
-        self.exp_config.obj_info_dict.get(&obj_type).unwrap().keys().cloned().collect()
+        // println!("{}", obj_type);
+        // println!("{:?}", self.exp_config.obj_info_dict);
+        let ids = self.exp_config.obj_info_dict.get(&obj_type);
+        if ids.is_none() {
+            return vec![];
+        }
+        ids.unwrap().keys().cloned().collect()
     }
     pub fn set_obj(&mut self, id: i32, obj: Objstructure) {
         if self.datastructofdata.is_some() {

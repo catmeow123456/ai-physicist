@@ -31,6 +31,8 @@ class SpecificModel:
         """
         for key in self.knowledge.fetch_concepts():
             specific_exprs: list[AtomExp] = self.knowledge.specialize_concept(key, self.exp_name)
+            # if len(specific_exprs) > 0:
+            #     print(f"specialize_concept({self.exp_name}, {key}) = {specific_exprs}")
             for atom_exp in specific_exprs:
                 self.knowledge.eval(str(atom_exp), self.experiment)
                 # 在这个 eval 过程中，
@@ -39,6 +41,9 @@ class SpecificModel:
 
     def append_conserved_exp(self, conserved_exp: Exp) -> str:
         hashed_value = self.exp_hashed(conserved_exp)
+        if hashed_value.is_none or hashed_value.is_const:
+            return None
+        # print(f"conserved exp = {conserved_exp} hashed_value = {hashed_value.get_data()}")
         for _, exp in self.conserved_list:
             if self.exp_hashed(exp) == hashed_value:
                 # print(f"exp = {self.exp_hashed(exp).get_data()}, conserved_exp = {conserved_exp.exp_hashed(exp).get_data()}")
@@ -59,3 +64,9 @@ class SpecificModel:
     def print_conclusion(self):
         print(f"Exp's name = {self.exp_name}, conclusions:")
         self.knowledge.print_conclusions()
+
+    def print_full_conclusion(self):
+        for name, exp in self.conserved_list:
+            print(name, "conserved:", exp, "=", self.knowledge.K.raw_definition(exp))
+        for name, exp in self.zero_list:
+            print(name, "zero:", exp, "=", self.knowledge.K.raw_definition(exp))

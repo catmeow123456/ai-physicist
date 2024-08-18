@@ -87,9 +87,11 @@ pub struct KeyValue {
 }
 #[pymethods]
 impl KeyValue {
+    #[getter]
     fn is_none(&self) -> bool {
         self.value.is_none()
     }
+    #[getter]
     fn is_const(&self) -> bool {
         if self.value.is_none() { return false; }
         let v = self.value.as_ref().unwrap();
@@ -127,6 +129,12 @@ impl KeyValueHashed {
             if v[i] != 0 { return false; }
         }
         true
+    }
+    #[getter]
+    pub fn is_trivial_const(&self) -> bool {
+        if !self.is_const() { return false; }
+        let val = self.value.as_ref().unwrap()[0];
+        val == 1 || val == 0 || val == self.p_mod - 1
     }
     pub fn get_data(&self) -> Vec<i32> {
         self.value.as_ref().unwrap().clone()

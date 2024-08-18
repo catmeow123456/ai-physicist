@@ -137,7 +137,7 @@ impl Knowledge {
         self.conclusions.remove(&name);
     }
     #[inline]
-    fn get_expstruct_pure(&self, name: String) -> ExpStructure {
+    fn fetch_expstruct(&self, name: String) -> ExpStructure {
         self.experiments.get(&name).unwrap().clone()
     }
     fn get_expstructure(&self, expconfig: &IExpConfig, objsettings: Vec<Objstructure> ) -> ExpStructure {
@@ -304,10 +304,58 @@ impl Knowledge {
     fn eval_exp_keyvaluehashed(&mut self, exp: &Exp) -> KeyValueHashed {
         self.eval_keyvalue(exp).to_hashed()
     }
+    fn raw_definition(&self, exp: &Exp) -> Exp {
+        match exp {
+            Exp::Number { num: _ } => {
+                exp.clone()
+            }
+            Exp::Atom { atom } => {
+                let atom = atom.as_ref();
+                if let Some(expr) = self.concepts.get(&atom.get_name()) {
+                    match expr {
+                        Expression::ObjAttrExp { objattrexp: _ } => {
+                            exp.clone()
+                        }
+                        Expression::TExp { texp } => {
+                            let texp_new = texp.subst(atom.get_vec_ids());
+                            self.raw_definition(&texp_new)
+                        }
+                        _ => unimplemented!()
+                    }
+                } else {
+                    exp.clone()
+                }
+            }
+            Exp::BinaryExp { left, op, right } => {
+                let left = self.raw_definition(&*left);
+                let right = self.raw_definition(&*right);
+                Exp::BinaryExp { left: Box::new(left), op: op.clone(), right: Box::new(right) }
+            }
+            Exp::UnaryExp { op, exp } => {
+                let exp = self.raw_definition(&*exp);
+                Exp::UnaryExp { op: op.clone(), exp: Box::new(exp) }
+            }
+            Exp::DiffExp { left, right, ord } => {
+                let left = self.raw_definition(&*left);
+                let right = self.raw_definition(&*right);
+                Exp::DiffExp { left: Box::new(left), right: Box::new(right), ord: *ord }
+            }
+            Exp::ExpWithMeasureType { exp, measuretype } => {
+                let exp = self.raw_definition(&*exp);
+                Exp::ExpWithMeasureType { exp: Box::new(exp), measuretype: measuretype.clone() }
+            }
+        }
+    }
 }
+
 impl Knowledge {
     fn _get_all_possible_map(&self, objtype_id_map: &HashMap<String, HashSet<i32>>, exp_name: String) -> Vec<HashMap<i32, i32>> {
         let ref expstructure = *self.experiments.get(&exp_name).unwrap();
+        for (objtype, ids) in objtype_id_map.iter() {
+            if expstructure.get_obj_ids(ObjType::from_str(objtype).unwrap()).len() < ids.len() {
+                return vec![];
+            }
+        }
         let mut vec_map: Vec<HashMap<i32, i32>> = vec![];
         vec_map.push(HashMap::new());
         for (objtype, ids) in objtype_id_map.iter() {
