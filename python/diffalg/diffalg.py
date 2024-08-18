@@ -106,6 +106,9 @@ class diffalg:
             return self
         return diffalg.from_eqs(self.ring, self.eqs + [eq], self.ineqs)
 
+    def _insert_new_eq(self, eq: sp.Expr) -> 'diffalg':
+        return diffalg.from_eqs(self.ring, self.eqs + [eq], self.ineqs)
+
     def insert_new_ineqs(self, eq: sp.Expr) -> 'diffalg':
         if eq in self.ineqs:
             return self

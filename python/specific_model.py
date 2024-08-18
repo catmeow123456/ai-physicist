@@ -4,7 +4,7 @@ from interface import (
     Knowledge,
     ExpStructure, Exp, AtomExp, Proposition, MeasureType
 )
-from diffalg.diffalg import DifferentialRing
+from diffalg.diffalg import DifferentialRing, diffalg
 
 class SpecificModel:
     exp_name: str
@@ -72,7 +72,7 @@ class SpecificModel:
         """
         return self.knowledge.K.raw_definition_prop(prop).get_complexity()
 
-    def reduce_conclusions(self):
+    def reduce_conclusions(self, debug = False):
         """
         这个函数的目的是将当前实验中的所有的 conserved 和 zero 的表达式整理并取 minimal 表示
         """
@@ -85,15 +85,32 @@ class SpecificModel:
         all_symbols = set()
         all_functions = set()
         for value in conclusions.values():
-            all_symbols |= value.atoms(sp.Symbol)
-            all_functions |= value.atoms(sp.Function)
+            all_symbols |= self._sympy_of_raw_defi(value.unwrap_exp).atoms(sp.Symbol)
+            all_functions |= self._sympy_of_raw_defi(value.unwrap_exp).atoms(sp.Function)
         argument = sp.Symbol("t_0")
-        all_symbols.remove(argument)
-        diffring = DifferentialRing.default(list(all_symbols) + list(all_functions))
+        if all_symbols.__contains__(argument):
+            all_symbols.remove(argument)
+        ring = DifferentialRing.default(list(all_symbols) + list(all_functions))
         # 第二步：TODO 把无意义的 conclusion 去掉
-        # TODO
-        # 最后一步：更新 conserved_list 和 zero_list
+        ideal: diffalg = diffalg(ring)
+        if debug:
+            print('prepare ring', list(all_symbols) + list(all_functions))
+        new_name_list = []
         for name in name_list:
+            prop = conclusions[name]
+            if prop.prop_type == "IsConserved":
+                new_eq = sp.diff(self._sympy_of_raw_defi(prop.unwrap_exp), argument)
+            elif prop.prop_type == "IsZero":
+                new_eq = self._sympy_of_raw_defi(prop.unwrap_exp)
+            if debug:
+                print('add new eq to ideal', new_eq)
+            if ideal.belongs_to(new_eq.as_numer_denom()[0]):
+                self.knowledge.K.remove_conclusion(name)
+            else:
+                ideal = ideal._insert_new_eq(new_eq)
+                new_name_list.append(name)
+        # 最后一步：更新 conserved_list 和 zero_list
+        for name in new_name_list:
             prop = conclusions[name]
             if prop.prop_type == "IsConserved":
                 self.conserved_list.append((name, prop.unwrap_exp))
