@@ -11,6 +11,7 @@ from ai_physicist import (
     TExp,
     AtomExp,
     IExpConfig,
+    ObjAttrExp,
     Expression,
     DataStruct,
     ExpData,
@@ -46,10 +47,10 @@ class Knowledge:
     def eval(self, expr: str, expstruct: ExpStructure) -> ExpData:
         return self.K.eval(sentence.parse_exp(expr), expstruct)
 
-    def register_expr(self, definition: str, name: str = None) -> str:
+    def register_expr(self, definition: Expression | str, name: str = None) -> str:
         if name is None:
             name = self.auto_concept_name()
-        expr: Expression = sentence.parse(definition)
+        expr: Expression = sentence.parse(definition) if isinstance(definition, str) else definition
         self.K.register_expression(name, expr)
         return name
     def register_conclusion(self, definition: str, name: str = None) -> str:
@@ -65,9 +66,10 @@ class Knowledge:
         self.conclusion_id += 1
         return "R_{:02d}".format(self.conclusion_id)
 
-    def generalize(self, exp_name: str, exp: str) -> Expression:
+    def generalize(self, exp_name: str, exp: Exp | str) -> Expression:
         try:
-            return Expression.TExp(self.K.generalize(sentence.parse_exp(exp), exp_name))
+            exp: Exp = sentence.parse_exp(exp) if isinstance(exp, str) else exp
+            return Expression.TExp(self.K.generalize(exp, exp_name))
         except:
             print("Failed to generalize", exp_name, exp)
     def specialize(self, texp: str, exp_name: str) -> List[Expression]:

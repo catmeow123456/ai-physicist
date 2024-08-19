@@ -79,11 +79,11 @@ class SpecificModel:
         conclusions: Dict[str, Proposition] = self.knowledge.K.fetch_conclusions()
         name_list: List[str] = list(conclusions.keys())
         name_list = sorted(name_list, key=lambda x: self.conclusion_raw_complexity(conclusions[x]))
-        self.conserved_list = []
-        self.zero_list = []
         # 第一步：提取 DifferentialRing
         all_symbols = set()
         all_functions = set()
+        for name, _ in self.conserved_list:
+            all_symbols.add(sp.Symbol(name))
         for value in conclusions.values():
             all_symbols |= self._sympy_of_raw_defi(value.unwrap_exp).atoms(sp.Symbol)
             all_functions |= self._sympy_of_raw_defi(value.unwrap_exp).atoms(sp.Function)
@@ -99,17 +99,29 @@ class SpecificModel:
         for name in name_list:
             prop = conclusions[name]
             if prop.prop_type == "IsConserved":
-                new_eq = sp.diff(self._sympy_of_raw_defi(prop.unwrap_exp), argument)
+                sp_expr = self._sympy_of_raw_defi(prop.unwrap_exp)
+                new_eq = sp.diff(sp_expr, argument).as_numer_denom()[0]
+                if ideal.belongs_to(new_eq):
+                    self.knowledge.K.remove_conclusion(name)
+                else:
+                    new_eq = sp_expr - sp.Symbol(name)
+                    if debug:
+                        print('add new eq to ideal', new_eq)
+                    ideal = ideal._insert_new_eq(new_eq)
+                    new_name_list.append(name)
             elif prop.prop_type == "IsZero":
-                new_eq = self._sympy_of_raw_defi(prop.unwrap_exp)
-            if debug:
-                print('add new eq to ideal', new_eq)
-            if ideal.belongs_to(new_eq.as_numer_denom()[0]):
-                self.knowledge.K.remove_conclusion(name)
-            else:
-                ideal = ideal._insert_new_eq(new_eq)
-                new_name_list.append(name)
+                sp_expr = self._sympy_of_raw_defi(prop.unwrap_exp)
+                new_eq = sp_expr.as_numer_denom()[0]
+                if ideal.belongs_to(new_eq):
+                    self.knowledge.K.remove_conclusion(name)
+                else:
+                    if debug:
+                        print('add new eq to ideal', sp_expr)
+                    ideal = ideal._insert_new_eq(sp_expr)
+                    new_name_list.append(name)
         # 最后一步：更新 conserved_list 和 zero_list
+        self.conserved_list = []
+        self.zero_list = []
         for name in new_name_list:
             prop = conclusions[name]
             if prop.prop_type == "IsConserved":
@@ -123,10 +135,10 @@ class SpecificModel:
         self.knowledge.print_conclusions()
 
     def print_full_conclusion(self):
-        for name, exp in self.conserved_list:
-            print(name, "conserved:", exp, "=", self.knowledge.K.raw_definition_exp(exp))
         for name, exp in self.zero_list:
             print(name, "zero:", exp, "=", self.knowledge.K.raw_definition_exp(exp))
+        for name, exp in self.conserved_list:
+            print(name, "conserved:", exp, "=", self.knowledge.K.raw_definition_exp(exp))
 
     def _sympy_of_raw_defi(self, exp: Exp) -> sp.Expr:
         return sp.sympify(self.knowledge.K.parse_exp_to_sympy_str(
@@ -135,14 +147,14 @@ class SpecificModel:
         ))
 
     def print_sympy_conclusion(self):
-        for name, exp in self.conserved_list:
-            print(name, "conserved:", exp, "=", self._sympy_of_raw_defi(exp))
         for name, exp in self.zero_list:
             print(name, "zero:", exp, "=", self._sympy_of_raw_defi(exp))
+        for name, exp in self.conserved_list:
+            print(name, "conserved:", exp, "=", self._sympy_of_raw_defi(exp))
     def list_sympy_conclusion(self) -> List[Tuple[str, sp.Expr]]:
         res = []
-        for name, exp in self.conserved_list:
-            res.append((name, self._sympy_of_raw_defi(exp)))
         for name, exp in self.zero_list:
+            res.append((name, self._sympy_of_raw_defi(exp)))
+        for name, exp in self.conserved_list:
             res.append((name, self._sympy_of_raw_defi(exp)))
         return res

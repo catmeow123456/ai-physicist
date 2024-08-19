@@ -1,7 +1,8 @@
 from typing import Dict, List, Tuple
 from specific_model import SpecificModel
+from object_model import ObjectModel
 from interface import Knowledge
-from interface import search_relations, DataStruct, ExpStructure, MeasureType, Proposition, Exp, AtomExp, ExpData, DataStruct, Expression
+from interface import search_relations, DataStruct, ExpStructure, MeasureType, Proposition, Exp, TExp, AtomExp, ExpData, DataStruct, Expression
 
 
 def list_datainfo(data_info: DataStruct):
@@ -12,6 +13,7 @@ def list_datainfo(data_info: DataStruct):
 class Theorist:
     general: Knowledge
     specific: Dict[str, SpecificModel]
+    objmodel: ObjectModel
 
     def __init__(self):
         self.general = Knowledge.default()
@@ -37,12 +39,16 @@ class Theorist:
             else:
                 raise ValueError("search_relations(data_info) returned an unexpected result")
             if name is not None:
-                expression: Expression = self.general.generalize(exp_name, str(expr))
-                self.general.register_expr(str(expression))
-                for key in self.specific:
-                    self.specific[key].knowledge.register_expr(str(expression))
+                expression: Expression = self.general.generalize(exp_name, expr)
+                self.register_concept(expression)
         self.specific[exp_name].reduce_conclusions(debug=True)
         pass
+
+    def register_concept(self, concept: TExp):
+        self.general.register_expr(concept)
+        for key in self.specific:
+            self.specific[key].knowledge.register_expr(concept)
+
 
 # 一个非常简餐粗暴的函数 （用于测试，详见 test8.py ）
 # 将一个理论家记忆中的所有概念实例化 （specialize） 到一个实验中的具体表达式
