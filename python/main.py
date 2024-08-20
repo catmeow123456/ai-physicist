@@ -13,7 +13,7 @@ def list_datainfo(data_info: DataStruct):
 class Theorist:
     general: Knowledge
     specific: Dict[str, SpecificModel]
-    objmodel: ObjectModel
+    objmodel: Dict[str, ObjectModel]
 
     def __init__(self):
         self.general = Knowledge.default()
@@ -30,6 +30,7 @@ class Theorist:
         # for spe in specific_exprs:
         #     print(f"eval({spe} = ", self.knowledge.K.eval_exp_keyvaluehashed(spe).get_data())
         res: List[Tuple[Exp, ExpData]] = search_relations(data_info)
+        print(f"Found {len(res)} relations")
         for (expr, expdata) in res:
             name: str = None
             if expdata.is_zero():
@@ -40,14 +41,17 @@ class Theorist:
                 raise ValueError("search_relations(data_info) returned an unexpected result")
             if name is not None:
                 expression: Expression = self.general.generalize(exp_name, expr)
-                self.register_concept(expression)
+                self.register_concept(expression.unwrap_texp())
         self.specific[exp_name].reduce_conclusions(debug=True)
-        pass
+        # for name, expr in self.specific[exp_name].conserved_list:
+        #     expression: Expression = self.general.generalize(exp_name, expr)
+        #     self.register_concept(expression.unwrap_texp())
 
     def register_concept(self, concept: TExp):
-        self.general.register_expr(concept)
+        expression: Expression = Expression.TExp(texp=concept)
+        self.general.register_expr(expression)
         for key in self.specific:
-            self.specific[key].knowledge.register_expr(concept)
+            self.specific[key].knowledge.register_expr(expression)
 
 
 # 一个非常简餐粗暴的函数 （用于测试，详见 test8.py ）
