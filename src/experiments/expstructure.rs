@@ -231,22 +231,23 @@ impl DataStructOfExpData {
     }
     pub fn plot_expdata(&self, name: &str) {
         // plot the arr
-        let mut plot = plotly::Plot::new();
-        let t = self.get_t();
-        let repeat_time = t.repeat_time;
-        for ith in 0..repeat_time {
-            let t= t.data.row(ith).to_vec();
-            for (key, value) in self.data.iter() {
-                if key.get_name() == "t" {
-                    continue;
-                }
-                let x = value.data.row(ith).to_vec();
-                let trace = plotly::Scatter::new(t.clone(), x.clone());
-                plot.add_trace(trace);
-            }
-        }
-        // plot.show();
-        plot.write_html(format!("tmp/{}.html", name));
+        unimplemented!()
+        // let mut plot = plotly::Plot::new();
+        // let t = self.get_t();
+        // let repeat_time = t.repeat_time;
+        // for ith in 0..repeat_time {
+        //     let t= t.data.row(ith).to_vec();
+        //     for (key, value) in self.data.iter() {
+        //         if key.get_name() == "t" {
+        //             continue;
+        //         }
+        //         let x = value.data.row(ith).to_vec();
+        //         let trace = plotly::Scatter::new(t.clone(), x.clone());
+        //         plot.add_trace(trace);
+        //     }
+        // }
+        // // plot.show();
+        // plot.write_html(format!("tmp/{}.html", name));
     }
 }
 
@@ -428,7 +429,7 @@ impl ExpStructure {
             }
             idata = add_errors(&idata, error);
             assert_eq!(idata.shape(), [repeat_time, t_num]);
-            multi_data.insert(name.clone(), ExpData::new(idata));
+            multi_data.insert(name.clone(), ExpData::from_arr2(idata));
         }
         self.datastructofdata = Some(DataStructOfExpData::new(
             self.exp_config.name.clone(), measuretype,

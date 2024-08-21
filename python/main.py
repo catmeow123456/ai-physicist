@@ -33,9 +33,9 @@ class Theorist:
         print(f"Found {len(res)} relations")
         for (expr, expdata) in res:
             name: str = None
-            if expdata.is_zero():
+            if expdata.is_zero:
                 name = spm.append_zero_exp(expr)
-            elif expdata.is_conserved():
+            elif expdata.is_conserved:
                 name = spm.append_conserved_exp(expr)
             else:
                 raise ValueError("search_relations(data_info) returned an unexpected result")
@@ -70,10 +70,10 @@ def work_at_exp(knowledge: Knowledge, exp_name: str) -> ExpStructure:
     print(data_info)
     res: List[Tuple[Exp, ExpData]] = search_relations(data_info)
     for (expr, expdata) in res:
-        if expdata.is_zero():
+        if expdata.is_zero:
             prop = Proposition.IsZero(expr)
             knowledge.register_conclusion(str(prop))
-        elif expdata.is_conserved():
+        elif expdata.is_conserved:
             prop = Proposition.IsConserved(expr)
             knowledge.register_conclusion(str(prop))
         expression: Expression = knowledge.generalize(exp_name, str(expr))

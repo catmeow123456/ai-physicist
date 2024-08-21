@@ -12,6 +12,7 @@ use crate::experiments::simulation::{
     motion0::struct_motion0,
 };
 use crate::experiments::{
+    constdata::ConstData,
     expdata::{ExpData, Diff},
     expstructure::{ExpStructure, Objstructure},
 };
@@ -513,14 +514,12 @@ impl Knowledge {
     fn _eval(&self, exp0: &Exp, context: &mut ExpStructure) -> ExpData {
         assert!(!context.expdata_is_none());
         let data = context.get_ref_expdata();
-        let n = data.measuretype.n();
-        let repeat_time = data.measuretype.repeat_time();
         match exp0 {
             Exp::ExpWithMeasureType { exp: _, measuretype: _ } => {
                 panic!("ExpWithMeasureType should be handled in eval");
             }
             Exp::Number { num } => {
-                ExpData::from_elem(*num as f64, n, repeat_time)
+                ExpData::from_exact_const(*num)
             }
             Exp::Atom { atom } => {
                 let atom = atom.as_ref();
@@ -555,19 +554,33 @@ impl Knowledge {
             Exp::UnaryExp { op: UnaryOp::Neg, ref exp } => -self._eval(&*exp, context),
             Exp::UnaryExp { op: UnaryOp::Diff, ref exp } => self._eval(&*exp, context).diff_tau(),
             Exp::BinaryExp { op, ref left, ref right } => 
-                apply_binary_op(op, &self._eval(&*left, context), &self._eval(&*right, context)).unwrap(),
+                apply_binary_op(op, &self._eval(&*left, context), &self._eval(&*right, context)),
             Exp::DiffExp { ref left, ref right, ord} =>
                 (&self._eval(&*left, context)).diff_n(&self._eval(&*right, context), *ord as usize),
         }
     }
 }
 
-pub fn apply_binary_op(op: &BinaryOp, valuei: &ExpData, valuej: &ExpData) -> Option<ExpData> {
+pub fn apply_binary_op(op: &BinaryOp, valuei: &ExpData, valuej: &ExpData) -> ExpData {
     match op {
-        BinaryOp::Add => Some(valuei + valuej),
-        BinaryOp::Sub => Some(valuei - valuej),
-        BinaryOp::Mul => Some(valuei * valuej),
-        BinaryOp::Div => Some(valuei / valuej),
-        BinaryOp::Pow => Some(valuei.pow(valuej)),
+        BinaryOp::Add => valuei + valuej,
+        BinaryOp::Sub => valuei - valuej,
+        BinaryOp::Mul => valuei * valuej,
+        BinaryOp::Div => valuei / valuej,
+        BinaryOp::Pow => {
+            match valuej {
+                ExpData::Const { content } => {
+                    match content {
+                        ConstData::Exact { value } => valuei.powi(*value),
+                        ConstData::Data { mean: _, std: _ } => {
+                            ExpData::Err { }
+                            // TODO
+                        }
+                    }
+                }
+                ExpData::Zero { } => ExpData::from_exact_const(1),
+                _ => ExpData::Err { }
+            }
+        },
     }
 }

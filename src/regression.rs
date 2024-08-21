@@ -24,41 +24,36 @@ fn search_relations_aux(list: &Vec<(Exp, ExpData)>) -> Vec<(Exp, ExpData)> {
             }
             let (ref id, ref valuei) = list[i];
             let (ref jd, ref valuej) = list[j];
-            if valuei.badpts.len() >= valuei.n / 4 || valuej.badpts.len() >= valuej.n / 4 {
+            if valuei.is_err() || valuej.is_err() {
                 continue;
             }
             if j < i {
                 for op in vec![BinaryOp::Add, BinaryOp::Sub, BinaryOp::Mul] {
-                    let exp = Exp::BinaryExp {
-                        left: Box::new(id.clone()),
-                        right: Box::new(jd.clone()),
-                        op: op.clone()
-                    };
-                    if let Some(value) = apply_binary_op(&op, valuei, valuej) {
-                        if value.is_conserved() {
-                            relation_list.push((exp, value));
-                        }
+                    let value = apply_binary_op(&op, valuei, valuej);
+                    if value.is_conserved() {
+                        let exp = Exp::BinaryExp {
+                            left: Box::new(id.clone()),
+                            right: Box::new(jd.clone()),
+                            op: op.clone()
+                        };
+                        relation_list.push((exp, value));
                     }
                 }
             }
-            {
+            let value = apply_binary_op(&BinaryOp::Div, valuei, valuej);
+            if value.is_conserved() {
                 let exp = Exp::BinaryExp {
                     left: Box::new(id.clone()),
                     right: Box::new(jd.clone()),
                     op: BinaryOp::Div
                 };
-                if let Some(value) = apply_binary_op(&BinaryOp::Div, valuei, valuej) {
-                    if value.is_conserved() {
-                        relation_list.push((exp, value));
-                    }
-                }
+                relation_list.push((exp, value));
             }
-            if !valuei.is_conserved_piecewise() && !valuej.is_conserved_piecewise() {
+            let value = valuei.diff(valuej);
+            // println!("diff value: {}", value);
+            if value.is_const() { // conserved but not zero
                 let exp = Exp::DiffExp { left: Box::new(id.clone()), right: Box::new(jd.clone()), ord: 1 };
-                let value = valuei.diff(valuej);
-                if value.is_conserved() {
-                    relation_list.push((exp, value));
-                }
+                relation_list.push((exp, value));
             }
         }
     }

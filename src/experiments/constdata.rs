@@ -1,0 +1,220 @@
+use pyo3::prelude::*;
+use std::fmt;
+use std::ops::{Add, Sub, Mul, Div, Neg};
+
+#[pyclass]
+#[derive(Debug, Clone)]
+pub enum ConstData {
+    Data { mean: f64, std: f64 },
+    Exact { value: i32 },
+}
+
+
+impl fmt::Display for ConstData {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "ExpData.ConstData =\n")?;
+        match self {
+            ConstData::Data { mean, std } => {
+                write!(f, "mean = {}, std = {}\n", mean, std)
+            }
+            ConstData::Exact { value } => {
+                write!(f, "value = {}\n", value)
+            }
+        }
+    }
+}
+
+impl Add for ConstData {
+    type Output = Self;
+
+    fn add(self, other: Self) -> Self {
+        match self {
+            ConstData::Data { mean: m1, std: s1 } => match other {
+                ConstData::Data { mean: m2, std: s2 } => ConstData::Data {
+                    mean: m1 + m2,
+                    std: fold_gaussian(s1, s2),
+                },
+                ConstData::Exact { value: v2 } => ConstData::Data {
+                    mean: m1 + v2 as f64,
+                    std: s1,
+                },
+            },
+            ConstData::Exact { value: v1 } => match other {
+                ConstData::Data { mean: m2, std: s2 } => ConstData::Data {
+                    mean: v1 as f64 + m2,
+                    std: s2,
+                },
+                ConstData::Exact { value: v2 } => ConstData::Exact {
+                    value: v1 + v2,
+                },
+            },
+        }
+    }
+}
+
+impl Add for &ConstData {
+    type Output = ConstData;
+
+    fn add(self, other: Self) -> ConstData {
+        self.clone() + other.clone()
+    }
+}
+
+impl Sub for ConstData {
+    type Output = Self;
+
+    fn sub(self, other: Self) -> Self {
+        match self {
+            ConstData::Data { mean: m1, std: s1 } => match other {
+                ConstData::Data { mean: m2, std: s2 } => ConstData::Data {
+                    mean: m1 - m2,
+                    std: fold_gaussian(s1, s2),
+                },
+                ConstData::Exact { value: v2 } => ConstData::Data {
+                    mean: m1 - v2 as f64,
+                    std: s1,
+                },
+            },
+            ConstData::Exact { value: v1 } => match other {
+                ConstData::Data { mean: m2, std: s2 } => ConstData::Data {
+                    mean: v1 as f64 - m2,
+                    std: s2,
+                },
+                ConstData::Exact { value: v2 } => ConstData::Exact {
+                    value: v1 - v2,
+                },
+            },
+        }
+    }
+}
+
+impl Sub for &ConstData {
+    type Output = ConstData;
+
+    fn sub(self, other: Self) -> ConstData {
+        self.clone() - other.clone()
+    }
+}
+
+impl Mul for ConstData {
+    type Output = Self;
+
+    fn mul(self, other: Self) -> Self {
+        match self {
+            ConstData::Data { mean: m1, std: s1 } => match other {
+                ConstData::Data { mean: m2, std: s2 } => ConstData::Data {
+                    mean: m1 * m2,
+                    std: fold_gaussian(m1 * s2, m2 * s1),
+                },
+                ConstData::Exact { value: v2 } => ConstData::Data {
+                    mean: m1 * v2 as f64,
+                    std: s1 * v2 as f64,
+                },
+            },
+            ConstData::Exact { value: v1 } => match other {
+                ConstData::Data { mean: m2, std: s2 } => ConstData::Data {
+                    mean: v1 as f64 * m2,
+                    std: s2 * v1 as f64,
+                },
+                ConstData::Exact { value: v2 } => ConstData::Exact {
+                    value: v1 * v2,
+                },
+            },
+        }
+    }
+}
+
+impl Mul for &ConstData {
+    type Output = ConstData;
+
+    fn mul(self, other: Self) -> ConstData {
+        self.clone() * other.clone()
+    }
+}
+
+impl Div for ConstData {
+    type Output = Self;
+
+    fn div(self, other: Self) -> Self {
+        match self {
+            ConstData::Data { mean: m1, std: s1 } => match other {
+                ConstData::Data { mean: m2, std: s2 } => ConstData::Data {
+                    mean: m1 / m2,
+                    std: fold_gaussian(s1 / m2, s2 * m1 / m2.powi(2)),
+                },
+                ConstData::Exact { value: v2 } => ConstData::Data {
+                    mean: m1 / v2 as f64,
+                    std: s1 / v2 as f64,
+                },
+            },
+            ConstData::Exact { value: v1 } => match other {
+                ConstData::Data { mean: m2, std: s2 } => ConstData::Data {
+                    mean: v1 as f64 / m2,
+                    std: s2 * v1 as f64 / m2.powi(2),
+                },
+                ConstData::Exact { value: v2 } => {
+                    unimplemented!()
+                    // ConstData::Exact {
+                    //     // TODO: rational
+                    //     value: v1 / v2,
+                    // }
+                },
+            },
+        }
+    }
+}
+
+impl Div for &ConstData {
+    type Output = ConstData;
+
+    fn div(self, other: Self) -> ConstData {
+        self.clone() / other.clone()
+    }
+}
+
+impl Neg for ConstData {
+    type Output = Self;
+
+    fn neg(self) -> Self {
+        match self {
+            ConstData::Data { mean, std } => ConstData::Data {
+                mean: -mean,
+                std,
+            },
+            ConstData::Exact { value } => ConstData::Exact {
+                value: -value,
+            },
+        }
+    }
+}
+
+impl Neg for &ConstData {
+    type Output = ConstData;
+
+    fn neg(self) -> ConstData {
+        self.clone().neg()
+    }
+}
+
+
+impl ConstData {
+    pub fn new(mean: f64, std: f64) -> Self {
+        ConstData::Data { mean, std }
+    }
+    pub fn powi(&self, n: i32) -> Self {
+        match self {
+            ConstData::Exact { value } => ConstData::Exact {
+                value: value.pow(n as u32),
+            },
+            ConstData::Data { mean, std } => ConstData::Data {
+                mean: mean.powi(n),
+                std: n as f64 * mean.powi(n - 1) * std,
+            },
+        }
+    }
+}
+
+// fold two gaussian distributions
+fn fold_gaussian(a: f64, b: f64) -> f64 {
+    (a.powi(2) + b.powi(2)).sqrt()
+}

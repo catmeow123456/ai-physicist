@@ -10,6 +10,8 @@ pub mod experiments{
     pub mod impl_for_pyo3;
     pub mod topy;
     pub mod expdata;
+    pub mod normaldata;
+    pub mod constdata;
     pub mod expstructure;
     pub mod objects{
         pub mod obj;
