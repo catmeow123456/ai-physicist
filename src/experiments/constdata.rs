@@ -9,16 +9,48 @@ pub enum ConstData {
     Exact { value: i32 },
 }
 
+#[pymethods]
+impl ConstData {
+    #[inline]
+    fn __str__(&self) -> String {
+        format!("{}", self)
+    }
+    #[inline]
+    fn __add__(&self, rhs: &Self) -> Self {
+        self + rhs
+    }
+    #[inline]
+    fn __sub__(&self, rhs: &Self) -> Self {
+        self - rhs
+    }
+    #[inline]
+    fn __mul__(&self, rhs: &Self) -> Self {
+        self * rhs
+    }
+    #[inline]
+    fn __truediv__(&self, rhs: &Self) -> Self {
+        self / rhs
+    }
+    #[inline]
+    fn __neg__(&self) -> Self {
+        -self
+    }
+    #[inline]
+    fn __powi__(&self, n: i32) -> Self {
+        self.powi(n)
+    }
+}
+
 
 impl fmt::Display for ConstData {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "ExpData.ConstData =\n")?;
         match self {
             ConstData::Data { mean, std } => {
-                write!(f, "mean = {}, std = {}\n", mean, std)
+                write!(f, "mean = {}, std = {}", mean, std)
             }
             ConstData::Exact { value } => {
-                write!(f, "value = {}\n", value)
+                write!(f, "value = {}", value)
             }
         }
     }
@@ -152,7 +184,7 @@ impl Div for ConstData {
                     mean: v1 as f64 / m2,
                     std: s2 * v1 as f64 / m2.powi(2),
                 },
-                ConstData::Exact { value: v2 } => {
+                ConstData::Exact { value: _ } => {
                     unimplemented!()
                     // ConstData::Exact {
                     //     // TODO: rational

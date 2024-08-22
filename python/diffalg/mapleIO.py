@@ -31,10 +31,10 @@ class mapleIO:
             raise Exception(stderr_)
         self.outputs = self.translate(stdout_)
         if 'error' in self.outputs[-1].lower():
-            print('debug' + '-'*20)
+            print('debug in maple' + '-'*20)
             for c in self.commands:
                 print(c)
-            print('debug' + '-'*20)
+            print('debug in maple' + '-'*20)
             raise Exception(self.outputs[-1])
         return self.outputs
 

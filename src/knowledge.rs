@@ -1,5 +1,6 @@
 use itertools::Itertools;
 use pyo3::prelude::*;
+use core::panic;
 use std::collections::{HashMap, HashSet};
 use crate::exprcharacter::{KeyState, KeyValue, KeyValueHashed};
 use crate::experiments::objects::obj::ObjType;
@@ -165,16 +166,25 @@ impl Knowledge {
             }
         }
     }
-    pub fn eval_objattr(&self, objattrexp: &ObjAttrExp, objsettings: Vec<Objstructure>) -> ExpData {
+    pub fn eval_objattr(&self, objattrexp: &ObjAttrExp, objsettings: Vec<Objstructure>) -> ConstData {
         match objattrexp {
             ObjAttrExp::From { sexp } => {
                 let sexp = sexp.as_ref();
                 match sexp {
                     SExp::Mk { expconfig, exp } => {
                         let expconfig = expconfig.as_ref();
-                        let mut data = self.get_expstructure(expconfig, objsettings);
-                        let exp = exp.as_ref();
-                        self.eval(exp, &mut data)
+                        let mut total_time = 0;
+                        loop {
+                            total_time += 1;
+                            if total_time > 5 {
+                                panic!("total_time > 5");
+                            }
+                            let mut data = self.get_expstructure(expconfig, objsettings.clone());
+                            let exp = exp.as_ref();
+                            if let Some(res) = self.eval(exp, &mut data).force_to_const_data() {
+                                return res;
+                            }
+                        };
                     }
                 }
             }
@@ -536,7 +546,9 @@ impl Knowledge {
                                 for id in atom.get_allids().iter() {
                                     objs.push(context.get_obj(*id).clone());
                                 }
-                                let expdata = self.eval_objattr(objattrexp, objs);
+                                let constdata = self.eval_objattr(objattrexp, objs);
+                                // println!("constdata = {}", constdata);
+                                let expdata = ExpData::from_const_data(constdata);
                                 context.get_mut_expdata().set_data(atom.clone(), expdata.clone());
                                 expdata
                             }

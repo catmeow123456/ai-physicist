@@ -22,7 +22,17 @@ pub enum ExpData {
 
 #[pymethods]
 impl ExpData {
+    #[inline]
+    fn __str__(&self) -> String {
+        format!("{}", self)
+    }
+    #[new]
+    #[inline]
+    fn __new__(arr: Vec<Vec<f64>>) -> ExpData {
+        ExpData::from_arr2(Array2::from_shape_vec((arr.len(), arr[0].len()), arr.iter().flat_map(|x| x.iter()).cloned().collect()).unwrap())
+    }
     #[getter]
+    #[inline]
     pub fn is_const(&self) -> bool {
         match self {
             ExpData::Const { content: _ } => true,
@@ -30,6 +40,7 @@ impl ExpData {
         }
     }
     #[getter]
+    #[inline]
     pub fn is_conserved(&self) -> bool {
         match self {
             ExpData::Const { content: _ } => true,
@@ -38,6 +49,7 @@ impl ExpData {
         }
     }
     #[getter]
+    #[inline]
     pub fn is_zero(&self) -> bool {
         match self {
             ExpData::Zero { } => true,
@@ -45,6 +57,7 @@ impl ExpData {
         }
     }
     #[getter]
+    #[inline]
     pub fn is_err(&self) -> bool {
         match self {
             ExpData::Err { } => true,
@@ -52,6 +65,7 @@ impl ExpData {
         }
     }
     #[getter]
+    #[inline]
     fn is_normal(&self) -> bool {
         match self {
             ExpData::Normal { content: _ } => true,
@@ -59,6 +73,7 @@ impl ExpData {
         }
     }
     #[getter]
+    #[inline]
     fn n(&self) -> usize {
         match self {
             ExpData::Normal { content } => content.n,
@@ -68,6 +83,7 @@ impl ExpData {
         }
     }
     #[getter]
+    #[inline]
     fn normal_data(&self) -> NormalData {
         match self {
             ExpData::Normal { content } => content.clone(),
@@ -75,6 +91,7 @@ impl ExpData {
         }
     }
     #[getter]
+    #[inline]
     fn const_data(&self) -> ConstData {
         match self {
             ExpData::Const { content } => content.clone(),
@@ -82,10 +99,12 @@ impl ExpData {
         }
     }
     #[staticmethod]
+    #[inline]
     fn from_elem(mean: f64, std: f64, n: usize, repeat_time: usize) -> ExpData {
         ExpData::Normal { content: NormalData::from_elem(mean, std, n, repeat_time) }
     }
     #[getter]
+    #[inline]
     fn repeat_time(&self) -> usize {
         match self {
             ExpData::Normal { content } => content.repeat_time,
@@ -94,32 +113,37 @@ impl ExpData {
             ExpData::Err { } => panic!("ErrData has no repeat_time"),
         }
     }
+    #[inline]
     fn __add__(&self, other: &ExpData) -> PyResult<ExpData> {
         Ok(self + other)
     }
+    #[inline]
     fn __sub__(&self, other: &ExpData) -> PyResult<ExpData> {
         Ok(self - other)
     }
+    #[inline]
     fn __mul__(&self, other: &ExpData) -> PyResult<ExpData> {
         Ok(self * other)
     }
+    #[inline]
     fn __truediv__(&self, other: &ExpData) -> PyResult<ExpData> {
         Ok(self / other)
     }
+    #[inline]
     fn __neg__(&self) -> PyResult<ExpData> {
         Ok(-self.clone())
     }
+    #[inline]
     fn __powi__(&self, other: i32) -> PyResult<ExpData> {
         Ok(self.powi(other))
     }
+    #[inline]
     fn __diff__(&self, other: &ExpData) -> PyResult<ExpData> {
         Ok(self.diff(other))
     }
+    #[inline]
     fn __difftau__(&self) -> PyResult<ExpData> {
         Ok(self.diff_tau())
-    }
-    fn __str__(&self) -> String {
-        format!("{}", self)
     }
 }
 
@@ -136,6 +160,21 @@ impl ExpData {
         match self {
             ExpData::Const { content } => content,
             _ => panic!("unwrap_const_data called on non-ConstData")
+        }
+    }
+    #[inline]
+    pub fn to_const_data(&self) -> Option<ConstData> {
+        match self {
+            ExpData::Const { content } => Some(content.clone()),
+            _ => None
+        }
+    }
+    #[inline]
+    pub fn force_to_const_data(&self) -> Option<ConstData> {
+        match self {
+            ExpData::Normal { content } => Some(content.to_const_data()),
+            ExpData::Const { content } => Some(content.clone()),
+            _ => None
         }
     }
     #[inline]
@@ -168,7 +207,7 @@ impl ExpData {
         }
     }
     #[inline]
-    fn from_const_data(content: ConstData) -> ExpData {
+    pub fn from_const_data(content: ConstData) -> ExpData {
         match content {
             ConstData::Data { mean, std } => {
                 if std > mean.abs() * 1000.0 {
@@ -303,13 +342,15 @@ impl Mul for &ExpData {
     #[inline]
     fn mul(self, other: &ExpData) -> ExpData {
         if self.is_err() || other.is_err() {
-            return ExpData::Err { }
+            ExpData::Err { }
         }
-        if self.is_zero() || other.is_zero() {
+        else if self.is_zero() || other.is_zero() {
             ExpData::Zero { }
-        } else if self.is_const() && other.is_const() {
+        }
+        else if self.is_const() && other.is_const() {
             ExpData::from_const_data(self.unwrap_const_data() * other.unwrap_const_data())
-        } else {
+        }
+        else {
             let n = if !self.is_const() { self.n() } else { other.n() };
             let repeat_time = if !self.is_const() { self.repeat_time() } else { other.repeat_time() };
             ExpData::from_normal_data(self.to_normal_data(n, repeat_time) * other.to_normal_data(n, repeat_time))
@@ -330,9 +371,9 @@ impl Div for &ExpData {
     #[inline]
     fn div(self, other: &ExpData) -> ExpData {
         if self.is_err() || other.is_err() || other.is_zero() {
-            return ExpData::Err { }
+            ExpData::Err { }
         }
-        if self.is_zero() {
+        else if self.is_zero() {
             ExpData::Zero {  }
         }
         else if self.is_const() && other.is_const() {
@@ -400,7 +441,10 @@ impl Diff for &ExpData {
     type Output = ExpData;
     #[inline]
     fn diff(&self, other: &ExpData) -> ExpData {
-        if self.is_zero() || self.is_const() {
+        if self.is_err() || other.is_err() {
+            return ExpData::Err { }
+        }
+        else if self.is_zero() || self.is_const() {
             ExpData::Zero { }
         }
         else if other.is_zero() || other.is_const() {

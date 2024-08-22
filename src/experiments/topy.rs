@@ -16,6 +16,9 @@ impl ObjType {
 
 #[pymethods]
 impl Objstructure {
+    fn __str__(&self) -> String {
+        format!("{}", self)
+    }
     fn random_settings(&mut self) {
         self.random_sample();
     }

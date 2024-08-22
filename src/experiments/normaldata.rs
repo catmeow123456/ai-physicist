@@ -264,9 +264,14 @@ impl NormalData {
     }
     #[inline]
     pub fn to_const_data(&self) -> ConstData {
+        let domain = self.gen_domain();
+        let mut data = Array2::zeros((self.repeat_time, 0));
+        for (x, y) in domain {
+            data.append(ndarray::Axis(1), self.data.slice(s![.., x..y])).unwrap();
+        }
         ConstData::new(
-            self.data.mean().unwrap(), 
-            self.data.mean_axis(ndarray::Axis(1)).unwrap().std(0.0)
+            data.mean().unwrap(), 
+            data.mean_axis(ndarray::Axis(1)).unwrap().std(0.0)
         )
     }
 }
