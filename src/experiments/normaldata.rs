@@ -269,10 +269,13 @@ impl NormalData {
         for (x, y) in domain {
             data.append(ndarray::Axis(1), self.data.slice(s![.., x..y])).unwrap();
         }
-        ConstData::new(
-            data.mean().unwrap(), 
-            data.mean_axis(ndarray::Axis(1)).unwrap().std(0.0)
-        )
+        let (mean, std) = weighted_mean_error(&data.mean_axis(ndarray::Axis(0)).unwrap(), &data.std_axis(ndarray::Axis(0), 0.0));
+        ConstData::new(mean, std)
+        // ConstData::new(
+        //     data.mean().unwrap(),
+        //     // data.std(0.0)
+        //     // data.mean_axis(ndarray::Axis(1)).unwrap().std(0.0)
+        // )
     }
 }
 
@@ -481,4 +484,13 @@ fn is_zero(mean: &Array1<f64>, std: &Array1<f64>, alpha: Option<f64>) -> bool {
     let chi_square_statistic = (mean.mapv(|x| x.powi(2)) * weight).sum();
     let critical_value = ppf(1.0 - alpha, dof);
     chi_square_statistic < critical_value
+}
+
+fn weighted_mean_error(value: &Array1<f64>, std: &Array1<f64>) -> (f64, f64) {
+    let n = value.len();
+    assert_eq!(n, std.len());
+    let weight = std.mapv(|x| 1. / x.powi(2));
+    let mean = weighted_sum(value, &weight);
+    let std = (value - mean).mapv(|x| x.powi(2)).sum();
+    (mean, (std / (n - 1) as f64).sqrt())
 }

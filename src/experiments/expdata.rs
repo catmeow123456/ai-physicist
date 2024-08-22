@@ -210,12 +210,12 @@ impl ExpData {
     pub fn from_const_data(content: ConstData) -> ExpData {
         match content {
             ConstData::Data { mean, std } => {
-                if std > mean.abs() * 1000.0 {
+                if std > mean.abs() * 10.0 {
                     // 等于 0 的置信度非常高
                     ExpData::Zero { }
                 }
                 else
-                if std > mean.abs() / 5.0 {
+                if std > mean.abs() / 10.0 {
                     // 处于 0 和 const 之间的模糊地带的数据，不予考虑
                     ExpData::Err { }
                 }
