@@ -10,7 +10,7 @@ use std::collections::HashSet;
 use ndarray_linalg::Solve;
 use statrs::distribution::{ChiSquared, ContinuousCDF};
 use super::constdata::ConstData;
-use super::expstructure::add_errors;
+use crate::experiments::expstructure::add_errors;
 
 #[pyclass]
 #[derive(Debug, Clone)]

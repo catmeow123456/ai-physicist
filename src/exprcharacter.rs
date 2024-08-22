@@ -6,7 +6,7 @@ use crate::ast::{
     AtomExp, BinaryOp, Exp, Expression, UnaryOp
 };
 use crate::knowledge::Knowledge;
-use crate::experiments::expdata::Diff;
+use crate::expdata::expdata::Diff;
 
 fn random_mod_ne_zero(p_mod: i32) -> i32 {
     let x = rand::random::<i32>() % p_mod as i32;

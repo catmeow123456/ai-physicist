@@ -6,12 +6,14 @@ pub mod parsing;
 pub mod knowledge;
 pub mod regression;
 pub mod complexity;
-pub mod experiments{
-    pub mod impl_for_pyo3;
-    pub mod topy;
+pub mod expdata{
     pub mod expdata;
     pub mod normaldata;
     pub mod constdata;
+}
+pub mod experiments{
+    pub mod impl_for_pyo3;
+    pub mod topy;
     pub mod expstructure;
     pub mod objects{
         pub mod obj;
@@ -26,11 +28,8 @@ pub mod experiments{
         pub mod oscillation;
     }
 }
-
-use experiments::{
-    topy::register_experiment,
-    expdata::ExpData,
-};
+use expdata::expdata::ExpData;
+use experiments::topy::register_experiment;
 use pyo3::prelude::*;
 use parsing::register_sentence;
 use knowledge::Knowledge;

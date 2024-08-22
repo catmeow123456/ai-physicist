@@ -12,11 +12,11 @@ use crate::experiments::simulation::{
     motion::struct_motion,
     motion0::struct_motion0,
 };
-use crate::experiments::{
-    constdata::ConstData,
+use crate::expdata::{
     expdata::{ExpData, Diff},
-    expstructure::{ExpStructure, Objstructure},
+    constdata::ConstData,
 };
+use crate::experiments::expstructure::{ExpStructure, Objstructure};
 
 #[pyclass]
 pub struct Knowledge {

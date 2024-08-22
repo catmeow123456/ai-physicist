@@ -4,7 +4,7 @@ use std::hash::{DefaultHasher, Hash, Hasher};
 
 use crate::ast::{AtomExp, MeasureType, TExp};
 use super::objects::obj::{ObjType, DATA, ATTR};
-use super::expdata::ExpData;
+use crate::expdata::expdata::ExpData;
 use super::expstructure::{ExpStructure, Parastructure, Objstructure, ExpConfig, DataStructOfExpData, DataStruct};
 
 #[pymethods]

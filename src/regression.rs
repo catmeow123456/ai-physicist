@@ -1,5 +1,5 @@
 use pyo3::prelude::*;
-use crate::experiments::expdata::{ExpData, Diff};
+use crate::expdata::expdata::{ExpData, Diff};
 use crate::experiments::expstructure::DataStruct;
 use crate::ast::{BinaryOp, Exp};
 use crate::knowledge::apply_binary_op;

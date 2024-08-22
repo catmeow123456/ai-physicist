@@ -4,7 +4,7 @@ use rand::Rng;
 use rand_distr::{Distribution, Normal};
 use std::{fmt, collections::HashMap};
 use ndarray::{ArrayBase, Array1, Array2, Dimension, OwnedRepr};
-use super::expdata::ExpData;
+use crate::expdata::expdata::ExpData;
 use super::objects::obj::{ObjType, ATTR};
 
 pub type DoExpType = fn(f64,usize,f64,&ExpConfig) -> DataStructOfDoExperiment;
