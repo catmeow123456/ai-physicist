@@ -12,5 +12,5 @@ class ObjectModel:
         self.attr = {}
         self.conclusion_about_attr = {}
 
-    def register_objattrexp(name: str, objattrexp: ObjAttrExp):
+    def register_objattrexp(self, name: str, objattrexp: ObjAttrExp):
         self.attr[name] = objattrexp

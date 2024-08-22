@@ -166,7 +166,7 @@ impl Knowledge {
             }
         }
     }
-    pub fn eval_objattr(&self, objattrexp: &ObjAttrExp, objsettings: Vec<Objstructure>) -> ConstData {
+    pub fn eval_objattr(&self, objattrexp: &ObjAttrExp, objsettings: Vec<Objstructure>) -> Option<ConstData> {
         match objattrexp {
             ObjAttrExp::From { sexp } => {
                 let sexp = sexp.as_ref();
@@ -177,12 +177,12 @@ impl Knowledge {
                         loop {
                             total_time += 1;
                             if total_time > 5 {
-                                panic!("total_time > 5");
+                                return None;
                             }
                             let mut data = self.get_expstructure(expconfig, objsettings.clone());
                             let exp = exp.as_ref();
                             if let Some(res) = self.eval(exp, &mut data).force_to_const_data() {
-                                return res;
+                                return Some(res);
                             }
                         };
                     }
@@ -546,9 +546,14 @@ impl Knowledge {
                                 for id in atom.get_allids().iter() {
                                     objs.push(context.get_obj(*id).clone());
                                 }
-                                let constdata = self.eval_objattr(objattrexp, objs);
-                                // println!("constdata = {}", constdata);
-                                let expdata = ExpData::from_const_data(constdata);
+                                let expdata = {
+                                    if let Some(constdata) = self.eval_objattr(objattrexp, objs) {
+                                        // println!("constdata = {}", constdata);
+                                        ExpData::from_const_data(constdata)
+                                    } else {
+                                        ExpData::Err { }
+                                    }
+                                };
                                 context.get_mut_expdata().set_data(atom.clone(), expdata.clone());
                                 expdata
                             }

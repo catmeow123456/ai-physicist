@@ -12,7 +12,6 @@ pub mod expdata{
     pub mod constdata;
 }
 pub mod experiments{
-    pub mod impl_for_pyo3;
     pub mod topy;
     pub mod expstructure;
     pub mod objects{
@@ -28,6 +27,8 @@ pub mod experiments{
         pub mod oscillation;
     }
 }
+
+pub mod impl_for_pyo3;
 use expdata::expdata::ExpData;
 use experiments::topy::register_experiment;
 use pyo3::prelude::*;
