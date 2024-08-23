@@ -262,7 +262,7 @@ pub struct ExpConfig {
     data_info: Vec<(TExp, Vec<String>)>,
     // auto generated
     pub obj_id_map: HashMap<String, (ObjType, i32)>,
-    obj_name_map: HashMap<i32, (ObjType, String)>,
+    pub obj_name_map: HashMap<i32, (ObjType, String)>,
     obj_info_dict: HashMap<ObjType, HashMap<i32, String>>,
 }
 impl ExpConfig {
@@ -331,6 +331,11 @@ impl ExpConfig {
         self.obj_info.get(name).unwrap()
     }
     #[inline]
+    fn get_mut_obj(&mut self, id: i32) -> &mut Objstructure {
+        let name = &self.obj_name_map.get(&id).unwrap().1;
+        self.obj_info.get_mut(name).unwrap()
+    }
+    #[inline]
     fn set_obj(&mut self, id: i32, obj: Objstructure) {
         let name = self.obj_info_dict.get(&obj.obj_type).unwrap().get(&id).unwrap();
         self.obj_info.insert(name.clone(), obj);
@@ -342,6 +347,14 @@ impl ExpConfig {
         for (_, obj) in self.obj_info.iter_mut() {
             obj.random_sample();
         }
+    }
+    fn random_set_exp_para(&mut self) {
+        for (_, para) in self.exp_para.iter_mut() {
+            para.random_sample();
+        }
+    }
+    fn random_set_obj(&mut self, id: i32) {
+        self.get_mut_obj(id).random_sample();
     }
     pub fn create_data_struct_of_do_experiment(&self, t_num: usize) -> DataStructOfDoExperiment {
         for (data_texp, obj_names) in self.data_info.iter() {
@@ -413,6 +426,18 @@ impl ExpStructure {
         }
         self.exp_config.random_sample();
     }
+    pub fn random_sample_exp_para(&mut self) {
+        if self.datastructofdata.is_some() {
+            self.datastructofdata = None;
+        }
+        self.get_mut_expconfig().random_set_exp_para();
+    }
+    pub fn random_sample_obj(&mut self, id: i32) {
+        if self.datastructofdata.is_some() {
+            self.datastructofdata = None;
+        }
+        self.get_mut_expconfig().random_set_obj(id);
+    }
     pub fn calc_expdata(&mut self, measuretype: MeasureType) {
         let doexp = self.do_experiment;
         let t_end = measuretype.t_end();
@@ -462,6 +487,10 @@ impl ExpStructure {
     #[inline]
     pub fn get_ref_expconfig(&self) -> &ExpConfig {
         &self.exp_config
+    }
+    #[inline]
+    fn get_mut_expconfig(&mut self) -> &mut ExpConfig {
+        &mut self.exp_config
     }
 }
 

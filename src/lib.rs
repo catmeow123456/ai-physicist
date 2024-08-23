@@ -7,6 +7,7 @@ pub mod knowledge;
 pub mod regression;
 pub mod complexity;
 pub mod expdata{
+    pub mod topy;
     pub mod expdata;
     pub mod normaldata;
     pub mod constdata;
@@ -29,7 +30,7 @@ pub mod experiments{
 }
 
 pub mod impl_for_pyo3;
-use expdata::expdata::ExpData;
+use expdata::topy::register_data;
 use experiments::topy::register_experiment;
 use pyo3::prelude::*;
 use parsing::register_sentence;
@@ -51,7 +52,6 @@ fn ai_physicist(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<ast::IExpConfig>()?;
     m.add_class::<ast::ObjAttrExp>()?;
     m.add_class::<ast::MeasureType>()?;
-    m.add_class::<ExpData>()?;
     m.add_class::<Knowledge>()?;
     m.add_function(wrap_pyfunction!(search_relations, m)?)?;
     m.add_function(wrap_pyfunction!(experiments::simulation::motion0::struct_motion0, m)?)?;
@@ -60,5 +60,6 @@ fn ai_physicist(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(experiments::simulation::oscillation::struct_oscillation, m)?)?;
     m.add_function(wrap_pyfunction!(experiments::simulation::collision::do_collision, m)?)?;
     register_experiment(m)?;
+    register_data(m)?;
     Ok(())
 }

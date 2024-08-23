@@ -14,10 +14,13 @@ from ai_physicist import (
     ObjAttrExp,
     Expression,
     DataStruct,
-    ExpData,
     ExpStructure,
     sentence,       # .parse()  .parse_exp()  .parse_sexp()
     search_relations
+)
+from ai_physicist import (
+    ExpData,
+    is_conserved_const_list,
 )
 from ai_physicist import (
     MeasureType,    # .default()
@@ -44,8 +47,10 @@ class Knowledge:
         self.K.register_experiment(name, expstruct)
     def fetch_expstruct(self, name: str) -> ExpStructure:
         return self.K.fetch_expstruct(name)
-    def eval(self, expr: str, expstruct: ExpStructure) -> ExpData:
-        return self.K.eval(sentence.parse_exp(expr), expstruct)
+    def eval(self, expr: Exp | str, expstruct: ExpStructure) -> ExpData:
+        if isinstance(expr, str):
+            expr = sentence.parse_exp(expr)
+        return self.K.eval(expr, expstruct)
 
     def register_expr(self, definition: Expression | str, name: str = None) -> str:
         if name is None:

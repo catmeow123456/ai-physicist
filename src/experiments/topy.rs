@@ -34,6 +34,12 @@ impl Objstructure {
 
 #[pymethods]
 impl ExpStructure {
+    fn get_all_ids(&self) -> HashSet<i32> {
+        self.get_ref_expconfig().obj_name_map.keys().cloned().collect()
+    }
+    fn get_obj_type(&self, id: i32) -> ObjType {
+        self.get_ref_expconfig().obj_name_map.get(&id).unwrap().0.clone()
+    }
     fn obj_info(&self) -> HashMap<String, (ObjType, i32)>{
         let expdata = self.get_ref_expconfig();
         expdata.obj_id_map.clone()
@@ -54,8 +60,17 @@ impl ExpStructure {
     fn random_settings(&mut self) {
         self.random_sample();
     }
+    fn random_set_exp_para(&mut self) {
+        self.random_sample_exp_para();
+    }
+    fn random_set_obj(&mut self, id: i32) {
+        self.random_sample_obj(id);
+    }
     pub fn collect_expdata(&mut self, measuretype: MeasureType) -> DataStructOfExpData {
         self.get_expdata(measuretype).clone()
+    }
+    fn copy(&self) -> Self {
+        self.clone()
     }
 }
 

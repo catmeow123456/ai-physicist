@@ -1,8 +1,9 @@
 import sympy as sp
-from typing import List, Tuple, Dict
+from typing import List, Tuple, Dict, Set
 from interface import (
-    Knowledge,
-    ExpStructure, Exp, AtomExp, Proposition, MeasureType
+    Knowledge, ExpData,
+    ExpStructure, Exp, AtomExp, Proposition, MeasureType,
+    is_conserved_const_list
 )
 from diffalg.diffalg import DifferentialRing, diffalg
 
@@ -10,6 +11,9 @@ class SpecificModel:
     exp_name: str
     knowledge: Knowledge
     experiment: ExpStructure
+    experiment_control: Dict[int, List[ExpStructure]]
+    # 保持其他实验对象不变，改变实验对象 id 并进行实验获得的结果存储在 experiment_control[id] 中
+    # id = -1 代表保持所有实验对象不变，只改变实验控制参数
     conserved_list: List[Tuple[str, Exp]]
     zero_list: List[Tuple[str, Exp]]
 
@@ -20,6 +24,7 @@ class SpecificModel:
         self.experiment = self.knowledge.fetch_expstruct(exp_name)
         self.experiment.random_settings()
         self.experiment.collect_expdata(MeasureType.default())
+        self.experiment_control = {}
         self.conserved_list = []
         self.zero_list = []
 
@@ -47,6 +52,8 @@ class SpecificModel:
     def append_conserved_exp(self, conserved_exp: Exp) -> str:
         hashed_value = self.exp_hashed(conserved_exp)
         if hashed_value.is_none or hashed_value.is_const:
+            # is_const 代表这个表达式是平凡的守恒量，例如 m[1] * m[2] / k[3], -1 等等
+            # is_none 是极个别特殊情况，代表在计算哈希值时出现了无法计算的情况。
             return None
         # print(f"conserved exp = {conserved_exp} hashed_value = {hashed_value.get_data()}")
         for _, exp in self.conserved_list:
@@ -59,6 +66,9 @@ class SpecificModel:
 
     def append_zero_exp(self, zero_exp: Exp) -> str:
         hashed_value = self.exp_hashed(zero_exp)
+        if hashed_value.is_none or hashed_value.is_zero:
+            # is_zero 代表这个表达式是平凡的零量，例如 m[1] - m[1] 等等
+            return None
         for _, exp in self.zero_list:
             if self.exp_hashed(exp) == hashed_value:
                 return None
@@ -129,6 +139,56 @@ class SpecificModel:
             elif prop.prop_type == "IsZero":
                 self.zero_list.append((name, prop.unwrap_exp))
         pass
+
+    def check_intrinsic(self, exp: Exp) -> Tuple[bool, Set[int] | None]:
+        """
+        这个函数的目的是检查一个表达式是否是内禀概念（取值仅依赖于实验对象）
+        如果是，返回 True 和它依赖的实验对象编号
+        否则，返回 False 和 None
+        """
+        expdata: ExpData = self.knowledge.eval(exp, self.experiment)
+        if not expdata.is_const:
+            return False, None
+        if not self.experiment_control.__contains__(-1):
+            self.experiment_control[-1] = []
+            for _ in range(5):
+                new_exp = self.experiment.copy()
+                new_exp.random_set_exp_para()
+                new_exp.collect_expdata(MeasureType.default())
+                self.experiment_control[-1].append(new_exp)
+        expdata_list = [expdata.const_data()]
+        for new_exp in self.experiment_control[-1]:
+            new_expdata = self.knowledge.eval(exp, new_exp)
+            if new_expdata.is_const:
+                expdata_list.append(new_expdata.const_data())
+            else:
+                return False, None
+        if not is_conserved_const_list(expdata_list):
+            return False, None
+
+        relevant_ids = set()
+
+        ids = self.experiment.get_all_ids()
+        for id in ids:
+            if not self.experiment_control.__contains__(id):
+                self.experiment_control[id] = []
+                for _ in range(5):
+                    new_exp = self.experiment.copy()
+                    new_exp.random_set_obj(id)
+                    new_exp.collect_expdata(MeasureType.default())
+                    self.experiment_control[id].append(new_exp)
+            expdata_list = [expdata.const_data()]
+            for new_exp in self.experiment_control[id]:
+                new_expdata = self.knowledge.eval(exp, new_exp)
+                if new_expdata.is_const:
+                    expdata_list.append(new_expdata.const_data())
+                else:
+                    return False, None
+            if not is_conserved_const_list(expdata_list):
+                relevant_ids.add(id)
+
+        return True, relevant_ids
+
 
     def print_conclusion(self):
         print(f"Exp's name = {self.exp_name}, conclusions:")

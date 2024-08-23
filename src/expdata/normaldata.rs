@@ -446,7 +446,7 @@ fn ppf(p: f64, dof: f64) -> f64 {
 fn weighted_sum(value: &Array1<f64>, weight: &Array1<f64>) -> f64 {
     (value * weight).sum() / weight.sum()
 }
-fn is_conserved(mean: &Array1<f64>, std: &Array1<f64>, alpha: Option<f64>) -> bool {
+pub fn is_conserved(mean: &Array1<f64>, std: &Array1<f64>, alpha: Option<f64>) -> bool {
     let n = mean.len();
     assert_eq!(n, std.len());
     {

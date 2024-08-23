@@ -100,6 +100,12 @@ impl KeyValue {
         }
         true
     }
+    #[getter]
+    fn is_zero(&self) -> bool {
+        if self.value.is_none() { return false; }
+        let v = self.value.as_ref().unwrap();
+        v.iter().all(|&x| x == 0)
+    }
 }
 
 // KeyValueHashed 结构与 KeyValue 一样，但它是一个不可计算的哈希值，用于比较两个 KeyValue 是否相等。
@@ -129,6 +135,12 @@ impl KeyValueHashed {
             if v[i] != 0 { return false; }
         }
         true
+    }
+    #[getter]
+    fn is_zero(&self) -> bool {
+        if self.value.is_none() { return false; }
+        let v = self.value.as_ref().unwrap();
+        v.iter().all(|&x| x == 0)
     }
     #[getter]
     pub fn is_trivial_const(&self) -> bool {

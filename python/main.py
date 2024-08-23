@@ -1,8 +1,11 @@
-from typing import Dict, List, Tuple
+from typing import Dict, List, Tuple, Set
 from specific_model import SpecificModel
 from object_model import ObjectModel
 from interface import Knowledge
-from interface import search_relations, DataStruct, ExpStructure, MeasureType, Proposition, Exp, TExp, AtomExp, ExpData, DataStruct, Expression
+from interface import (
+    search_relations, DataStruct, ExpStructure, MeasureType, Proposition,
+    Exp, TExp, SExp, IExpConfig, ObjAttrExp, AtomExp, ExpData, DataStruct, Expression
+)
 
 
 def list_datainfo(data_info: DataStruct):
@@ -37,6 +40,20 @@ class Theorist:
                 name = spm.append_zero_exp(expr)
             elif expdata.is_conserved:
                 name = spm.append_conserved_exp(expr)
+                is_intrinsic, relevant_id = spm.check_intrinsic(expr)
+                if is_intrinsic and len(relevant_id) == 1:
+                    print(f"Found intrinsic relation: {expr} with relevant_id = {relevant_id}")
+                    id, obj_type = relevant_id[0], str(spm.experiment.get_obj(relevant_id[0]))
+                    iexp_config = IExpConfig.Mk(
+                        obj_type,
+                        IExpConfig.From(exp_name),
+                        id
+                    )
+                    objattrexp = ObjAttrExp.From(SExp.Mk(iexp_config, expr))
+                    self.objmodel[obj_type].register_objattrexp(objattrexp)
+                if is_intrinsic and len(relevant_id) == 2:
+                    print(f"Found intrinsic relation: {expr} with relevant_id = {relevant_id}")
+                    pass
             else:
                 raise ValueError("search_relations(data_info) returned an unexpected result")
             if name is not None:

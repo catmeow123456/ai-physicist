@@ -125,6 +125,9 @@ impl Exp {
     fn __str__(&self) -> String {
         format!("{}", self)
     }
+    fn copy(&self) -> Self {
+        self.clone()
+    }
     fn unwrap_atom(&self) -> AtomExp {
         match self {
             Exp::Atom {atom} => *atom.clone(),

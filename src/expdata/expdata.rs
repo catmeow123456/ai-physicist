@@ -90,7 +90,6 @@ impl ExpData {
             _ => panic!("unwrap_normal_data called on non-NormalData")
         }
     }
-    #[getter]
     #[inline]
     fn const_data(&self) -> ConstData {
         match self {
