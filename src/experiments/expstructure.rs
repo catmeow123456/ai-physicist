@@ -326,7 +326,7 @@ impl ExpConfig {
         }
     }
     #[inline]
-    fn get_obj(&self, id: i32) -> &Objstructure {
+    pub fn get_obj(&self, id: i32) -> &Objstructure {
         let name = &self.obj_name_map.get(&id).unwrap().1;
         self.obj_info.get(name).unwrap()
     }
@@ -399,10 +399,6 @@ impl ExpStructure {
     #[inline]
     pub fn print_obj_info(&self) {
         self.exp_config.print_obj_info();
-    }
-    #[inline]
-    pub fn get_obj(&self, id: i32) -> &Objstructure {
-        self.exp_config.get_obj(id)
     }
     #[inline]
     pub fn get_obj_ids(&self, obj_type: ObjType) -> Vec<i32> {

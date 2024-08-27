@@ -107,6 +107,14 @@ impl Knowledge {
         self.conclusions.get(&name).unwrap().clone()
     }
     #[inline]
+    fn fetch_object_by_name(&self, name: String) -> Objstructure {
+        self.objects.get(&name).unwrap().clone()
+    }
+    #[inline]
+    pub fn fetch_object_type_by_name(&self, name: String) -> String {
+        self.objects.get(&name).unwrap().obj_type.to_string()
+    }
+    #[inline]
     fn register_object(&mut self, name: String, obj: Objstructure) {
         self.objects.insert(name, obj);
     }
@@ -115,20 +123,31 @@ impl Knowledge {
         self.experiments.insert(name, exp);
     }
     #[inline]
-    fn register_expression(&mut self, name: String, exp: Expression) {
+    fn register_expression(&mut self, name: String, exp: Expression) -> bool {
         match &exp {
             Expression::TExp { texp } => {
-                let (kv, kvh, subs_dict) = self.eval_concept_keyvaluehashed(&exp);
+                let (kv, kvh, subs_dict) = self.eval_concept_keyvaluehashed(&texp);
                 if kvh.is_none() || kvh.is_const() || self.key.contains_key(&kvh) {
-                    return;
+                    return false;
                 }
                 let ids: Vec<_> = texp.get_preids().iter().map(|x| *subs_dict.get(&x).unwrap()).collect();
                 let atom = AtomExp::new_variable_ids(name.clone(), ids);
                 self.key.insert(atom, kv, kvh);
             },
+            Expression::ObjAttrExp { objattrexp } => {
+                let (kv, kvh) = self.eval_objattrexp_keyvaluehashed(&objattrexp);
+                // println!("objattrexp = {}", objattrexp);
+                // println!("kvh = {:?}", kvh);
+                if kvh.is_none() || kvh.is_const() || self.key.contains_key(&kvh) || self.key.contains_key(&kvh.inv()) {
+                    return false;
+                }
+                let atom = AtomExp::new_variable(name.clone());
+                self.key.insert(atom, kv, kvh);
+            }
             _ => ()
         };
         self.concepts.insert(name, exp);
+        true
     }
     #[inline]
     fn register_conclusion(&mut self, name: String, prop: Proposition) {
@@ -218,7 +237,15 @@ impl Knowledge {
     }
     #[inline]
     pub fn eval_expr_key(&mut self, exp: &Expression) -> KeyValueHashed {
-        self.eval_concept_keyvaluehashed(exp).1
+        match exp {
+            Expression::ObjAttrExp { objattrexp } => {
+                self.eval_objattrexp_keyvaluehashed(objattrexp).1
+            }
+            Expression::TExp { texp } => {
+                self.eval_concept_keyvaluehashed(texp).1
+            }
+            _ => unimplemented!()
+        }
     }
     pub fn generalize_sexp(&self, sexp: &SExp) -> TExp {
         match sexp {

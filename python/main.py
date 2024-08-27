@@ -24,6 +24,15 @@ class Theorist:
         self.specific = {}
         for name in experiment_list:
             self.specific[name] = SpecificModel(name, self.general.fetch_expstruct(name))
+        self.objmodel = {}
+
+    def newObjectModel(self, obj_type: str) -> ObjectModel:
+        return ObjectModel(obj_type, self.general)
+
+    def register_new_objattrexp(self, obj_type: str, objattrexp: ObjAttrExp):
+        if not self.objmodel.__contains__(obj_type):
+            self.objmodel[obj_type] = self.newObjectModel(obj_type)
+        self.objmodel[obj_type].register_objattrexp(objattrexp)
 
     def theoretical_analysis(self, exp_name: str):
         assert(exp_name in self.specific)
@@ -41,19 +50,35 @@ class Theorist:
             elif expdata.is_conserved:
                 name = spm.append_conserved_exp(expr)
                 is_intrinsic, relevant_id = spm.check_intrinsic(expr)
-                if is_intrinsic and len(relevant_id) == 1:
-                    print(f"Found intrinsic relation: {expr} with relevant_id = {relevant_id}")
-                    id, obj_type = relevant_id[0], str(spm.experiment.get_obj(relevant_id[0]))
-                    iexp_config = IExpConfig.Mk(
-                        obj_type,
-                        IExpConfig.From(exp_name),
-                        id
-                    )
-                    objattrexp = ObjAttrExp.From(SExp.Mk(iexp_config, expr))
-                    self.objmodel[obj_type].register_objattrexp(objattrexp)
-                if is_intrinsic and len(relevant_id) == 2:
-                    print(f"Found intrinsic relation: {expr} with relevant_id = {relevant_id}")
-                    pass
+                if relevant_id is not None:
+                    relevant_id: List[int] = list(relevant_id)
+                    if is_intrinsic and len(relevant_id) == 1:
+                        print(f"Found intrinsic relation: {expr} with relevant_id = {relevant_id}")
+                        id, obj_type = relevant_id[0], str(spm.experiment.get_obj_type(relevant_id[0]))
+                        iexp_config = IExpConfig.Mk(
+                            obj_type,
+                            IExpConfig.From(exp_name),
+                            id
+                        )
+                        objattrexp = ObjAttrExp.From(SExp.Mk(iexp_config, expr))
+                        self.register_new_objattrexp(obj_type, objattrexp)
+                    if is_intrinsic and len(relevant_id) == 2:
+                        print(f"Found intrinsic relation: {expr} with relevant_id = {relevant_id}")
+                        id, obj_type = relevant_id[0], str(spm.experiment.get_obj_type(relevant_id[0]))
+                        iexp_config = IExpConfig.Mk(
+                            obj_type,
+                            IExpConfig.From(exp_name),
+                            id
+                        )
+                        id1 = relevant_id[1]
+                        standard_object_name = self.general.register_object(spm.experiment.get_obj(relevant_id[1]))
+                        iexp_config = IExpConfig.Mkfix(
+                            standard_object_name,
+                            iexp_config,
+                            id1
+                        )
+                        objattrexp = ObjAttrExp.From(SExp.Mk(iexp_config, expr))
+                        self.register_new_objattrexp(obj_type, objattrexp)
             else:
                 raise ValueError("search_relations(data_info) returned an unexpected result")
             if name is not None:

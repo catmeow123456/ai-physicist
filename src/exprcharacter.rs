@@ -1,9 +1,10 @@
+use crate::r;
 use itertools::Itertools;
 use pyo3::prelude::*;
 use std::collections::HashMap;
 use std::cmp::{min, max};
 use crate::ast::{
-    AtomExp, BinaryOp, Exp, Expression, UnaryOp
+    AtomExp, BinaryOp, Exp, Expression, IExpConfig, ObjAttrExp, SExp, TExp, UnaryOp
 };
 use crate::knowledge::Knowledge;
 use crate::expdata::expdata::Diff;
@@ -20,13 +21,13 @@ fn random_mod_ne_zero(p_mod: i32) -> i32 {
     }
 }
 const VALUE_LEN: usize = 6;
-const P_MOD: i32 = 1e9 as i32 + 7;
+const P_MOD: i32 = 100000007;
 const DIFF_TIMES: usize = 4;
 pub struct KeyState {
     key_len: usize,
     p_mod: i32,
     key: HashMap<AtomExp, KeyValue>,
-    table: HashMap<KeyValueHashed, AtomExp>
+    table: HashMap<KeyValueHashed, AtomExp>,
 }
 impl KeyState {
     pub fn new(n: Option<usize>) -> Self {
@@ -37,7 +38,7 @@ impl KeyState {
             },
             p_mod: P_MOD,
             key: HashMap::new(),
-            table: HashMap::new()
+            table: HashMap::new(),
         }
     }
     pub fn contains_key(&self, kvh: &KeyValueHashed) -> bool {
@@ -74,7 +75,7 @@ impl KeyState {
         KeyValue::const_value(value, self.key_len, self.p_mod)
     }
 }
-// 默认取 value_len=6 ，p_mod=1e9+7 ，KeyValue 可视作 p_mod 域上的多项式（关于 t 的函数）
+// 默认取 value_len=6 ，p_mod=1e8+7 ，KeyValue 可视作 p_mod 域上的多项式（关于 t 的函数）
 // 那么可以对它做加法、乘法、除法、求导等操作，计算结果是 Expr 的特征值
 // 计算过程中需要保留 value_len+4 次以内的多项式系数，并允许最多 4 次求导。
 #[pyclass]
@@ -111,17 +112,18 @@ impl KeyValue {
 // KeyValueHashed 结构与 KeyValue 一样，但它是一个不可计算的哈希值，用于比较两个 KeyValue 是否相等。
 // 只保留了 value_len 次以内的多项式系数。
 #[pyclass(eq)]
-#[derive(Clone, PartialEq, Eq, Hash, PartialOrd)]
+#[derive(Clone, PartialEq, Eq, Hash, PartialOrd, Debug)]
 pub struct KeyValueHashed {
     value_len: usize,
     p_mod: i32,
-    value: Option<Vec<i32>>
+    value: Option<Vec<i32>>,
+    description: String
 }
 #[pymethods]
 impl KeyValueHashed {
     #[staticmethod]
     fn none(value_len: usize, p_mod: i32) -> Self {
-        Self { value_len, p_mod, value: None }
+        Self { value_len, p_mod, value: None, description: r!("") }
     }
     #[getter]
     pub fn is_none(&self) -> bool {
@@ -150,6 +152,54 @@ impl KeyValueHashed {
     }
     pub fn get_data(&self) -> Vec<i32> {
         self.value.as_ref().unwrap().clone()
+    }
+    pub fn insert_description(&mut self, desc: String) {
+        self.description = desc;
+    }
+    pub fn neg(&self) -> KeyValueHashed {
+        KeyValueHashed {
+            value_len: self.value_len,
+            p_mod: self.p_mod,
+            value: {
+                match self.value {
+                    None => None,
+                    Some(ref v) => Some(
+                        v.into_iter().map(|&x| if x == 0 { 0 } else { self.p_mod - x }).collect()
+                    )
+                }
+            },
+            description: self.description.clone()
+        }
+    }
+    pub fn inv(&self) -> KeyValueHashed {
+        KeyValueHashed {
+            value_len: self.value_len,
+            p_mod: self.p_mod,
+            value: {
+                match self.value {
+                    None => None,
+                    Some(ref v) => {
+                        let v0 = v[0];
+                        if v0 == 0 { None }
+                        else {
+                            let v0_inv = mod_inv(v0, self.p_mod);
+                            let mut res = vec![0; self.value_len];
+                            for i in 0..self.value_len {
+                                let mut s = if i == 0 { 1 } else { 0 };
+                                for j in 1..(i+1) {
+                                    let w = (v[j] as i64 * res[i-j] as i64 % self.p_mod as i64) as i32;
+                                    s = s - w;
+                                    if s < 0 { s += self.p_mod; }
+                                }
+                                res[i] = (s as i64 * v0_inv as i64 % self.p_mod as i64) as i32;
+                            }
+                            Some(res)
+                        }
+                    }
+                }
+            },
+            description: self.description.clone()
+        }
     }
 }
 impl KeyValue {
@@ -182,7 +232,8 @@ impl KeyValue {
         KeyValueHashed {
             value_len: self.value_len,
             p_mod: self.p_mod,
-            value: Some(s)
+            value: Some(s),
+            description: r!("")
         }
     }
     fn diff_tau(&self) -> Self {
@@ -323,6 +374,7 @@ fn mod_inv(a: i32, p: i32) -> i32 {
         }
         q = (q * q) % p as i64;
     }
+    assert!(res * a as i64 % p as i64 == 1);
     res as i32
 }
 
@@ -373,51 +425,79 @@ pub fn apply_binary_op(op: &BinaryOp, valuei: KeyValue, valuej: KeyValue) -> Key
 }
 
 impl Knowledge {
-    pub fn eval_concept_keyvaluehashed(&mut self, expr: &Expression) ->
-            (KeyValue, KeyValueHashed, HashMap<i32, i32>) {
-        match expr {
-            Expression::ObjAttrExp { objattrexp: _ } => {
-                unimplemented!()
-            }
-            Expression::TExp { texp } => {
-                let s = texp.get_objtype_id_map();
-                let mut vec_map: Vec<HashMap<i32, i32>> = vec![];
-                vec_map.push(HashMap::new());
-                for (_, ids) in s.iter() {
-                    let ids_vec: Vec<i32> = ids.iter().cloned().collect();
-                    let n = ids_vec.len();
-                    let perm = (1..(n+1)).permutations(n);
-                    let mut vec_map_new: Vec<HashMap<i32, i32>> = vec![];
-                    for p in perm {
-                        for dict in vec_map.iter() {
-                            let mut dict_new = dict.clone();
-                            for i in 0..n {
-                                dict_new.insert(ids_vec[i], p[i] as i32);
+    pub fn eval_objattrexp_keyvaluehashed(&mut self, objattrexp: &ObjAttrExp) ->
+            (KeyValue, KeyValueHashed) {
+        match objattrexp {
+            ObjAttrExp::From { sexp } => {
+                match sexp.as_ref() {
+                    SExp::Mk { expconfig, exp } => {
+                        let mut vec_fix_id_objtype = vec![];
+                        let mut mut_expconfig = expconfig.as_ref().clone();
+                        let exp_name: String;
+                        loop {
+                            match mut_expconfig {
+                                IExpConfig::From { name } => {
+                                    exp_name = name;
+                                    break
+                                }
+                                IExpConfig::Mk { expconfig, .. } => {
+                                    mut_expconfig = *expconfig;
+                                }
+                                IExpConfig::Mkfix { object, expconfig, id } => {
+                                    vec_fix_id_objtype.push((id, self.fetch_object_type_by_name(object)));
+                                    mut_expconfig = *expconfig;
+                                }
                             }
-                            vec_map_new.push(dict_new);
-                        }
-                    }
-                    vec_map = vec_map_new;
-                }
-                let mut res_dict = HashMap::new();
-                let mut res_kv = KeyValue::none(self.key.key_len, self.key.p_mod);
-                let mut res_kvh = KeyValueHashed::none(self.key.key_len, self.key.p_mod);
-                for dict in vec_map.iter() {
-                    let texp_new = texp.substs(dict);
-                    let kv = self.eval_keyvalue(&texp_new);
-                    let kv_hashed = kv.to_hashed();
-                    if res_kvh.is_none() || kv_hashed < res_kvh {
-                        res_kvh = kv_hashed;
-                        res_kv = kv;
-                        res_dict = dict.clone();
+                        };
+                        vec_fix_id_objtype.sort_by(|a, b| a.0.cmp(&b.0));
+                        let res_kv = self.eval_keyvalue(exp);
+                        let mut res_kvh = res_kv.to_hashed();
+                        let mut desc = exp_name;
+                        for (id, objtype) in vec_fix_id_objtype.iter() {
+                            desc.push_str(&format!(" {}->{}", id, objtype));
+                        };
+                        res_kvh.insert_description(desc);
+                        (res_kv, res_kvh)
                     }
                 }
-                (res_kv, res_kvh, res_dict)
-            }
-            _ => {
-                unimplemented!()
             }
         }
+    }
+    pub fn eval_concept_keyvaluehashed(&mut self, texp: &TExp) ->
+            (KeyValue, KeyValueHashed, HashMap<i32, i32>) {
+        let s = texp.get_objtype_id_map();
+        let mut vec_map: Vec<HashMap<i32, i32>> = vec![];
+        vec_map.push(HashMap::new());
+        for (_, ids) in s.iter() {
+            let ids_vec: Vec<i32> = ids.iter().cloned().collect();
+            let n = ids_vec.len();
+            let perm = (1..(n+1)).permutations(n);
+            let mut vec_map_new: Vec<HashMap<i32, i32>> = vec![];
+            for p in perm {
+                for dict in vec_map.iter() {
+                    let mut dict_new = dict.clone();
+                    for i in 0..n {
+                        dict_new.insert(ids_vec[i], p[i] as i32);
+                    }
+                    vec_map_new.push(dict_new);
+                }
+            }
+            vec_map = vec_map_new;
+        }
+        let mut res_dict = HashMap::new();
+        let mut res_kv = KeyValue::none(self.key.key_len, self.key.p_mod);
+        let mut res_kvh = KeyValueHashed::none(self.key.key_len, self.key.p_mod);
+        for dict in vec_map.iter() {
+            let texp_new = texp.substs(dict);
+            let kv = self.eval_keyvalue(&texp_new);
+            let kv_hashed = kv.to_hashed();
+            if res_kvh.is_none() || kv_hashed < res_kvh {
+                res_kvh = kv_hashed;
+                res_kv = kv;
+                res_dict = dict.clone();
+            }
+        }
+        (res_kv, res_kvh, res_dict)
     }
     pub fn eval_keyvalue(&mut self, exp0: &Exp) -> KeyValue {
         match exp0 {

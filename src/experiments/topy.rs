@@ -40,6 +40,10 @@ impl ExpStructure {
     fn get_obj_type(&self, id: i32) -> ObjType {
         self.get_ref_expconfig().obj_name_map.get(&id).unwrap().0.clone()
     }
+    #[inline]
+    pub fn get_obj(&self, id: i32) -> Objstructure {
+        self.get_ref_expconfig().get_obj(id).clone()
+    }
     fn obj_info(&self) -> HashMap<String, (ObjType, i32)>{
         let expdata = self.get_ref_expconfig();
         expdata.obj_id_map.clone()

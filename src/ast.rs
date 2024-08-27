@@ -395,6 +395,12 @@ impl ObjAttrExp {
         self.get_sexp().get_expconfig().get_preids()
     }
 }
+#[pymethods]
+impl ObjAttrExp {
+    fn __str__(&self) -> String {
+        format!("{}", self)
+    }
+}
 
 #[pyclass(eq)]
 #[derive(Clone, PartialEq)]
