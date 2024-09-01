@@ -231,23 +231,24 @@ impl DataStructOfExpData {
     }
     pub fn plot_expdata(&self, name: &str) {
         // plot the arr
-        unimplemented!()
-        // let mut plot = plotly::Plot::new();
-        // let t = self.get_t();
-        // let repeat_time = t.repeat_time;
-        // for ith in 0..repeat_time {
-        //     let t= t.data.row(ith).to_vec();
-        //     for (key, value) in self.data.iter() {
-        //         if key.get_name() == "t" {
-        //             continue;
-        //         }
-        //         let x = value.data.row(ith).to_vec();
-        //         let trace = plotly::Scatter::new(t.clone(), x.clone());
-        //         plot.add_trace(trace);
-        //     }
-        // }
-        // // plot.show();
-        // plot.write_html(format!("tmp/{}.html", name));
+        let mut plot = plotly::Plot::new();
+        let n = self.measuretype.n;
+        let repeat_time = self.measuretype.repeat_time;
+        let t = self.get_t().to_normal_data(n, repeat_time);
+        let repeat_time = t.repeat_time;
+        for ith in 0..repeat_time {
+            let t= t.data.row(ith).to_vec();
+            for (key, value) in self.data.iter() {
+                if key.get_name() == "t" {
+                    continue;
+                }
+                let x = value.to_normal_data(n, repeat_time).data.row(ith).to_vec();
+                let trace = plotly::Scatter::new(t.clone(), x.clone());
+                plot.add_trace(trace);
+            }
+        }
+        // plot.show();
+        plot.write_html(format!("tmp/{}.html", name));
     }
 }
 

@@ -7,7 +7,14 @@ from interface import (
 )
 from diffalg.diffalg import DifferentialRing, diffalg
 
+
 class SpecificModel:
+    """
+    SpecificModel 类是专注于特定实验的物理学家模型，
+    它包括一个 knowledge 对象，存储了有关这个实验的知识；
+    一个 experiment 对象，存储了这个实验的具体信息和某个随机参数下的实验结果；
+    以及一个 experiment_control 字典，是相对于 experiment 的实验对照组，表达了在控制变量的条件下做实验获得的新结果。
+    """
     exp_name: str
     knowledge: Knowledge
     experiment: ExpStructure
@@ -18,6 +25,9 @@ class SpecificModel:
     zero_list: List[Tuple[str, Exp]]
 
     def __init__(self, exp_name: str, exp_struct: ExpStructure):
+        """
+        初始化一个 SpecificModel 对象，需要提供实验的名称和实验的结构
+        """
         self.exp_name = exp_name
         self.knowledge = Knowledge.empty()
         self.knowledge.register_expstruct(exp_name, exp_struct)
@@ -82,7 +92,7 @@ class SpecificModel:
         """
         return self.knowledge.K.raw_definition_prop(prop).get_complexity()
 
-    def reduce_conclusions(self, debug = False):
+    def reduce_conclusions(self, debug=False):
         """
         这个函数的目的是将当前实验中的所有的 conserved 和 zero 的表达式整理并取 minimal 表示
         """

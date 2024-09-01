@@ -233,7 +233,7 @@ impl ExpData {
         }
     }
     #[inline]
-    fn to_normal_data(&self, n: usize, repeat_time: usize) -> NormalData {
+    pub fn to_normal_data(&self, n: usize, repeat_time: usize) -> NormalData {
         match self {
             ExpData::Normal { content } => {
                 assert_eq!(n, content.n);
