@@ -3,7 +3,8 @@ from specific_model import SpecificModel
 from object_model import ObjectModel
 from interface import Knowledge
 from interface import (
-    search_relations, DataStruct, ExpStructure, MeasureType, Proposition,
+    search_relations_ver2
+    ,search_relations, DataStruct, ExpStructure, MeasureType, Proposition,
     Exp, TExp, SExp, IExpConfig, ObjAttrExp, AtomExp, ExpData, DataStruct, Expression
 )
 
@@ -43,14 +44,14 @@ class Theorist:
             self.objmodel[obj_type] = self.newObjectModel(obj_type)
         self.objmodel[obj_type].register_objattrexp(objattrexp)
 
-    def theoretical_analysis(self, exp_name: str):
+    def theoretical_analysis(self, exp_name: str, ver: str | None = None):
         assert(exp_name in self.specific)
         spm: SpecificModel = self.specific[exp_name]
         data_info: DataStruct = spm.pick_relevant_exprs()
         # list_datainfo(data_info)
         # for spe in specific_exprs:
         #     print(f"eval({spe} = ", self.knowledge.K.eval_exp_keyvaluehashed(spe).get_data())
-        res: List[Tuple[Exp, ExpData]] = search_relations(data_info)
+        res: List[Tuple[Exp, ExpData]] = search_relations(data_info) if ver is None else search_relations_ver2(data_info)
         print(f"Found {len(res)} relations")
         for (expr, expdata) in res:
             name: str = None

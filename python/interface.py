@@ -15,7 +15,8 @@ from ai_physicist import (
     DataStruct,
     ExpStructure,
     sentence,       # .parse()  .parse_exp()  .parse_sexp()
-    search_relations
+    search_relations,
+    search_relations_ver2
 )
 from ai_physicist import (
     ExpData,

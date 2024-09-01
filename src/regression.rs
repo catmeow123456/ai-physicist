@@ -5,6 +5,42 @@ use crate::ast::{BinaryOp, Exp};
 use crate::knowledge::apply_binary_op;
 
 #[pyfunction]
+pub fn search_relations_ver2(fn_list: &DataStruct) -> Vec<(Exp, ExpData)> {
+    let ref origin_list = fn_list.iter().collect::<Vec<_>>();
+    let mut list: Vec<(Exp, ExpData)> = vec![];
+    for (atom, value) in origin_list {
+        if !value.is_conserved() {
+            list.push((Exp::Atom { atom: Box::new((*atom).clone()) }, (*value).clone()));
+        }
+    }
+    for id1 in 0..origin_list.len() {
+        for id2 in 0..id1 {
+            if id1 == id2 {
+                continue;
+            }
+            let (atom1, value1) = origin_list[id1];
+            let (atom2, value2) = origin_list[id2];
+            if value1.is_err() || value2.is_err() {
+                continue;
+            }
+            if value1.is_conserved() && value2.is_conserved() {
+                continue;
+            }
+            let value = value1 * value2;
+            if value.is_normal() {
+                let exp = Exp::BinaryExp {
+                    left: Box::new(Exp::Atom { atom: Box::new(atom1.clone()) }),
+                    right: Box::new(Exp::Atom { atom: Box::new(atom2.clone()) }),
+                    op: BinaryOp::Mul
+                };
+                list.push((exp, value));
+            }
+        }
+    }
+    search_relations_aux(&list)
+}
+
+#[pyfunction]
 pub fn search_relations(fn_list: &DataStruct) -> Vec<(Exp, ExpData)> {
     let mut list: Vec<(Exp, ExpData)> = vec![];
     for (atom, value) in fn_list.iter() {
