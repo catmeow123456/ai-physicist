@@ -46,4 +46,11 @@ jobs:
     - name: Test python program 'python/test9.py'
       run: |
         conda activate base
-        python python/test9.py
+        python python/test1.py
+        python python/test2.py
+        python python/test3.py
+        python python/test4.py
+        python python/test5.py
+        python python/test6.py
+        python python/test7.py
+        python python/test8.py
