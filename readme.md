@@ -31,3 +31,23 @@ Testing AI-physicist
 ```
 python python/test9.py
 ```
+
+## QA
+1.
+Q:
+```
+No usable m4 in $PATH or /usr/5bin (see config.log for reasons).
+```
+A:
+```
+sudo apt install m4
+```
+2.
+```
+The system library `openssl` required by crate `openssl-sys` was not found.
+```
+A:
+```
+sudo apt install libssl-dev
+sudo apt install openssl
+```
