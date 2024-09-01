@@ -28,18 +28,31 @@ from ai_physicist import (
 )
 
 class Knowledge:
+    """
+    Knowledge 类，是 ai_physicist.Knowledge （ built-in 的方法是在 rust 中实现的 ） 的一个包装类，提供了一些便捷的方法，
+    存储各种知识，包括实验、概念、结论等。
+    可以在这个知识库中注册和查询概念与结论。
+
+    查看当前知识库信息的方法：    
+    fetch_expstruct()  fetch_exps()  fetch_concepts()  print_concepts()  print_conclusions()
+    注册新的概念、结论、实验的方法：
+    register_expr()  register_conclusion()  register_expstruct()
+    """
     K: aiphy.Knowledge
     concept_id: int = 0
     conclusion_id: int = 0
     object_id: int = 0
+
     def default() -> "Knowledge":
         obj = object.__new__(Knowledge)
         obj.K = aiphy.Knowledge.default()
         return obj
+
     def empty() -> "Knowledge":
         obj = object.__new__(Knowledge)
         obj.K = aiphy.Knowledge()
         return obj
+
     def fetch_exps(self) -> List[str]:
         return self.K.fetch_experiments()
     def fetch_concepts(self) -> Dict[str, Expression]:
@@ -48,6 +61,7 @@ class Knowledge:
         self.K.register_experiment(name, expstruct)
     def fetch_expstruct(self, name: str) -> ExpStructure:
         return self.K.fetch_expstruct(name)
+
     def eval(self, expr: Exp | str, expstruct: ExpStructure) -> ExpData:
         if isinstance(expr, str):
             expr = sentence.parse_exp(expr)

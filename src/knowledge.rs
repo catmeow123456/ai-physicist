@@ -35,7 +35,9 @@ pub struct Knowledge {
 
 #[pymethods]
 impl Knowledge {
+    /// This function create a empty Knowledge object.
     #[new]
+    #[pyo3(signature = ())]
     pub fn new() -> Self {
         Self {
             experiments: HashMap::new(),
@@ -46,7 +48,9 @@ impl Knowledge {
         }
     }
 
+    /// This function create a default Knowledge object with default experiments implemented.
     #[staticmethod]
+    #[pyo3(signature = ())]
     pub fn default() -> Self {
         Self {
             experiments: HashMap::from([
@@ -114,15 +118,25 @@ impl Knowledge {
     pub fn fetch_object_type_by_name(&self, name: String) -> String {
         self.objects.get(&name).unwrap().obj_type.to_string()
     }
+
+    // This function is used to register a new (obj: `Objstructure`) to the Knowledge object.
     #[inline]
+    #[pyo3(signature = (name, obj))]
     fn register_object(&mut self, name: String, obj: Objstructure) {
         self.objects.insert(name, obj);
     }
+
+    // This function is used to register a new (exp: `ExpStructure`) to the Knowledge object.
     #[inline]
+    #[pyo3(signature = (name, exp))]
     fn register_experiment(&mut self, name: String, exp: ExpStructure) {
         self.experiments.insert(name, exp);
     }
+
+    // This function is used to register a new concept to the Knowledge object.
+    // The concept can be a ObjAttrExp or a TExp, and they must be wrapped to `Expression` type.
     #[inline]
+    #[pyo3(signature = (name, exp))]
     fn register_expression(&mut self, name: String, exp: Expression) -> bool {
         match &exp {
             Expression::TExp { texp } => {

@@ -14,6 +14,15 @@ def list_datainfo(data_info: DataStruct):
         print(i)
 
 class Theorist:
+    """
+    Theorist 类，由一个主要 Knowledge 类 `general` 和一系列次要 Knowledge 类 `specific`,`objmodel` 组成。
+    general 是一个全局的知识库。
+    specific 代表了关于每一个实验的知识库。
+    objmodel 代表了关于每一个物体的知识库。
+    理论家的主要工作就是不断地做实验，然后从实验中发现一些规律，将这些规律注册到 general 或者具体的 specific 中，
+    如果这个过程中发现一些关于物理对象的具体知识，这个知识会被注册到 objmodel 中。
+    理论家可以调用不同知识库的记忆，来辅助推理分析，也可以将推理分析的结果注册到不同的知识库中。
+    """
     general: Knowledge
     specific: Dict[str, SpecificModel]
     objmodel: Dict[str, ObjectModel]
@@ -84,23 +93,33 @@ class Theorist:
             if name is not None:
                 expression: Expression = self.general.generalize(exp_name, expr)
                 self.register_concept(expression.unwrap_texp())
-        self.specific[exp_name].reduce_conclusions(debug=True)
+        self.specific[exp_name].reduce_conclusions(debug=False)
         # for name, expr in self.specific[exp_name].conserved_list:
         #     expression: Expression = self.general.generalize(exp_name, expr)
         #     self.register_concept(expression.unwrap_texp())
 
     def register_concept(self, concept: TExp):
+        """
+        Theorist 类中新注册一个概念。
+
+        新注册的概念在 general 中注册过后，可以有选择性地给 specific 中的每一个实验注册
+        这个地方有很多优化空间，因为在一些实验中某个概念可能是毫无用处的，这个时候就可以删掉。
+        """
         expression: Expression = Expression.TExp(texp=concept)
-        self.general.register_expr(expression)
-        for key in self.specific:
-            self.specific[key].knowledge.register_expr(expression)
+        name = self.general.register_expr(expression)
+        if name is not None:
+            print(f"\033[1m" + f"Registered New Concept: {name} = {concept}" + f"\033[0m")
+            for key in self.specific:
+                self.specific[key].knowledge.register_expr(expression)
 
 
-# 一个非常简餐粗暴的函数 （用于测试，详见 test8.py ）
-# 将一个理论家记忆中的所有概念实例化 （specialize） 到一个实验中的具体表达式
-# 再对具体表达式进行各种加减乘除求导的拼凑组合求值，
-# 如果结果守恒，就将这个表达式注册为新的概念 （generalize） 
 def work_at_exp(knowledge: Knowledge, exp_name: str) -> ExpStructure:
+    """
+    一个非常简单粗暴的函数 （用于测试，详见 test8.py ）
+    将一个理论家记忆中的所有概念实例化 （specialize） 到一个实验中的具体表达式
+    再对具体表达式进行各种加减乘除求导的拼凑组合求值，
+    如果结果守恒，就将这个表达式注册为新的概念 （generalize）
+    """
     exp = knowledge.fetch_expstruct(exp_name)
     exp.random_settings()
     exp.collect_expdata(MeasureType.default())
