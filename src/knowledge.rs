@@ -318,7 +318,6 @@ impl Knowledge {
     }
     pub fn specialize_concept(&self, concept_name: String, exp_name: String) -> Vec<AtomExp> {
         let concept = self.concepts.get(&concept_name).unwrap();
-        println!("debug-----debug {}", concept);
         match concept {
             Expression::ObjAttrExp { objattrexp } => {
                 let vec_map = self._get_all_possible_map(&objattrexp.get_objtype_id_map(), exp_name);
@@ -331,7 +330,7 @@ impl Knowledge {
                     }
                     exp_list.push(AtomExp::new_variable_ids(concept_name.clone(), ids));
                 }
-                unimplemented!()
+                exp_list
             }
             Expression::TExp { texp } => {
                 let vec_map = self._get_all_possible_map(&texp.get_objtype_id_map(), exp_name);

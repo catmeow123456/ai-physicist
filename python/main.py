@@ -1,4 +1,5 @@
 from typing import Dict, List, Tuple, Set
+from memory import Memory
 from specific_model import SpecificModel
 from object_model import ObjectModel
 from interface import Knowledge
@@ -10,7 +11,7 @@ from interface import (
 
 
 def list_datainfo(data_info: DataStruct):
-    df = data_info.fetch_atomexps();
+    df = data_info.fetch_atomexps()
     for i in df:
         print(i)
 
@@ -25,6 +26,7 @@ class Theorist:
     理论家可以调用不同知识库的记忆，来辅助推理分析，也可以将推理分析的结果注册到不同的知识库中。
     """
     general: Knowledge
+    memory: Memory
     specific: Dict[str, SpecificModel]
     objmodel: Dict[str, ObjectModel]
 
@@ -33,7 +35,7 @@ class Theorist:
         experiment_list = self.general.fetch_exps()
         self.specific = {}
         for name in experiment_list:
-            self.specific[name] = SpecificModel(name, self.general.fetch_expstruct(name))
+            self.specific[name] = SpecificModel(name, self.general)
         self.objmodel = {}
 
     def newObjectModel(self, obj_type: str) -> ObjectModel:
@@ -45,9 +47,8 @@ class Theorist:
         name = self.objmodel[obj_type].register_objattrexp(objattrexp)
         if name is not None:
             print(f"\033[1m" + f"Registered New Concept: {name} = {objattrexp}" + f"\033[0m")
-            expression = Expression.ObjAttrExp(objattrexp)
             for key in self.specific:
-                self.specific[key].knowledge.register_expr(expression, name)
+                self.specific[key].memory.register_objattrexp(objattrexp, name)
 
     def theoretical_analysis(self, exp_name: str, ver: str | None = None):
         assert(exp_name in self.specific)
@@ -55,7 +56,7 @@ class Theorist:
         data_info: DataStruct = spm.pick_relevant_exprs()
         # list_datainfo(data_info)
         # for spe in specific_exprs:
-        #     print(f"eval({spe} = ", self.knowledge.K.eval_exp_keyvaluehashed(spe).get_data())
+        #     print(f"eval({spe} = ", self.general.eval_exp_keyvaluehashed(spe).get_data())
         
         if ver is None:
             res: List[Tuple[Exp, ExpData]] = search_relations(data_info)
@@ -122,7 +123,7 @@ class Theorist:
         if name is not None:
             print(f"\033[1m" + f"Registered New Concept: {name} = {concept}" + f"\033[0m")
             for key in self.specific:
-                self.specific[key].knowledge.register_expr(expression, name)
+                self.specific[key].memory.register_concept(concept, name)
 
 
 def work_at_exp(knowledge: Knowledge, exp_name: str) -> ExpStructure:
