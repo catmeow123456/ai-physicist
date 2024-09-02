@@ -16,8 +16,9 @@ class ObjectModel:
         self.conclusion_about_attr = {}
         self.general = general
 
-    def register_objattrexp(self, objattrexp: ObjAttrExp):
+    def register_objattrexp(self, objattrexp: ObjAttrExp) -> str | None:
         name = self.general.register_expr(Expression.ObjAttrExp(objattrexp))
         if name is not None:
             print(f"\033[1m" + f"Registered New Onebody Intrinsic Concept: {name} = {objattrexp}" + f"\033[0m")
             self.attr[name] = objattrexp
+        return name

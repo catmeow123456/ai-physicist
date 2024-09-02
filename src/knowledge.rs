@@ -318,6 +318,7 @@ impl Knowledge {
     }
     pub fn specialize_concept(&self, concept_name: String, exp_name: String) -> Vec<AtomExp> {
         let concept = self.concepts.get(&concept_name).unwrap();
+        println!("debug-----debug {}", concept);
         match concept {
             Expression::ObjAttrExp { objattrexp } => {
                 let vec_map = self._get_all_possible_map(&objattrexp.get_objtype_id_map(), exp_name);

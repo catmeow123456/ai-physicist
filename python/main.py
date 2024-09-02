@@ -42,7 +42,12 @@ class Theorist:
     def register_new_objattrexp(self, obj_type: str, objattrexp: ObjAttrExp):
         if not self.objmodel.__contains__(obj_type):
             self.objmodel[obj_type] = self.newObjectModel(obj_type)
-        self.objmodel[obj_type].register_objattrexp(objattrexp)
+        name = self.objmodel[obj_type].register_objattrexp(objattrexp)
+        if name is not None:
+            print(f"\033[1m" + f"Registered New Concept: {name} = {objattrexp}" + f"\033[0m")
+            expression = Expression.ObjAttrExp(objattrexp)
+            for key in self.specific:
+                self.specific[key].knowledge.register_expr(expression, name)
 
     def theoretical_analysis(self, exp_name: str, ver: str | None = None):
         assert(exp_name in self.specific)
@@ -117,7 +122,7 @@ class Theorist:
         if name is not None:
             print(f"\033[1m" + f"Registered New Concept: {name} = {concept}" + f"\033[0m")
             for key in self.specific:
-                self.specific[key].knowledge.register_expr(expression)
+                self.specific[key].knowledge.register_expr(expression, name)
 
 
 def work_at_exp(knowledge: Knowledge, exp_name: str) -> ExpStructure:

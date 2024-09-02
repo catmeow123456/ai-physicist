@@ -50,6 +50,7 @@ class SpecificModel:
         TODO：需要有方向性的智能的随机选取，且这种随机选取方式是可学习的
         """
         for key in self.knowledge.fetch_concepts():
+            print('----debug ', key)
             specific_exprs: list[AtomExp] = self.knowledge.specialize_concept(key, self.exp_name)
             # if len(specific_exprs) > 0:
             #     print(f"specialize_concept({self.exp_name}, {key}) = {specific_exprs}")
