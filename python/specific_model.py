@@ -118,8 +118,8 @@ class SpecificModel:
         new_name_list = []
         for name in name_list:
             prop = conclusions[name]
+            sp_expr = sp.simplify(self._sympy_of_raw_defi(prop.unwrap_exp))
             if prop.prop_type == "IsConserved":
-                sp_expr = self._sympy_of_raw_defi(prop.unwrap_exp)
                 new_eq = sp.diff(sp_expr, argument).as_numer_denom()[0]
                 if ideal.belongs_to(new_eq):
                     self.knowledge.K.remove_conclusion(name)
@@ -130,7 +130,6 @@ class SpecificModel:
                     ideal = ideal._insert_new_eq(new_eq)
                     new_name_list.append(name)
             elif prop.prop_type == "IsZero":
-                sp_expr = self._sympy_of_raw_defi(prop.unwrap_exp)
                 new_eq = sp_expr.as_numer_denom()[0]
                 if ideal.belongs_to(new_eq):
                     self.knowledge.K.remove_conclusion(name)

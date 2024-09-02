@@ -35,7 +35,7 @@ use experiments::topy::register_experiment;
 use pyo3::prelude::*;
 use parsing::register_sentence;
 use knowledge::Knowledge;
-use regression::{search_relations, search_relations_ver2};
+use regression::{search_relations, search_relations_ver2, search_trivial_relations};
 
 #[pymodule]
 fn ai_physicist(m: &Bound<'_, PyModule>) -> PyResult<()> {
@@ -55,6 +55,7 @@ fn ai_physicist(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<Knowledge>()?;
     m.add_function(wrap_pyfunction!(search_relations, m)?)?;
     m.add_function(wrap_pyfunction!(search_relations_ver2, m)?)?;
+    m.add_function(wrap_pyfunction!(search_trivial_relations, m)?)?;
     m.add_function(wrap_pyfunction!(experiments::simulation::motion0::struct_motion0, m)?)?;
     m.add_function(wrap_pyfunction!(experiments::simulation::motion::struct_motion, m)?)?;
     m.add_function(wrap_pyfunction!(experiments::simulation::collision::struct_collision, m)?)?;

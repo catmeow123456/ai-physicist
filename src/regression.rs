@@ -5,6 +5,24 @@ use crate::ast::{BinaryOp, Exp};
 use crate::knowledge::apply_binary_op;
 
 #[pyfunction]
+pub fn search_trivial_relations(fn_list: &DataStruct) -> Vec<(Exp, ExpData)> {
+    let mut list: Vec<(Exp, ExpData)> = vec![];
+    let tdata = fn_list.get_t();
+    for (atom, value) in fn_list.iter() {
+        if value.is_conserved() {
+            list.push((Exp::Atom { atom: Box::new(atom.clone()) }, value.clone()));
+        } else {
+            let valuedt = value.diff(&tdata);
+            if valuedt.is_conserved() {
+                let exp = Exp::DiffExp { left: Box::new(Exp::Atom { atom: Box::new(atom.clone()) }), right: Box::new(Exp::get_t()), ord: 1 };
+                list.push((exp, valuedt));
+            }
+        }
+    }
+    list
+}
+
+#[pyfunction]
 pub fn search_relations_ver2(fn_list: &DataStruct) -> Vec<(Exp, ExpData)> {
     let ref origin_list = fn_list.iter().collect::<Vec<_>>();
     let mut list: Vec<(Exp, ExpData)> = vec![];

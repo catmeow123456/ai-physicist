@@ -3,8 +3,8 @@ from specific_model import SpecificModel
 from object_model import ObjectModel
 from interface import Knowledge
 from interface import (
-    search_relations_ver2
-    ,search_relations, DataStruct, ExpStructure, MeasureType, Proposition,
+    search_relations_ver2, search_trivial_relations,
+    search_relations, DataStruct, ExpStructure, MeasureType, Proposition,
     Exp, TExp, SExp, IExpConfig, ObjAttrExp, AtomExp, ExpData, DataStruct, Expression
 )
 
@@ -51,7 +51,13 @@ class Theorist:
         # list_datainfo(data_info)
         # for spe in specific_exprs:
         #     print(f"eval({spe} = ", self.knowledge.K.eval_exp_keyvaluehashed(spe).get_data())
-        res: List[Tuple[Exp, ExpData]] = search_relations(data_info) if ver is None else search_relations_ver2(data_info)
+        
+        if ver is None:
+            res: List[Tuple[Exp, ExpData]] = search_relations(data_info)
+        elif ver == 'ver2':
+            res: List[Tuple[Exp, ExpData]] = search_relations_ver2(data_info)
+        elif ver == 'trivial':
+            res: List[Tuple[Exp, ExpData]] = search_trivial_relations(data_info)
         print(f"Found {len(res)} relations")
         for (expr, expdata) in res:
             name: str = None
