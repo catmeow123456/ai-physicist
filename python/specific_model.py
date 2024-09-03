@@ -116,7 +116,8 @@ class SpecificModel:
         argument = sp.Symbol("t_0")
         if all_symbols.__contains__(argument):
             all_symbols.remove(argument)
-        ring = DifferentialRing.default(list(all_symbols) + list(all_functions))
+        ring = DifferentialRing([('lex', list(all_functions)),
+                                 ('lex', list(all_symbols))])
         # 第二步：TODO 把无意义的 conclusion 去掉
         ideal: diffalg = diffalg(ring)
         if debug:
@@ -128,7 +129,17 @@ class SpecificModel:
             if prop.prop_type == "IsConserved":
                 new_eq = sp.diff(sp_expr, argument).as_numer_denom()[0]
                 if ideal.belongs_to(new_eq):
-                    self.memory.remove_conclusion(name)
+                    eq_reduced = ideal.gb[0].reduce(sp_expr)
+                    if eq_reduced.diff(argument).is_zero:
+                        # if eq_reduced is composed by all const value, then remove it
+                        self.memory.remove_conclusion(name)
+                    else:
+                        print(prop.unwrap_exp, '-->', sp_expr, ' --eq_reduced--> ', eq_reduced)
+                        new_eq = sp_expr - sp.Symbol(name)
+                        if debug:
+                            print('add new eq to ideal', new_eq)
+                        ideal = ideal._insert_new_eq(new_eq)
+                        new_name_list.append(name)
                 else:
                     new_eq = sp_expr - sp.Symbol(name)
                     if debug:

@@ -62,7 +62,7 @@ class RegularDifferentialChain:
         solver.append_command(f'eqs := [{eqs_arg}]')
         solver.append_command(f'ideal := PretendRegularDifferentialChain(eqs, R)')
         eq_arg = eq_to_maple(self.ring, eq=eq, trans_table="ver2")
-        solver.append_command(f'eq := ReducedForm({eq_arg}, ideal)')
+        solver.append_command(f'eq := NormalForm({eq_arg}, ideal)')
         solver.append_command(f'print(eq)')
         stdout = solver.exec_maple()
         return eq_from_maple(self.ring, stdout[-1])

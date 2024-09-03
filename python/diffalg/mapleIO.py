@@ -30,12 +30,13 @@ class mapleIO:
         if stderr_:
             raise Exception(stderr_)
         self.outputs = self.translate(stdout_)
-        if 'error' in self.outputs[-1].lower():
-            print('debug in maple' + '-'*20)
-            for c in self.commands:
-                print(c)
-            print('debug in maple' + '-'*20)
-            raise Exception(self.outputs[-1])
+        for message in self.outputs:
+            if 'error' in message.lower():
+                print('debug in maple' + '-'*20)
+                for c in self.commands:
+                    print(c)
+                print('debug in maple' + '-'*20)
+                raise Exception(message)
         return self.outputs
 
     def translate(self, stdout: str):
