@@ -33,6 +33,14 @@ impl ExpData {
     }
     #[getter]
     #[inline]
+    pub fn is_normal(&self) -> bool {
+        match self {
+            ExpData::Normal { content: _ } => true,
+            _ => false
+        }
+    }
+    #[getter]
+    #[inline]
     pub fn is_const(&self) -> bool {
         match self {
             ExpData::Const { content: _ } => true,
@@ -61,14 +69,6 @@ impl ExpData {
     pub fn is_err(&self) -> bool {
         match self {
             ExpData::Err { } => true,
-            _ => false
-        }
-    }
-    #[getter]
-    #[inline]
-    fn is_normal(&self) -> bool {
-        match self {
-            ExpData::Normal { content: _ } => true,
             _ => false
         }
     }

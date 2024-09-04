@@ -330,7 +330,7 @@ impl Knowledge {
                     }
                     exp_list.push(AtomExp::new_variable_ids(concept_name.clone(), ids));
                 }
-                unimplemented!()
+                exp_list
             }
             Expression::TExp { texp } => {
                 let vec_map = self._get_all_possible_map(&texp.get_objtype_id_map(), exp_name);

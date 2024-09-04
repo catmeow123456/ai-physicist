@@ -62,7 +62,7 @@ class RegularDifferentialChain:
         solver.append_command(f'eqs := [{eqs_arg}]')
         solver.append_command(f'ideal := PretendRegularDifferentialChain(eqs, R)')
         eq_arg = eq_to_maple(self.ring, eq=eq, trans_table="ver2")
-        solver.append_command(f'eq := ReducedForm({eq_arg}, ideal)')
+        solver.append_command(f'eq := NormalForm({eq_arg}, ideal)')
         solver.append_command(f'print(eq)')
         stdout = solver.exec_maple()
         return eq_from_maple(self.ring, stdout[-1])
@@ -114,6 +114,9 @@ class diffalg:
             return self
         if self.belongs_to(eq):
             return diffalg(self.ring, gb=None, eqs=self.eqs, ineqs=self.ineqs + [eq])
+        return diffalg.from_eqs(self.ring, self.eqs, self.ineqs + [eq])
+
+    def _insert_new_ineqs(self, eq: sp.Expr) -> 'diffalg':
         return diffalg.from_eqs(self.ring, self.eqs, self.ineqs + [eq])
 
     def belongs_to(self, eq: sp.Expr) -> bool:

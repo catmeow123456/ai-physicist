@@ -190,6 +190,10 @@ impl DataStruct {
     pub fn iter(&self) -> std::collections::hash_map::Iter<AtomExp, ExpData> {
         self.data.iter()
     }
+    #[inline]
+    pub fn get_t(&self) -> ExpData {
+        self.get_data_by_key(&AtomExp::get_t()).unwrap()
+    }
 }
 
 impl fmt::Display for DataStruct {
@@ -227,7 +231,7 @@ impl DataStructOfExpData {
     }
     #[inline]
     pub fn get_t(&self) -> ExpData {
-        self.data.get_data_by_key(&AtomExp::get_t()).unwrap()
+        self.data.get_t()
     }
     pub fn plot_expdata(&self, name: &str) {
         // plot the arr

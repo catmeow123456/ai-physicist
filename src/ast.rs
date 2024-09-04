@@ -102,7 +102,7 @@ impl MeasureType {
 
 
 #[pyclass(eq)]
-#[derive(Clone, PartialEq, Eq, Hash)]
+#[derive(Clone, PartialEq, Eq, Hash, Debug)]
 pub enum AtomExp {
     Variable {name: String},
     VariableIds {name: String, ids: Vec<i32>},

@@ -5,6 +5,7 @@ from interface import (
     ExpStructure, Exp, AtomExp, Proposition, MeasureType,
     is_conserved_const_list
 )
+from memory import Memory
 from diffalg.diffalg import DifferentialRing, diffalg
 
 
@@ -16,7 +17,8 @@ class SpecificModel:
     以及一个 experiment_control 字典，是相对于 experiment 的实验对照组，表达了在控制变量的条件下做实验获得的新结果。
     """
     exp_name: str
-    knowledge: Knowledge
+    general: Knowledge
+    memory: Memory
     experiment: ExpStructure
     experiment_control: Dict[int, List[ExpStructure]]
     # 保持其他实验对象不变，改变实验对象 id 并进行实验获得的结果存储在 experiment_control[id] 中
@@ -24,14 +26,14 @@ class SpecificModel:
     conserved_list: List[Tuple[str, Exp]]
     zero_list: List[Tuple[str, Exp]]
 
-    def __init__(self, exp_name: str, exp_struct: ExpStructure):
+    def __init__(self, exp_name: str, general: Knowledge):
         """
         初始化一个 SpecificModel 对象，需要提供实验的名称和实验的结构
         """
         self.exp_name = exp_name
-        self.knowledge = Knowledge.empty()
-        self.knowledge.register_expstruct(exp_name, exp_struct)
-        self.experiment = self.knowledge.fetch_expstruct(exp_name)
+        self.general = general
+        self.memory = Memory()
+        self.experiment = self.general.fetch_expstruct(exp_name)
         self.experiment.random_settings()
         self.experiment.collect_expdata(MeasureType.default())
         self.experiment_control = {}
@@ -39,7 +41,7 @@ class SpecificModel:
         self.zero_list = []
 
     def exp_hashed(self, exp: Exp):
-        return self.knowledge.K.eval_exp_keyvaluehashed(exp)
+        return self.general.K.eval_exp_keyvaluehashed(exp)
 
     # 待修改（下面的所有函数都处于最 naive 的实现，之后需要添加更多的逻辑来进行优化）
 
@@ -49,14 +51,18 @@ class SpecificModel:
         这些 specific 的原子表达式由概念库中的概念 specialize 生成，以备后续组合出更复杂的表达式。
         TODO：需要有方向性的智能的随机选取，且这种随机选取方式是可学习的
         """
-        for key in self.knowledge.fetch_concepts():
-            specific_exprs: list[AtomExp] = self.knowledge.specialize_concept(key, self.exp_name)
+        for key in self.memory.fetch_concepts():
+            specific_exprs: list[AtomExp] = self.general.specialize_concept(key, self.exp_name)
             # if len(specific_exprs) > 0:
             #     print(f"specialize_concept({self.exp_name}, {key}) = {specific_exprs}")
             for atom_exp in specific_exprs:
-                self.knowledge.eval(str(atom_exp), self.experiment)
+                self.general.eval(Exp.Atom(atom_exp), self.experiment)
                 # 在这个 eval 过程中，
                 # atom_exp 的计算结果会自动被记录到 self.experiment.data_info() 中
+        for key in self.memory.fetch_objattrexps():
+            specific_exprs: list[AtomExp] = self.general.specialize_concept(key, self.exp_name)
+            for atom_exp in specific_exprs:
+                self.general.eval(Exp.Atom(atom_exp), self.experiment)
         return self.experiment.data_info()
 
     def append_conserved_exp(self, conserved_exp: Exp) -> str:
@@ -70,7 +76,7 @@ class SpecificModel:
             if self.exp_hashed(exp) == hashed_value:
                 # print(f"exp = {self.exp_hashed(exp).get_data()}, conserved_exp = {conserved_exp.exp_hashed(exp).get_data()}")
                 return None
-        name = self.knowledge.register_conclusion(str(Proposition.IsConserved(conserved_exp)))
+        name = self.memory.register_conclusion(Proposition.IsConserved(conserved_exp))
         self.conserved_list.append((name, conserved_exp))
         return name
 
@@ -82,7 +88,7 @@ class SpecificModel:
         for _, exp in self.zero_list:
             if self.exp_hashed(exp) == hashed_value:
                 return None
-        name = self.knowledge.register_conclusion(str(Proposition.IsZero(zero_exp)))
+        name = self.memory.register_conclusion(Proposition.IsZero(zero_exp))
         self.zero_list.append((name, zero_exp))
         return name
 
@@ -90,13 +96,13 @@ class SpecificModel:
         """
         这个函数的目的是计算一个结论（ conclusion ）的 rawdefinition 的复杂度，以便在 reduce_conclusions 函数中进行排序
         """
-        return self.knowledge.K.raw_definition_prop(prop).get_complexity()
+        return self.general.K.raw_definition_prop(prop).get_complexity()
 
     def reduce_conclusions(self, debug=False):
         """
         这个函数的目的是将当前实验中的所有的 conserved 和 zero 的表达式整理并取 minimal 表示
         """
-        conclusions: Dict[str, Proposition] = self.knowledge.K.fetch_conclusions()
+        conclusions: Dict[str, Proposition] = self.memory.fetch_conclusions()
         name_list: List[str] = list(conclusions.keys())
         name_list = sorted(name_list, key=lambda x: self.conclusion_raw_complexity(conclusions[x]))
         # 第一步：提取 DifferentialRing
@@ -110,19 +116,31 @@ class SpecificModel:
         argument = sp.Symbol("t_0")
         if all_symbols.__contains__(argument):
             all_symbols.remove(argument)
-        ring = DifferentialRing.default(list(all_symbols) + list(all_functions))
+        ring = DifferentialRing([('lex', list(all_functions)),
+                                 ('lex', list(all_symbols))])
         # 第二步：TODO 把无意义的 conclusion 去掉
         ideal: diffalg = diffalg(ring)
+        ideal.insert_new_ineqs(argument)
         if debug:
             print('prepare ring', list(all_symbols) + list(all_functions))
         new_name_list = []
         for name in name_list:
             prop = conclusions[name]
+            sp_expr = sp.simplify(self._sympy_of_raw_defi(prop.unwrap_exp))
             if prop.prop_type == "IsConserved":
-                sp_expr = self._sympy_of_raw_defi(prop.unwrap_exp)
                 new_eq = sp.diff(sp_expr, argument).as_numer_denom()[0]
                 if ideal.belongs_to(new_eq):
-                    self.knowledge.K.remove_conclusion(name)
+                    eq_reduced = ideal.gb[0].reduce(sp_expr)
+                    if eq_reduced.diff(argument).is_zero:
+                        # if eq_reduced is composed by all const value, then remove it
+                        self.memory.remove_conclusion(name)
+                    else:
+                        # print(prop.unwrap_exp, '-->', sp_expr, ' --eq_reduced--> ', eq_reduced)
+                        new_eq = sp_expr - sp.Symbol(name)
+                        if debug:
+                            print('add new eq to ideal', new_eq)
+                        ideal = ideal._insert_new_eq(new_eq)
+                        new_name_list.append(name)
                 else:
                     new_eq = sp_expr - sp.Symbol(name)
                     if debug:
@@ -130,10 +148,9 @@ class SpecificModel:
                     ideal = ideal._insert_new_eq(new_eq)
                     new_name_list.append(name)
             elif prop.prop_type == "IsZero":
-                sp_expr = self._sympy_of_raw_defi(prop.unwrap_exp)
                 new_eq = sp_expr.as_numer_denom()[0]
                 if ideal.belongs_to(new_eq):
-                    self.knowledge.K.remove_conclusion(name)
+                    self.memory.remove_conclusion(name)
                 else:
                     if debug:
                         print('add new eq to ideal', sp_expr)
@@ -156,7 +173,7 @@ class SpecificModel:
         如果是，返回 True 和它依赖的实验对象编号
         否则，返回 False 和 None
         """
-        expdata: ExpData = self.knowledge.eval(exp, self.experiment)
+        expdata: ExpData = self.general.eval(exp, self.experiment)
         if not expdata.is_const:
             return False, None
         if not self.experiment_control.__contains__(-1):
@@ -168,7 +185,7 @@ class SpecificModel:
                 self.experiment_control[-1].append(new_exp)
         expdata_list = [expdata.const_data()]
         for new_exp in self.experiment_control[-1]:
-            new_expdata = self.knowledge.eval(exp, new_exp)
+            new_expdata = self.general.eval(exp, new_exp)
             if new_expdata.is_const:
                 expdata_list.append(new_expdata.const_data())
             else:
@@ -189,7 +206,7 @@ class SpecificModel:
                     self.experiment_control[id].append(new_exp)
             expdata_list = [expdata.const_data()]
             for new_exp in self.experiment_control[id]:
-                new_expdata = self.knowledge.eval(exp, new_exp)
+                new_expdata = self.general.eval(exp, new_exp)
                 if new_expdata.is_const:
                     expdata_list.append(new_expdata.const_data())
                 else:
@@ -202,17 +219,17 @@ class SpecificModel:
 
     def print_conclusion(self):
         print(f"Exp's name = {self.exp_name}, conclusions:")
-        self.knowledge.print_conclusions()
+        self.memory.print_conclusions()
 
     def print_full_conclusion(self):
         for name, exp in self.zero_list:
-            print(name, "zero:", exp, "=", self.knowledge.K.raw_definition_exp(exp))
+            print(name, "zero:", exp, "=", self.general.raw_definition_exp(exp))
         for name, exp in self.conserved_list:
-            print(name, "conserved:", exp, "=", self.knowledge.K.raw_definition_exp(exp))
+            print(name, "conserved:", exp, "=", self.general.raw_definition_exp(exp))
 
     def _sympy_of_raw_defi(self, exp: Exp) -> sp.Expr:
-        return sp.sympify(self.knowledge.K.parse_exp_to_sympy_str(
-            self.knowledge.K.raw_definition_exp(exp),
+        return sp.sympify(self.general.K.parse_exp_to_sympy_str(
+            self.general.K.raw_definition_exp(exp),
             "t_0"
         ))
 

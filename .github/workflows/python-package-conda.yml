@@ -43,7 +43,7 @@ jobs:
         maturin develop
         pip install -r requirements.txt
 
-    - name: Test python program 'python/test9.py'
+    - name: Test python program 'python/testi.py'
       run: |
         conda activate base
         python python/test1.py
