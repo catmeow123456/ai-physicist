@@ -51,3 +51,15 @@ A:
 sudo apt install libssl-dev
 sudo apt install openssl
 ```
+3.
+```
+not found CC
+not found FC
+not found HOSTCC
+...
+called `Result::unwrap()` on an `Err` value: FortranCompilerNotFound
+```
+A:
+```
+sudo apt install gfortran
+```
