@@ -120,6 +120,7 @@ class SpecificModel:
                                  ('lex', list(all_symbols))])
         # 第二步：TODO 把无意义的 conclusion 去掉
         ideal: diffalg = diffalg(ring)
+        ideal.insert_new_ineqs(argument)
         if debug:
             print('prepare ring', list(all_symbols) + list(all_functions))
         new_name_list = []
@@ -134,7 +135,7 @@ class SpecificModel:
                         # if eq_reduced is composed by all const value, then remove it
                         self.memory.remove_conclusion(name)
                     else:
-                        print(prop.unwrap_exp, '-->', sp_expr, ' --eq_reduced--> ', eq_reduced)
+                        # print(prop.unwrap_exp, '-->', sp_expr, ' --eq_reduced--> ', eq_reduced)
                         new_eq = sp_expr - sp.Symbol(name)
                         if debug:
                             print('add new eq to ideal', new_eq)

@@ -116,6 +116,9 @@ class diffalg:
             return diffalg(self.ring, gb=None, eqs=self.eqs, ineqs=self.ineqs + [eq])
         return diffalg.from_eqs(self.ring, self.eqs, self.ineqs + [eq])
 
+    def _insert_new_ineqs(self, eq: sp.Expr) -> 'diffalg':
+        return diffalg.from_eqs(self.ring, self.eqs, self.ineqs + [eq])
+
     def belongs_to(self, eq: sp.Expr) -> bool:
         symbols = set()
         for i in self.gb:
