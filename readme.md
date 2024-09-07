@@ -3,6 +3,18 @@
 Discover new laws automatically from data.  
 This project is still at a very early stage.  
 
+## Preparation
+
+Install Python (>= 3.10.0), conda (or pyenv)
+
+Install Rust
+```
+curl -sSf https://static.rust-lang.org/rustup.sh | sh
+```
+
+
+
+
 ## Installation
 
 You can use `pyenv, conda` etc. to set up environment. Take pyenv as an example, first create a virtual environment as follows:

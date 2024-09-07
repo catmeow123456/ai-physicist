@@ -46,18 +46,18 @@ class Theorist:
             self.objmodel[obj_type] = self.newObjectModel(obj_type)
         name = self.objmodel[obj_type].register_objattrexp(objattrexp)
         if name is not None:
-            print(f"\033[1m" + f"Registered New Concept: {name} = {objattrexp}" + f"\033[0m")
+            print("\033[1m" + f"Registered New Concept: {name} = {objattrexp}" + "\033[0m")
             for key in self.specific:
                 self.specific[key].memory.register_objattrexp(objattrexp, name)
 
     def theoretical_analysis(self, exp_name: str, ver: str | None = None):
-        assert(exp_name in self.specific)
+        assert (exp_name in self.specific)
         spm: SpecificModel = self.specific[exp_name]
         data_info: DataStruct = spm.pick_relevant_exprs()
         # list_datainfo(data_info)
         # for spe in specific_exprs:
         #     print(f"eval({spe} = ", self.general.eval_exp_keyvaluehashed(spe).get_data())
-        
+
         if ver is None:
             res: List[Tuple[Exp, ExpData]] = search_relations(data_info)
         elif ver == 'ver2':
