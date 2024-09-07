@@ -12,7 +12,11 @@ Install Rust
 curl -sSf https://static.rust-lang.org/rustup.sh | sh
 ```
 
-
+Check and build the rust code.
+```
+cargo check
+cargo build
+```
 
 
 ## Installation
