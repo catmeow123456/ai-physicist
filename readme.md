@@ -7,10 +7,7 @@ This project is still at a very early stage.
 
 Install Python (>= 3.10.0), conda (or pyenv)
 
-Install Rust
-```
-curl -sSf https://static.rust-lang.org/rustup.sh | sh
-```
+Install Rust (https://www.rust-lang.org/tools/install)
 
 Check and build the rust code.
 ```

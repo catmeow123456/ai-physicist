@@ -1,4 +1,3 @@
-ai-physicist==0.1.0
 asttokens==2.4.1
 contourpy==1.3.0
 cycler==0.12.1
