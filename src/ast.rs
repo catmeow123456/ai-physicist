@@ -423,21 +423,10 @@ impl AtomExp {
         s.finish()
     }
     #[staticmethod]
-    pub fn new_variable_ids(name: String, ids: Vec<i32>) -> Self {
-        if ids.len() == 0 {
-            AtomExp::Variable {name}
-        } else {
-            AtomExp::VariableIds {name, ids}
-        }
-    }
-    #[staticmethod]
-    pub fn new_variable(name: String) -> Self {
-        AtomExp::Variable {name}
-    }
-    #[staticmethod]
     pub fn get_t() -> Self {
         AtomExp::VariableIds { name: r!("t"), ids: vec![0] }
     }
+    #[inline]
     pub fn get_name(&self) -> String {
         match self {
             AtomExp::Variable {name} => name.clone(),
@@ -494,5 +483,19 @@ impl AtomExp {
                 AtomExp::VariableIds {name: name.clone(), ids: res}
             }
         }
+    }
+}
+impl AtomExp {
+    #[inline]
+    pub fn new_variable_ids(name: String, ids: Vec<i32>) -> Self {
+        if ids.len() == 0 {
+            AtomExp::Variable {name}
+        } else {
+            AtomExp::VariableIds {name, ids}
+        }
+    }
+    #[inline]
+    pub fn new_variable(name: String) -> Self {
+        AtomExp::Variable {name}
     }
 }
