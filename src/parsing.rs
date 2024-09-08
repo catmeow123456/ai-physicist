@@ -2,7 +2,7 @@ use crate::r;
 use pyo3::prelude::*;
 use lalrpop_util::lalrpop_mod;
 lalrpop_mod!(expr);
-use crate::ast::{Proposition, Exp, SExp, TExp, ObjAttrExp, Expression};
+use crate::ast::{Proposition, AtomExp, Exp, SExp, TExp, ObjAttrExp, Expression};
 // mod ast;
 
 #[pymethods]
@@ -87,6 +87,11 @@ pub fn parse_texp(input: &str) -> PyResult<TExp> {
 #[pyfunction]
 pub fn parse_objattrexp(input: &str) -> PyResult<ObjAttrExp> {
     let res: Box<ObjAttrExp> = expr::ObjAttrExpParser::new().parse(input).unwrap();
+    Ok(*res)
+}
+#[pyfunction]
+pub fn parse_atomexp(input: &str) -> PyResult<AtomExp> {
+    let res: Box<AtomExp> = expr::AtomExpParser::new().parse(input).unwrap();
     Ok(*res)
 }
 #[pyfunction]

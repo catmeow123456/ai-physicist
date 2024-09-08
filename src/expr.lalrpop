@@ -52,6 +52,10 @@ pub TExp: Box<TExp> = {
   },
 }
 
+pub AtomExp: Box<AtomExp> = {
+  <name: Ident> => Box::new(AtomExp::Variable{ <> }),
+  <name: Ident>"["<ids: IntVecConst>"]" => Box::new(AtomExp::VariableIds{ <> }),
+}
 
 MeasureType: Box<MeasureType> = {
   "[t_end=" <t_end: FloatConst> ",n=" <n: Number> ",repeat_time=" <repeat_time: Number> ",error=" <error: FloatConst> "]"
@@ -106,11 +110,6 @@ WithExp: Box<Exp> = {
   <addexp: AddExp> => <>,
   <addexp: AddExp> "with" <measuretype: MeasureType> =>
     Box::new(Exp::ExpWithMeasureType{ exp: addexp, measuretype: measuretype }),
-}
-
-AtomExp: Box<AtomExp> = {
-  <name: Ident> => Box::new(AtomExp::Variable{ <> }),
-  <name: Ident>"["<ids: IntVecConst>"]" => Box::new(AtomExp::VariableIds{ <> }),
 }
 
 Number: i32 = <num: IntConst> => <>;

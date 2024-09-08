@@ -484,6 +484,11 @@ impl AtomExp {
             }
         }
     }
+    #[new]
+    pub fn from_string(str: String) -> Self {
+        use super::parsing::parse_atomexp;
+        parse_atomexp(&str).unwrap()
+    }
 }
 impl AtomExp {
     #[inline]

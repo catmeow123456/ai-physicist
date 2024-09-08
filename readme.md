@@ -18,6 +18,8 @@ cargo build
 
 ## Installation
 
+### use `maturin`
+
 You can use `pyenv, conda` etc. to set up environment. Take pyenv as an example, first create a virtual environment as follows:
 ```
 pyenv virtualenv 3.10.0 aiphysicist  
@@ -45,6 +47,27 @@ Testing AI-physicist
 python python/test9.py
 ```
 
+### use `ai_physicist.so`
+
+First, run
+```
+cargo build --release
+```
+to produce a `libai_physicist.so` file at `{work folder}/target/release/`.
+Then, change its name and copy the file to `{work folder}/ai_physicist.so`.
+```
+cp target/release/libai_physicist.so python/ai_physicist.so
+```
+Remember to create a virtual environment with all dependencies in `requirements.txt` are installed:
+```
+conda activate aiphy
+pip install -r requirements.txt
+```
+Finally, Testing AI-physicist
+```
+python python/test9.py
+```
+ 
 ## QA
 1.
 Q:

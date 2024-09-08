@@ -1,4 +1,4 @@
-from typing import List, Dict
+from typing import List, Dict, Set
 from deprecated.sphinx import deprecated
 
 class AtomExp:
@@ -6,6 +6,8 @@ class AtomExp:
     Represents an atomic expression in the language of the AI Physicist.
     For example, "pos[1]", "r[2, 3]", "t[0]" are all atomic expressions.
     """
+
+    def __new__(cls, content: str) -> AtomExp: ...
 
     def __str__(self) -> str: ...
 
@@ -26,22 +28,13 @@ class AtomExp:
         """
         ...
 
-    def get_name(self) -> str:
-        """
-        get the name of the atomic expression
-        """
-        ...
-
+    def get_name(self) -> str: ...
     def get_vec_ids(self) -> List[int]:
-        """
-        get the ordered ids of the atomic expression
-        """
+        """get the ordered ids of the atomic expression"""
         ...
-
+    def get_allids(self) -> Set[int]: ...
     def substs(self, subs: Dict[int, int]) -> AtomExp:
-        """
-        Substitute the ids of the atomic expression with the given substitutions.
-        """
+        """Substitute the ids of the atomic expression with the given substitutions."""
         ...
 
 class Exp:
