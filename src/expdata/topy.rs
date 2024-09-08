@@ -3,6 +3,7 @@ use ndarray::Array1;
 use super::normaldata::is_conserved;
 use super::expdata::ExpData;
 use super::constdata::ConstData;
+use super::normaldata::NormalData;
 
 #[pyfunction]
 fn is_conserved_const_list(data: Vec<ConstData>) -> bool {
@@ -24,6 +25,7 @@ fn is_conserved_const_list(data: Vec<ConstData>) -> bool {
 #[pymodule]
 pub fn register_data(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<ExpData>()?;
+    m.add_class::<NormalData>()?;
     m.add_class::<ConstData>()?;
     m.add_function(wrap_pyfunction!(is_conserved_const_list, m)?)?;
     Ok(())

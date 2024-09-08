@@ -42,6 +42,9 @@ impl fmt::Display for NormalData {
 
 #[pymethods]
 impl NormalData {
+    fn __str__(&self) -> String {
+        format!("{}", self)
+    }
     #[new]
     fn __new__(data: Vec<Vec<f64>>) -> Self {
         let n = data[0].len();
@@ -93,6 +96,7 @@ impl NormalData {
         }
         true
     }
+    #[getter]
     pub fn is_conserved(&self) -> bool {
         let mut mean_vec = vec![];
         let mut std_vec = vec![];
@@ -102,6 +106,7 @@ impl NormalData {
         }
         is_conserved(&Array1::from(mean_vec), &Array1::from(std_vec), None)
     }
+    #[getter]
     pub fn is_zero(&self) -> bool {
         for (x, y) in self.gen_domain() {
             if !is_zero(&self.data.slice(s![.., x..y]).mean_axis(ndarray::Axis(0)).unwrap(),

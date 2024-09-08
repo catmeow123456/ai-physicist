@@ -16,28 +16,30 @@ impl ConstData {
         format!("{}", self)
     }
     #[inline]
-    fn __add__(&self, rhs: &Self) -> Self {
-        self + rhs
+    #[new]
+    fn __new__(mean: f64, std: f64) -> Self {
+        ConstData::Data { mean, std }
     }
     #[inline]
-    fn __sub__(&self, rhs: &Self) -> Self {
-        self - rhs
+    #[staticmethod]
+    fn exact(value: i32) -> Self {
+        ConstData::Exact { value }
     }
     #[inline]
-    fn __mul__(&self, rhs: &Self) -> Self {
-        self * rhs
+    #[getter]
+    fn mean(&self) -> f64 {
+        match self {
+            ConstData::Data { mean, std: _ } => *mean,
+            ConstData::Exact { value } => *value as f64,
+        }
     }
     #[inline]
-    fn __truediv__(&self, rhs: &Self) -> Self {
-        self / rhs
-    }
-    #[inline]
-    fn __neg__(&self) -> Self {
-        -self
-    }
-    #[inline]
-    fn __powi__(&self, n: i32) -> Self {
-        self.powi(n)
+    #[getter]
+    fn std(&self) -> f64 {
+        match self {
+            ConstData::Data { mean: _, std } => *std,
+            ConstData::Exact { value: _ } => 0.0,
+        }
     }
 }
 

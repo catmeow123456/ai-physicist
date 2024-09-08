@@ -134,6 +134,7 @@ impl Exp {
             _ => panic!("Error: unwrap_atom failed"),
         }
     }
+    #[inline]
     #[getter]
     fn get_complexity(&self) -> i32 {
         self.complexity()
