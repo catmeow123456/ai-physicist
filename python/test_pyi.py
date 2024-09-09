@@ -1,21 +1,22 @@
 #%%
 from ai_physicist import AtomExp
 print(AtomExp.VariableIds("dis", [2, 3]))
-print(AtomExp("dis[2,3]").get_allids())
+print(AtomExp("dis[2,3]").allids)
 print(AtomExp.get_t())
-print(AtomExp.get_t().get_name())
+print(AtomExp.get_t().name)
 dis23: AtomExp = AtomExp.VariableIds("dis", [2, 3])
-print(dis23.get_name())
-print(dis23.get_vec_ids())
+print(dis23.name)
+print(dis23.vec_ids)
 print(dis23.substs({2: 3, 3: 33}))
 #%%
 from ai_physicist import Exp, AtomExp
 print(Exp.Number(1))
 exp_of_atom: Exp = Exp.Atom(AtomExp("dis[2,3]"))
+print(exp_of_atom.unwrap_atom())
+exp_of_atom = (exp_of_atom.__powi__(2) + exp_of_atom).__difft__(3)
 print(exp_of_atom)
-print(exp_of_atom.unwrap_atom().__class__)
 print(exp_of_atom.complexity)
-
+print(exp_of_atom.subst_by_dict({2: 3, 3: 33}))
 # %%
 from ai_physicist import ExpData, NormalData
 xx: ExpData = ExpData([[1, 1.1], [1.05, 0.9]])

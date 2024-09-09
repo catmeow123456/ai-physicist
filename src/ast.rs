@@ -26,7 +26,12 @@ impl Proposition {
     fn __str__(&self) -> String {
         format!("{}", self)
     }
-    #[getter]
+    #[new]#[inline]
+    fn from_string(str: String) -> Self {
+        use super::parsing::parse_proposition;
+        parse_proposition(&str).unwrap()
+    }
+    #[getter]#[inline]
     fn prop_type(&self) -> String {
         match self {
             Proposition::IsConserved {exp: _} => r!("IsConserved"),
@@ -35,10 +40,11 @@ impl Proposition {
             Proposition::Not {prop: _} => r!("Not"),
         }
     }
+    #[getter]#[inline]
     fn get_complexity(&self) -> i32 {
         self.complexity()
     }
-    #[getter]
+    #[getter]#[inline]
     fn unwrap_exp(&self) -> Exp {
         match self {
             Proposition::IsConserved {exp} => *exp.clone(),
@@ -172,6 +178,7 @@ impl Exp {
     pub fn subst_by_dict(&self, sub_dict: HashMap<i32, i32>) -> Self {
         self.substs(&sub_dict)
     }
+    #[getter]
     pub fn get_allids(&self) -> HashSet<i32> {
         match self {
             Exp::Number { num: _ } => HashSet::new(),
@@ -191,6 +198,43 @@ impl Exp {
             },
             Exp::ExpWithMeasureType {exp, measuretype:_} => exp.get_allids(),
         }
+    }
+    #[new]
+    pub fn from_string(str: String) -> Self {
+        use super::parsing::parse_exp;
+        parse_exp(&str).unwrap()
+    }
+    #[inline]
+    fn __add__(&self, other: &Self) -> Self {
+        Exp::BinaryExp {left: Box::new(self.clone()), op: BinaryOp::Add, right: Box::new(other.clone())}
+    }
+    #[inline]
+    fn __sub__(&self, other: &Self) -> Self {
+        Exp::BinaryExp {left: Box::new(self.clone()), op: BinaryOp::Sub, right: Box::new(other.clone())}
+    }
+    #[inline]
+    fn __mul__(&self, other: &Self) -> Self {
+        Exp::BinaryExp {left: Box::new(self.clone()), op: BinaryOp::Mul, right: Box::new(other.clone())}
+    }
+    #[inline]
+    fn __truediv__(&self, other: &Self) -> Self {
+        Exp::BinaryExp {left: Box::new(self.clone()), op: BinaryOp::Div, right: Box::new(other.clone())}
+    }
+    #[inline]
+    fn __powi__(&self, i: i32) -> Self {
+        Exp::BinaryExp {left: Box::new(self.clone()), op: BinaryOp::Pow, right: Box::new(Exp::Number {num: i})}
+    }
+    #[inline]
+    fn __neg__(&self) -> Self {
+        Exp::UnaryExp {op: UnaryOp::Neg, exp: Box::new(self.clone())}
+    }
+    #[inline]
+    fn __difft__(&self, ord: i32) -> Self {
+        Exp::DiffExp {left: Box::new(self.clone()), right: Box::new(Exp::get_t()), ord}
+    }
+    #[inline]
+    fn __diff__(&self, other: &Self) -> Self {
+        Exp::DiffExp {left: Box::new(self.clone()), right: Box::new(other.clone()), ord: 1}
     }
 }
 impl Exp {
@@ -234,14 +278,28 @@ pub enum SExp {
 }
 #[pymethods]
 impl SExp {
+    #[inline]
     fn __str__(&self) -> String {
         format!("{}", self)
     }
+    #[new]#[inline]
+    fn from_string(str: String) -> Self {
+        use super::parsing::parse_sexp;
+        parse_sexp(&str).unwrap()
+    }
+    #[getter]#[inline]
     pub fn get_expconfig(&self) -> IExpConfig {
         match self {
-            SExp::Mk {expconfig, exp:_} => (**expconfig).clone(),
+            SExp::Mk {expconfig, ..} => (**expconfig).clone(),
         }
     }
+    #[getter]#[inline]
+    pub fn get_exp(&self) -> Exp {
+        match self {
+            SExp::Mk {exp, ..} => (**exp).clone(),
+        }
+    }
+    #[getter]#[inline]
     pub fn get_objtype_id_map(&self) -> HashMap<String, HashSet<i32>> {
         self.get_expconfig().get_objtype_id_map()
     }
@@ -290,6 +348,12 @@ impl TExp {
 }
 #[pymethods]
 impl TExp {
+    #[new]
+    #[inline]
+    fn from_string(str: String) -> Self {
+        use super::parsing::parse_texp;
+        parse_texp(&str).unwrap()
+    }
     fn __str__(&self) -> String {
         format!("{}", self)
     }
@@ -299,12 +363,16 @@ impl TExp {
     fn subst_by_dict(&self, sub_dict: HashMap<i32, i32>) -> Exp {
         self.substs(&sub_dict)
     }
+    #[getter]
+    #[inline]
     pub fn get_exp(&self) -> Exp {
         match self {
             TExp::Mk0 {exp} => (**exp).clone(),
             TExp::Mksucc {objtype: _, texp, id: _} => texp.get_exp(),
         }
     }
+    #[getter]
+    #[inline]
     pub fn get_preids(&self) -> Vec<i32> {
         match self {
             TExp::Mk0 {exp:_} => vec![],
@@ -315,6 +383,8 @@ impl TExp {
             },
         }
     }
+    #[getter]
+    #[inline]
     pub fn get_objtype_id_map(&self) -> HashMap<String, HashSet<i32>> {
         match self {
             TExp::Mk0 {exp:_} => HashMap::new(),
@@ -338,9 +408,16 @@ pub enum IExpConfig {
 }
 #[pymethods]
 impl IExpConfig {
+    #[inline]
     fn __str__(&self) -> String {
         format!("{}", self)
     }
+    #[new]#[inline]
+    pub fn from_string(str: String) -> Self {
+        use super::parsing::parse_iexpconfig;
+        parse_iexpconfig(&str).unwrap()
+    }
+    #[getter]#[inline]
     pub fn get_expname(&self) -> String {
         match self {
             IExpConfig::From {name} => name.clone(),
@@ -348,6 +425,7 @@ impl IExpConfig {
             IExpConfig::Mkfix {object: _, expconfig, id: _} => expconfig.get_expname(),
         }
     }
+    #[getter]#[inline]
     fn get_objtype_id_map(&self) -> HashMap<String, HashSet<i32>> {
         match self {
             IExpConfig::From {name: _} => HashMap::new(),
@@ -362,6 +440,7 @@ impl IExpConfig {
             },
         }
     }
+    #[getter]#[inline]
     fn get_preids(&self) -> Vec<i32> {
         match self {
             IExpConfig::From {name: _} => vec![],
@@ -401,6 +480,11 @@ impl ObjAttrExp {
     fn __str__(&self) -> String {
         format!("{}", self)
     }
+    #[new]#[inline]
+    pub fn from_string(str: String) -> Self {
+        use super::parsing::parse_objattrexp;
+        parse_objattrexp(&str).unwrap()
+    }
 }
 
 #[pyclass(eq)]
@@ -427,6 +511,7 @@ impl AtomExp {
     pub fn get_t() -> Self {
         AtomExp::VariableIds { name: r!("t"), ids: vec![0] }
     }
+    #[getter]
     #[inline]
     pub fn get_name(&self) -> String {
         match self {
@@ -434,12 +519,16 @@ impl AtomExp {
             AtomExp::VariableIds {name, ids:_} => name.clone(),
         }
     }
+    #[getter]
+    #[inline]
     pub fn get_vec_ids(&self) -> Vec<i32> {
         match self {
             AtomExp::Variable {name:_} => vec![],
             AtomExp::VariableIds {name:_, ids} => ids.clone(),
         }
     }
+    #[getter]
+    #[inline]
     pub fn get_allids(&self) -> HashSet<i32> {
         match self {
             AtomExp::Variable {name:_} => HashSet::new(),

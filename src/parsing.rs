@@ -2,7 +2,7 @@ use crate::r;
 use pyo3::prelude::*;
 use lalrpop_util::lalrpop_mod;
 lalrpop_mod!(expr);
-use crate::ast::{Proposition, AtomExp, Exp, SExp, TExp, ObjAttrExp, Expression};
+use crate::ast::{Proposition, AtomExp, Exp, SExp, TExp, IExpConfig, ObjAttrExp, Expression};
 // mod ast;
 
 #[pymethods]
@@ -10,7 +10,7 @@ impl Expression {
     fn __str__(&self) -> String {
         format!("{}", self)
     }
-    #[getter]
+    #[getter]#[inline]
     fn expr_type(&self) -> String {
         match self {
             Expression::Exp {exp: _} => r!("Exp"),
@@ -20,30 +20,35 @@ impl Expression {
             Expression::Proposition {prop: _} => r!("Proposition"),
         }
     }
+    #[getter]#[inline]
     fn unwrap_exp(&self) -> Exp {
         match self {
             Expression::Exp {exp} => *exp.clone(),
             _ => panic!("Not an Exp"),
         }
     }
+    #[getter]#[inline]
     fn unwrap_texp(&self) -> TExp {
         match self {
             Expression::TExp {texp} => *texp.clone(),
             _ => panic!("Not a TExp"),
         }
     }
+    #[getter]#[inline]
     fn unwrap_sexp(&self) -> SExp {
         match self {
             Expression::SExp {sexp} => *sexp.clone(),
             _ => panic!("Not a SExp"),
         }
     }
+    #[getter]#[inline]
     fn unwrap_objattrexp(&self) -> ObjAttrExp {
         match self {
             Expression::ObjAttrExp {objattrexp} => *objattrexp.clone(),
             _ => panic!("Not an ObjAttrExp"),
         }
     }
+    #[getter]#[inline]
     fn unwrap_proposition(&self) -> Proposition {
         match self {
             Expression::Proposition {prop} => *prop.clone(),
@@ -100,6 +105,11 @@ pub fn parse_proposition(input: &str) -> PyResult<Proposition> {
     let res: Box<Proposition> = expr::PropositionParser::new().parse(input).unwrap();
     Ok(*res)
 }
+#[pyfunction]
+pub fn parse_iexpconfig(input: &str) -> PyResult<IExpConfig> {
+    let res: Box<IExpConfig> = expr::ExpConfigParser::new().parse(input).unwrap();
+    Ok(*res)
+}
 
 #[pymodule]
 pub fn register_sentence(m: &Bound<'_, PyModule>) -> PyResult<()> {
@@ -111,6 +121,7 @@ pub fn register_sentence(m: &Bound<'_, PyModule>) -> PyResult<()> {
     child_module.add_function(wrap_pyfunction!(parse_texp, m)?)?;
     child_module.add_function(wrap_pyfunction!(parse_objattrexp, m)?)?;
     child_module.add_function(wrap_pyfunction!(parse_proposition, m)?)?;
+    child_module.add_function(wrap_pyfunction!(parse_iexpconfig, m)?)?;
     m.add_submodule(&child_module)?;
     Ok(())
 }
