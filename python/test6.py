@@ -1,7 +1,7 @@
 from interface import Knowledge
 from ai_physicist import MeasureType
 from ai_physicist import search_relations
-from ai_physicist import sentence
+from ai_physicist import Concept
 
 theorist = Knowledge.default()
 theorist.fetch_exps
@@ -24,8 +24,8 @@ print(str(s.data_info))
 res = search_relations(s.data_info)
 # print(res)
 
-concept = sentence.parse("(1->MassPoint)(2->MassPoint)|-posx[1]-posx[2]")
-exp = concept.unwrap_concept.subst([2,1])
+concept = Concept("(1->MassPoint)(2->MassPoint)|-posx[1]-posx[2]")
+exp = concept.subst([2,1])
 print(str(exp))
 print(theorist.generalize("collision", str(exp)))
 print(res[0][0])

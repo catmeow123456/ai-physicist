@@ -1,7 +1,7 @@
 from ai_physicist import struct_oscillation
-from ai_physicist import sentence, Intrinsic, Objstructure, Knowledge
+from ai_physicist import SExp, Intrinsic, Objstructure, Knowledge
 
-sexp = sentence.parse_sexp("#oscillation (1 -> MassPoint) (2 -> Spring) |- D[posx[1]'']/D[posx[1]]")
+sexp = SExp("#oscillation (1 -> MassPoint) (2 -> Spring) |- D[posx[1]'']/D[posx[1]]")
 intrinsic = Intrinsic.From(sexp)
 print(str(sexp))
 mp = Objstructure.make_masspoint(2, 5)

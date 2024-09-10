@@ -11,7 +11,6 @@ from ai_physicist import (
     Expression,
     DataStruct,
     ExpStructure,
-    sentence,       # .parse()  .parse_exp()  .parse_sexp()
     search_trivial_relations,
     search_relations,
     search_relations_ver2,
@@ -65,7 +64,7 @@ class Knowledge:
 
     def eval(self, expr: Exp | str, expstruct: ExpStructure) -> ExpData:
         if isinstance(expr, str):
-            expr = sentence.parse_exp(expr)
+            expr = Exp(expr)
         return self.K.eval(expr, expstruct)
 
     def register_object(self, objstruct: Objstructure, name: str = None) -> str:
@@ -74,14 +73,14 @@ class Knowledge:
         return name
     def register_expr(self, definition: Expression | str, name: str = None) -> str | None:
         name = self.auto_concept_name() if name is None else name
-        expr: Expression = sentence.parse(definition) if isinstance(definition, str) else definition
+        expr: Expression = Expression(definition) if isinstance(definition, str) else definition
         if self.K.register_expression(name, expr):
             return name
         else:
             return None
     def register_conclusion(self, definition: str, name: str = None) -> str:
         name = self.auto_conclusion_name() if name is None else name
-        prop: Proposition = sentence.parse_proposition(definition)
+        prop: Proposition = Proposition(definition)
         self.K.register_conclusion(name, prop)
         return name
     def auto_object_name(self) -> str:
@@ -96,12 +95,12 @@ class Knowledge:
 
     def generalize(self, exp_name: str, exp: Exp | str) -> Expression:
         try:
-            exp: Exp = sentence.parse_exp(exp) if isinstance(exp, str) else exp
+            exp: Exp = Exp(exp) if isinstance(exp, str) else exp
             return Expression.Concept(self.K.generalize(exp, exp_name))
         except:
             print("Failed to generalize", exp_name, exp)
     def specialize(self, concept: str, exp_name: str) -> List[Expression]:
-        return self.K.specialize(sentence.parse_concept(concept), exp_name)
+        return self.K.specialize(Concept(concept), exp_name)
     def fetch_concept_concept(self, concept_name: str) -> Concept:
         return self.K.fetch_concept_by_name(concept_name).unwrap_concept
     def specialize_concept(self, concept_name: str, exp_name: str) -> List[AtomExp]:

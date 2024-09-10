@@ -10,6 +10,11 @@ impl Expression {
     fn __str__(&self) -> String {
         format!("{}", self)
     }
+    #[new]
+    fn from_string(input: &str) -> Self {
+        let exp = expr::ExpressionParser::new().parse(input).unwrap();
+        *exp
+    }
     #[getter]#[inline]
     fn expr_type(&self) -> String {
         match self {

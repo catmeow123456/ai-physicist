@@ -1,6 +1,6 @@
-from ai_physicist import sentence, Exp
-print(sentence.parse_str("(x[1]' + x[2]') ** 2"))
-a = sentence.parse_exp("(x[1]' + x[2]') ** 2")
-t = sentence.parse_exp("t[0]")
-b = Exp.DiffExp(a, t, 1)
+from ai_physicist import Exp
+a = Exp("(x[1]' + x[2]')")
+print(a)
+t = Exp("t[0]")
+b = Exp.DiffExp(a.__powi__(2), t, 1)
 print(str(b))
