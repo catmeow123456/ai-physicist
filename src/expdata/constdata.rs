@@ -41,6 +41,30 @@ impl ConstData {
             ConstData::Exact { value: _ } => 0.0,
         }
     }
+    #[inline]
+    fn __add__(&self, rhs: &Self) -> Self {
+        self + rhs
+    }
+    #[inline]
+    fn __sub__(&self, rhs: &Self) -> Self {
+        self - rhs
+    }
+    #[inline]
+    fn __mul__(&self, rhs: &Self) -> Self {
+        self * rhs
+    }
+    #[inline]
+    fn __truediv__(&self, rhs: &Self) -> Self {
+        self / rhs
+    }
+    #[inline]
+    fn __neg__(&self) -> Self {
+        -self
+    }
+    #[inline]
+    fn __powi__(&self, n: i32) -> Self {
+        self.powi(n)
+    }
 }
 
 

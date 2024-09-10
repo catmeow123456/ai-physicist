@@ -96,7 +96,7 @@ class SpecificModel:
         """
         这个函数的目的是计算一个结论（ conclusion ）的 rawdefinition 的复杂度，以便在 reduce_conclusions 函数中进行排序
         """
-        return self.general.K.raw_definition_prop(prop).get_complexity()
+        return self.general.K.raw_definition_prop(prop).complexity
 
     def reduce_conclusions(self, debug=False):
         """
@@ -183,11 +183,11 @@ class SpecificModel:
                 new_exp.random_set_exp_para()
                 new_exp.collect_expdata(MeasureType.default())
                 self.experiment_control[-1].append(new_exp)
-        expdata_list = [expdata.const_data()]
+        expdata_list = [expdata.const_data]
         for new_exp in self.experiment_control[-1]:
             new_expdata = self.general.eval(exp, new_exp)
             if new_expdata.is_const:
-                expdata_list.append(new_expdata.const_data())
+                expdata_list.append(new_expdata.const_data)
             else:
                 return False, None
         if not is_conserved_const_list(expdata_list):
@@ -204,11 +204,11 @@ class SpecificModel:
                     new_exp.random_set_obj(id)
                     new_exp.collect_expdata(MeasureType.default())
                     self.experiment_control[id].append(new_exp)
-            expdata_list = [expdata.const_data()]
+            expdata_list = [expdata.const_data]
             for new_exp in self.experiment_control[id]:
                 new_expdata = self.general.eval(exp, new_exp)
                 if new_expdata.is_const:
-                    expdata_list.append(new_expdata.const_data())
+                    expdata_list.append(new_expdata.const_data)
                 else:
                     return False, None
             if not is_conserved_const_list(expdata_list):

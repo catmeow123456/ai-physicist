@@ -104,7 +104,7 @@ class Knowledge:
     def specialize(self, texp: str, exp_name: str) -> List[Expression]:
         return self.K.specialize(sentence.parse_texp(texp), exp_name)
     def fetch_concept_texp(self, concept_name: str) -> TExp:
-        return self.K.fetch_concept_by_name(concept_name).unwrap_texp()
+        return self.K.fetch_concept_by_name(concept_name).unwrap_texp
     def specialize_concept(self, concept_name: str, exp_name: str) -> List[AtomExp]:
         return self.K.specialize_concept(concept_name, exp_name)
     def print_concepts(self):

@@ -83,11 +83,21 @@ impl DataStruct {
     fn __str__(&self) -> String {
         format!("{}", self)
     }
-    fn fetch_atomexps(&self) -> HashSet<AtomExp> {
+    #[getter]#[inline]
+    fn get_data_keys(&self) -> HashSet<AtomExp> {
         self.get_data().keys().cloned().collect()
     }
-    fn fetch_data(&self, name: &str, id: i32) -> Option<ExpData> {
-        self.get_data().get(&AtomExp::new_variable_ids(name.to_string(), vec![id])).cloned()
+    #[inline]
+    fn fetch_data_by_name_ids(&self, name: &str, ids: Vec<i32>) -> Option<ExpData> {
+        self.get_data().get(&AtomExp::new_variable_ids(name.to_string(), ids)).cloned()
+    }
+    #[inline]
+    fn fetch_data_by_key(&self, atom: AtomExp) -> Option<ExpData> {
+        self.get_data().get(&atom).cloned()
+    }
+    #[inline]
+    fn fetch_data_by_str(&self, atom_name: &str) -> Option<ExpData> {
+        self.get_data().get(&AtomExp::from_string(atom_name.to_string())).cloned()
     }
     #[staticmethod]
     fn empty() -> Self {

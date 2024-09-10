@@ -11,7 +11,7 @@ from interface import (
 
 
 def list_datainfo(data_info: DataStruct):
-    df = data_info.fetch_atomexps()
+    df = data_info.data_keys
     for i in df:
         print(i)
 
@@ -105,11 +105,11 @@ class Theorist:
                 raise ValueError("search_relations(data_info) returned an unexpected result")
             if name is not None:
                 expression: Expression = self.general.generalize(exp_name, expr)
-                self.register_concept(expression.unwrap_texp())
+                self.register_concept(expression.unwrap_texp)
         self.specific[exp_name].reduce_conclusions(debug=False)
         # for name, expr in self.specific[exp_name].conserved_list:
         #     expression: Expression = self.general.generalize(exp_name, expr)
-        #     self.register_concept(expression.unwrap_texp())
+        #     self.register_concept(expression.unwrap_texp)
 
     def register_concept(self, concept: TExp):
         """
