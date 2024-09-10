@@ -1,23 +1,23 @@
 from typing import Dict, List
-from interface import Proposition, TExp, ObjAttrExp
+from interface import Proposition, Concept, Intrinsic
 
 class Memory:
-    concept: Dict[str, TExp]
-    objattrexp: Dict[str, ObjAttrExp]
+    concept: Dict[str, Concept]
+    intrinsic: Dict[str, Intrinsic]
     conclusion: Dict[str, Proposition]
     conclusion_id: int
 
     def __init__(self):
         self.concept = {}
-        self.objattrexp = {}
+        self.intrinsic = {}
         self.conclusion = {}
         self.conclusion_id = 0
 
-    def register_concept(self, texp: TExp, name: str):
-        self.concept[name] = texp
+    def register_concept(self, concept: Concept, name: str):
+        self.concept[name] = concept
 
-    def register_objattrexp(self, objattrexp: ObjAttrExp, name: str):
-        self.objattrexp[name] = objattrexp
+    def register_intrinsic(self, intrinsic: Intrinsic, name: str):
+        self.intrinsic[name] = intrinsic
 
     def register_conclusion(self, prop: Proposition):
         self.conclusion_id += 1
@@ -34,8 +34,8 @@ class Memory:
         return self.concept.keys()
 
     @property
-    def fetch_objattrexps(self):
-        return self.objattrexp.keys()
+    def fetch_intrinsics(self):
+        return self.intrinsic.keys()
 
     @property
     def fetch_conclusions(self) -> Dict[str, Proposition]:

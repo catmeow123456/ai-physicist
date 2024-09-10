@@ -59,7 +59,7 @@ class SpecificModel:
                 self.general.eval(Exp.Atom(atom_exp), self.experiment)
                 # 在这个 eval 过程中，
                 # atom_exp 的计算结果会自动被记录到 self.experiment.data_info() 中
-        for key in self.memory.fetch_objattrexps:
+        for key in self.memory.fetch_intrinsics:
             specific_exprs: list[AtomExp] = self.general.specialize_concept(key, self.exp_name)
             for atom_exp in specific_exprs:
                 self.general.eval(Exp.Atom(atom_exp), self.experiment)

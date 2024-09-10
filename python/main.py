@@ -6,7 +6,7 @@ from interface import Knowledge
 from interface import (
     search_relations_ver2, search_trivial_relations,
     search_relations, DataStruct, ExpStructure, MeasureType, Proposition,
-    Exp, TExp, SExp, IExpConfig, ObjAttrExp, AtomExp, ExpData, DataStruct, Expression
+    Exp, Concept, SExp, IExpConfig, Intrinsic, AtomExp, ExpData, DataStruct, Expression
 )
 
 
@@ -41,14 +41,14 @@ class Theorist:
     def newObjectModel(self, obj_type: str) -> ObjectModel:
         return ObjectModel(obj_type, self.general)
 
-    def register_new_objattrexp(self, obj_type: str, objattrexp: ObjAttrExp):
+    def register_new_intrinsic(self, obj_type: str, intrinsic: Intrinsic):
         if not self.objmodel.__contains__(obj_type):
             self.objmodel[obj_type] = self.newObjectModel(obj_type)
-        name = self.objmodel[obj_type].register_objattrexp(objattrexp)
+        name = self.objmodel[obj_type].register_intrinsic(intrinsic)
         if name is not None:
-            print("\033[1m" + f"Registered New Concept: {name} = {objattrexp}" + "\033[0m")
+            print("\033[1m" + f"Registered New Concept: {name} = {intrinsic}" + "\033[0m")
             for key in self.specific:
-                self.specific[key].memory.register_objattrexp(objattrexp, name)
+                self.specific[key].memory.register_intrinsic(intrinsic, name)
 
     def theoretical_analysis(self, exp_name: str, ver: str | None = None):
         assert (exp_name in self.specific)
@@ -82,8 +82,8 @@ class Theorist:
                             IExpConfig.From(exp_name),
                             id
                         )
-                        objattrexp = ObjAttrExp.From(SExp.Mk(iexp_config, expr))
-                        self.register_new_objattrexp(obj_type, objattrexp)
+                        intrinsic = Intrinsic.From(SExp.Mk(iexp_config, expr))
+                        self.register_new_intrinsic(obj_type, intrinsic)
                     if is_intrinsic and len(relevant_id) == 2:
                         print(f"Found intrinsic relation: {expr} with relevant_id = {relevant_id}")
                         id, obj_type = relevant_id[0], str(spm.experiment.get_obj_type(relevant_id[0]))
@@ -99,26 +99,26 @@ class Theorist:
                             iexp_config,
                             id1
                         )
-                        objattrexp = ObjAttrExp.From(SExp.Mk(iexp_config, expr))
-                        self.register_new_objattrexp(obj_type, objattrexp)
+                        intrinsic = Intrinsic.From(SExp.Mk(iexp_config, expr))
+                        self.register_new_intrinsic(obj_type, intrinsic)
             else:
                 raise ValueError("search_relations(data_info) returned an unexpected result")
             if name is not None:
                 expression: Expression = self.general.generalize(exp_name, expr)
-                self.register_concept(expression.unwrap_texp)
+                self.register_concept(expression.unwrap_concept)
         self.specific[exp_name].reduce_conclusions(debug=False)
         # for name, expr in self.specific[exp_name].conserved_list:
         #     expression: Expression = self.general.generalize(exp_name, expr)
-        #     self.register_concept(expression.unwrap_texp)
+        #     self.register_concept(expression.unwrap_concept)
 
-    def register_concept(self, concept: TExp):
+    def register_concept(self, concept: Concept):
         """
         Theorist 类中新注册一个概念。
 
         新注册的概念在 general 中注册过后，可以有选择性地给 specific 中的每一个实验注册
         这个地方有很多优化空间，因为在一些实验中某个概念可能是毫无用处的，这个时候就可以删掉。
         """
-        expression: Expression = Expression.TExp(texp=concept)
+        expression: Expression = Expression.Concept(concept=concept)
         name = self.general.register_expr(expression)
         if name is not None:
             print(f"\033[1m" + f"Registered New Concept: {name} = {concept}" + f"\033[0m")

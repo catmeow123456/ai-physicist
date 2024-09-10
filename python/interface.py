@@ -4,10 +4,10 @@ from ai_physicist import (
     Proposition,
     Exp,
     SExp,
-    TExp,
+    Concept,
     AtomExp,
     IExpConfig,
-    ObjAttrExp,
+    Intrinsic,
     Expression,
     DataStruct,
     ExpStructure,
@@ -97,13 +97,13 @@ class Knowledge:
     def generalize(self, exp_name: str, exp: Exp | str) -> Expression:
         try:
             exp: Exp = sentence.parse_exp(exp) if isinstance(exp, str) else exp
-            return Expression.TExp(self.K.generalize(exp, exp_name))
+            return Expression.Concept(self.K.generalize(exp, exp_name))
         except:
             print("Failed to generalize", exp_name, exp)
-    def specialize(self, texp: str, exp_name: str) -> List[Expression]:
-        return self.K.specialize(sentence.parse_texp(texp), exp_name)
-    def fetch_concept_texp(self, concept_name: str) -> TExp:
-        return self.K.fetch_concept_by_name(concept_name).unwrap_texp
+    def specialize(self, concept: str, exp_name: str) -> List[Expression]:
+        return self.K.specialize(sentence.parse_concept(concept), exp_name)
+    def fetch_concept_concept(self, concept_name: str) -> Concept:
+        return self.K.fetch_concept_by_name(concept_name).unwrap_concept
     def specialize_concept(self, concept_name: str, exp_name: str) -> List[AtomExp]:
         return self.K.specialize_concept(concept_name, exp_name)
     def print_concepts(self):

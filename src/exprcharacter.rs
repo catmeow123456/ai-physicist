@@ -4,7 +4,7 @@ use pyo3::prelude::*;
 use std::collections::HashMap;
 use std::cmp::{min, max};
 use crate::ast::{
-    AtomExp, BinaryOp, Exp, Expression, IExpConfig, ObjAttrExp, SExp, TExp, UnaryOp
+    AtomExp, BinaryOp, Exp, Expression, IExpConfig, Intrinsic, SExp, Concept, UnaryOp
 };
 use crate::knowledge::Knowledge;
 use crate::expdata::expdata::Diff;
@@ -426,10 +426,10 @@ pub fn apply_binary_op(op: &BinaryOp, valuei: KeyValue, valuej: KeyValue) -> Key
 }
 
 impl Knowledge {
-    pub fn eval_objattrexp_keyvaluehashed(&mut self, objattrexp: &ObjAttrExp) ->
+    pub fn eval_intrinsic_keyvaluehashed(&mut self, intrinsic: &Intrinsic) ->
             (KeyValue, KeyValueHashed) {
-        match objattrexp {
-            ObjAttrExp::From { sexp } => {
+        match intrinsic {
+            Intrinsic::From { sexp } => {
                 match sexp.as_ref() {
                     SExp::Mk { expconfig, exp } => {
                         let mut vec_fix_id_objtype = vec![];
@@ -464,9 +464,9 @@ impl Knowledge {
             }
         }
     }
-    pub fn eval_concept_keyvaluehashed(&mut self, texp: &TExp) ->
+    pub fn eval_concept_keyvaluehashed(&mut self, concept: &Concept) ->
             (KeyValue, KeyValueHashed, HashMap<i32, i32>) {
-        let s = texp.get_objtype_id_map();
+        let s = concept.get_objtype_id_map();
         let mut vec_map: Vec<HashMap<i32, i32>> = vec![];
         vec_map.push(HashMap::new());
         for (_, ids) in s.iter() {
@@ -489,8 +489,8 @@ impl Knowledge {
         let mut res_kv = KeyValue::none(self.key.key_len, self.key.p_mod);
         let mut res_kvh = KeyValueHashed::none(self.key.key_len, self.key.p_mod);
         for dict in vec_map.iter() {
-            let texp_new = texp.substs(dict);
-            let kv = self.eval_keyvalue(&texp_new);
+            let concept_new = concept.substs(dict);
+            let kv = self.eval_keyvalue(&concept_new);
             let kv_hashed = kv.to_hashed();
             if res_kvh.is_none() || kv_hashed < res_kvh {
                 res_kvh = kv_hashed;
@@ -512,12 +512,12 @@ impl Knowledge {
                 let expr = self.concepts.get(&atom.get_name());
                 if let Some(expr) = expr {
                     match expr {
-                        Expression::ObjAttrExp { objattrexp: _ } => {
+                        Expression::Intrinsic { intrinsic: _ } => {
                             self.key.get_or_insert_const(atom)
                         },
-                        Expression::TExp { texp } => {
-                            let texp_new = texp.subst(atom.get_vec_ids());
-                            self.eval_keyvalue(&texp_new)
+                        Expression::Concept { concept } => {
+                            let concept_new = concept.subst(atom.get_vec_ids());
+                            self.eval_keyvalue(&concept_new)
                         }
                         _ => {
                             unimplemented!()

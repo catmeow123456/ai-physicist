@@ -2,7 +2,7 @@ use crate::r;
 use pyo3::prelude::*;
 use lalrpop_util::lalrpop_mod;
 lalrpop_mod!(expr);
-use crate::ast::{Proposition, AtomExp, Exp, SExp, TExp, IExpConfig, ObjAttrExp, Expression};
+use crate::ast::{Proposition, AtomExp, Exp, SExp, Concept, IExpConfig, Intrinsic, Expression};
 // mod ast;
 
 #[pymethods]
@@ -15,8 +15,8 @@ impl Expression {
         match self {
             Expression::Exp {exp: _} => r!("Exp"),
             Expression::SExp {sexp: _} => r!("SExp"),
-            Expression::TExp {texp: _} => r!("TExp"),
-            Expression::ObjAttrExp {objattrexp: _} => r!("ObjAttrExp"),
+            Expression::Concept {concept: _} => r!("Concept"),
+            Expression::Intrinsic {intrinsic: _} => r!("Intrinsic"),
             Expression::Proposition {prop: _} => r!("Proposition"),
         }
     }
@@ -28,10 +28,10 @@ impl Expression {
         }
     }
     #[getter]#[inline]
-    fn unwrap_texp(&self) -> TExp {
+    fn unwrap_concept(&self) -> Concept {
         match self {
-            Expression::TExp {texp} => *texp.clone(),
-            _ => panic!("Not a TExp"),
+            Expression::Concept {concept} => *concept.clone(),
+            _ => panic!("Not a Concept"),
         }
     }
     #[getter]#[inline]
@@ -42,10 +42,10 @@ impl Expression {
         }
     }
     #[getter]#[inline]
-    fn unwrap_objattrexp(&self) -> ObjAttrExp {
+    fn unwrap_intrinsic(&self) -> Intrinsic {
         match self {
-            Expression::ObjAttrExp {objattrexp} => *objattrexp.clone(),
-            _ => panic!("Not an ObjAttrExp"),
+            Expression::Intrinsic {intrinsic} => *intrinsic.clone(),
+            _ => panic!("Not an Intrinsic"),
         }
     }
     #[getter]#[inline]
@@ -69,8 +69,8 @@ fn parse_str(input: &str) -> PyResult<String> {
     match *res {
         Expression::Exp {exp} => Ok(format!("{}", *exp)),
         Expression::SExp {sexp} => Ok(format!("{}", *sexp)),
-        Expression::TExp {texp} => Ok(format!("{}", *texp)),
-        Expression::ObjAttrExp {objattrexp} => Ok(format!("{}", *objattrexp)),
+        Expression::Concept {concept} => Ok(format!("{}", *concept)),
+        Expression::Intrinsic {intrinsic} => Ok(format!("{}", *intrinsic)),
         Expression::Proposition {prop} => Ok(format!("{}", *prop)),
     }
 }
@@ -85,13 +85,13 @@ pub fn parse_sexp(input: &str) -> PyResult<SExp> {
     Ok(*res)
 }
 #[pyfunction]
-pub fn parse_texp(input: &str) -> PyResult<TExp> {
-    let res: Box<TExp> = expr::TExpParser::new().parse(input).unwrap();
+pub fn parse_concept(input: &str) -> PyResult<Concept> {
+    let res: Box<Concept> = expr::ConceptParser::new().parse(input).unwrap();
     Ok(*res)
 }
 #[pyfunction]
-pub fn parse_objattrexp(input: &str) -> PyResult<ObjAttrExp> {
-    let res: Box<ObjAttrExp> = expr::ObjAttrExpParser::new().parse(input).unwrap();
+pub fn parse_intrinsic(input: &str) -> PyResult<Intrinsic> {
+    let res: Box<Intrinsic> = expr::IntrinsicParser::new().parse(input).unwrap();
     Ok(*res)
 }
 #[pyfunction]
@@ -118,8 +118,8 @@ pub fn register_sentence(m: &Bound<'_, PyModule>) -> PyResult<()> {
     child_module.add_function(wrap_pyfunction!(parse_str, m)?)?;
     child_module.add_function(wrap_pyfunction!(parse_exp, m)?)?;
     child_module.add_function(wrap_pyfunction!(parse_sexp, m)?)?;
-    child_module.add_function(wrap_pyfunction!(parse_texp, m)?)?;
-    child_module.add_function(wrap_pyfunction!(parse_objattrexp, m)?)?;
+    child_module.add_function(wrap_pyfunction!(parse_concept, m)?)?;
+    child_module.add_function(wrap_pyfunction!(parse_intrinsic, m)?)?;
     child_module.add_function(wrap_pyfunction!(parse_proposition, m)?)?;
     child_module.add_function(wrap_pyfunction!(parse_iexpconfig, m)?)?;
     m.add_submodule(&child_module)?;

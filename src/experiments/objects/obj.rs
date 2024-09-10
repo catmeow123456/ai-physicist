@@ -89,18 +89,18 @@ impl fmt::Display for ATTR {
     }
 }
 
-use crate::ast::{Exp, TExp};
+use crate::ast::{Exp, Concept};
 impl DATA{
-    pub fn data_global(name: String) -> TExp {
-        TExp::Mk0 { exp: Box::new(Exp::new_variable(name)) }
+    pub fn data_global(name: String) -> Concept {
+        Concept::Mk0 { exp: Box::new(Exp::new_variable(name)) }
     }
-    pub fn data(obj_types: Vec<String>, name: String) -> TExp {
+    pub fn data(obj_types: Vec<String>, name: String) -> Concept {
         let n = obj_types.len();
         let atom = Exp::new_variable_ids(name, (1..(n+1)).map(|x| x as i32).collect());
-        let mut texp = TExp::Mk0 { exp: Box::new(atom) };
+        let mut concept = Concept::Mk0 { exp: Box::new(atom) };
         for i in 0..n {
-            texp = TExp::Mksucc { objtype: obj_types[i].clone(), texp: Box::new(texp), id: i as i32+1 }
+            concept = Concept::Mksucc { objtype: obj_types[i].clone(), concept: Box::new(concept), id: i as i32+1 }
         }
-        texp
+        concept
     }
 }

@@ -1,8 +1,8 @@
 from ai_physicist import struct_oscillation
-from ai_physicist import sentence, ObjAttrExp, Objstructure, Knowledge
+from ai_physicist import sentence, Intrinsic, Objstructure, Knowledge
 
 sexp = sentence.parse_sexp("#oscillation (1 -> MassPoint) (2 -> Spring) |- D[posx[1]'']/D[posx[1]]")
-objattr = ObjAttrExp.From(sexp)
+intrinsic = Intrinsic.From(sexp)
 print(str(sexp))
 mp = Objstructure.make_masspoint(2, 5)
 mp.random_settings()
@@ -14,11 +14,11 @@ newexp = struct_oscillation()
 newexp.random_settings()
 
 KK = Knowledge.default()
-expdata1 = KK.eval_objattr(objattr, [mp, sp])
+expdata1 = KK.eval_intrinsic(intrinsic, [mp, sp])
 print(expdata1)
 
 KK2 = Knowledge.default()
-expdata2 = KK2.eval_objattr(objattr, [mp, sp])
+expdata2 = KK2.eval_intrinsic(intrinsic, [mp, sp])
 print(expdata2)
 
 print(expdata1 - expdata2)

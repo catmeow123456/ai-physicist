@@ -307,52 +307,52 @@ impl SExp {
 
 #[pyclass(eq)]
 #[derive(Clone, PartialEq)]
-pub enum TExp {
+pub enum Concept {
     // {ObjStructure} -> ExpConfig -> MeasureData -> ExpData
     Mk0 {exp: Box<Exp>},
     // Mk {objtype: String, exp: Box<Exp>, id: i32},
-    Mksucc {objtype: String, texp: Box<TExp>, id: i32},
+    Mksucc {objtype: String, concept: Box<Concept>, id: i32},
 }
-impl TExp {
+impl Concept {
     fn _subst(&self, idlist: Vec<i32>, sub_dict: HashMap<i32, i32>) -> Exp {
         match self {
-            TExp::Mk0 {exp} => {
+            Concept::Mk0 {exp} => {
                 let ref exp = **exp;
                 assert_eq!(idlist.len(), 0);
                 exp.substs(&sub_dict)
             }
-            TExp::Mksucc {objtype: _, texp, id} => {
+            Concept::Mksucc {objtype: _, concept, id} => {
                 let mut sub_dict = sub_dict;
                 let mut idlist = idlist;
                 let nid = idlist.pop().unwrap();
-                let ref texp = **texp;
+                let ref concept = **concept;
                 sub_dict.insert(*id, nid);
                 // println!("debug {} {}", id, nid);
-                texp._subst(idlist, sub_dict)
+                concept._subst(idlist, sub_dict)
             }
         }
     }
     pub fn substs(&self, sub_dict: &HashMap<i32, i32>) -> Exp {
         match self {
-            TExp::Mk0 { exp } => exp.substs(&sub_dict),
-            TExp::Mksucc { objtype:_, texp, id:_ } => texp.substs(sub_dict)
+            Concept::Mk0 { exp } => exp.substs(&sub_dict),
+            Concept::Mksucc { objtype:_, concept, id:_ } => concept.substs(sub_dict)
         }
     }
     pub fn to_atomexp(&self, ids: Vec<i32>) -> AtomExp {
         let x = self.subst(ids);
         match x {
             Exp::Atom {atom} => *atom,
-            _ => panic!("Error: TExp to AtomExp Failed"),
+            _ => panic!("Error: Concept to AtomExp Failed"),
         }
     }
 }
 #[pymethods]
-impl TExp {
+impl Concept {
     #[new]
     #[inline]
     fn from_string(str: String) -> Self {
-        use super::parsing::parse_texp;
-        parse_texp(&str).unwrap()
+        use super::parsing::parse_concept;
+        parse_concept(&str).unwrap()
     }
     fn __str__(&self) -> String {
         format!("{}", self)
@@ -367,17 +367,17 @@ impl TExp {
     #[inline]
     pub fn get_exp(&self) -> Exp {
         match self {
-            TExp::Mk0 {exp} => (**exp).clone(),
-            TExp::Mksucc {objtype: _, texp, id: _} => texp.get_exp(),
+            Concept::Mk0 {exp} => (**exp).clone(),
+            Concept::Mksucc {objtype: _, concept, id: _} => concept.get_exp(),
         }
     }
     #[getter]
     #[inline]
     pub fn get_preids(&self) -> Vec<i32> {
         match self {
-            TExp::Mk0 {exp:_} => vec![],
-            TExp::Mksucc {objtype: _, texp, id} => {
-                let mut s = texp.get_preids();
+            Concept::Mk0 {exp:_} => vec![],
+            Concept::Mksucc {objtype: _, concept, id} => {
+                let mut s = concept.get_preids();
                 s.push(*id);
                 s
             },
@@ -387,9 +387,9 @@ impl TExp {
     #[inline]
     pub fn get_objtype_id_map(&self) -> HashMap<String, HashSet<i32>> {
         match self {
-            TExp::Mk0 {exp:_} => HashMap::new(),
-            TExp::Mksucc {objtype, texp, id} => {
-                let mut res = texp.get_objtype_id_map();
+            Concept::Mk0 {exp:_} => HashMap::new(),
+            Concept::Mksucc {objtype, concept, id} => {
+                let mut res = concept.get_objtype_id_map();
                 let res_objtype = res.entry(objtype.clone()).or_insert(HashSet::new());
                 res_objtype.insert(*id);
                 res
@@ -458,14 +458,14 @@ impl IExpConfig {
 
 #[pyclass(eq)]
 #[derive(Clone, PartialEq)]
-pub enum ObjAttrExp {
+pub enum Intrinsic {
     // {ObjStructure} -> ExpData  与 MeasureData 无关，与 ObjStructure 有关
     From { sexp: Box<SExp> },
 }
-impl ObjAttrExp {
+impl Intrinsic {
     pub fn get_sexp(&self) -> SExp {
         match self {
-            ObjAttrExp::From {sexp} => (**sexp).clone(),
+            Intrinsic::From {sexp} => (**sexp).clone(),
         }
     }
     pub fn get_objtype_id_map(&self) -> HashMap<String, HashSet<i32>> {
@@ -476,14 +476,14 @@ impl ObjAttrExp {
     }
 }
 #[pymethods]
-impl ObjAttrExp {
+impl Intrinsic {
     fn __str__(&self) -> String {
         format!("{}", self)
     }
     #[new]#[inline]
     pub fn from_string(str: String) -> Self {
-        use super::parsing::parse_objattrexp;
-        parse_objattrexp(&str).unwrap()
+        use super::parsing::parse_intrinsic;
+        parse_intrinsic(&str).unwrap()
     }
 }
 
@@ -492,8 +492,8 @@ impl ObjAttrExp {
 pub enum Expression {
     Exp {exp: Box<Exp>},
     SExp {sexp: Box<SExp>},
-    TExp {texp: Box<TExp>},
-    ObjAttrExp {objattrexp: Box<ObjAttrExp>},
+    Concept {concept: Box<Concept>},
+    Intrinsic {intrinsic: Box<Intrinsic>},
     Proposition {prop: Box<Proposition>},
 }
 

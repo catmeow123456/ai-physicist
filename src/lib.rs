@@ -46,11 +46,11 @@ fn ai_physicist(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<ast::Proposition>()?;
     m.add_class::<ast::Exp>()?;
     m.add_class::<ast::SExp>()?;
-    m.add_class::<ast::TExp>()?;
+    m.add_class::<ast::Concept>()?;
     m.add_class::<ast::AtomExp>()?;
     m.add_class::<ast::Expression>()?;
     m.add_class::<ast::IExpConfig>()?;
-    m.add_class::<ast::ObjAttrExp>()?;
+    m.add_class::<ast::Intrinsic>()?;
     m.add_class::<ast::MeasureType>()?;
     m.add_class::<Knowledge>()?;
     m.add_function(wrap_pyfunction!(search_relations, m)?)?;

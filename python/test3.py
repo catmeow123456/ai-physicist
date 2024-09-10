@@ -1,9 +1,9 @@
 from ai_physicist import struct_oscillation
-from ai_physicist import sentence, ObjAttrExp, MeasureType, Knowledge
+from ai_physicist import sentence, Intrinsic, MeasureType, Knowledge
 exp_oscillation = struct_oscillation()
 sexp = sentence.parse_sexp("#oscillation(1->MassPoint)|-D[posx[1]'']/D[posx[1]]")
 print(str(sexp))
-objattr = ObjAttrExp.From(sexp)
+intrinsic = Intrinsic.From(sexp)
 print(sentence.parse_str("#oscillation|-D[posx[1]'']/D[posx[1]]"))
 KK = Knowledge()
 exp_oscillation.random_settings()

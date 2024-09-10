@@ -5,7 +5,7 @@ use std::collections::{HashMap, HashSet};
 use crate::exprcharacter::{KeyState, KeyValue, KeyValueHashed};
 use crate::experiments::objects::obj::ObjType;
 use crate::r;
-use crate::ast::{Proposition, UnaryOp, BinaryOp, AtomExp, Exp, SExp, TExp, ObjAttrExp, IExpConfig, Expression, MeasureType};
+use crate::ast::{Proposition, UnaryOp, BinaryOp, AtomExp, Exp, SExp, Concept, Intrinsic, IExpConfig, Expression, MeasureType};
 use crate::experiments::simulation::{
     oscillation::struct_oscillation,
     collision::struct_collision,
@@ -22,7 +22,7 @@ use crate::experiments::expstructure::{ExpStructure, Objstructure};
 pub struct Knowledge {
     experiments: HashMap<String, ExpStructure>,
     pub concepts: HashMap<String, Expression>,
-    // concepts only support two kinds of Expression: ObjAttrExp and TExp.
+    // concepts only support two kinds of Expression: Intrinsic and Concept.
     objects: HashMap<String, Objstructure>,
     // key is used to calculate the Concept's Expression characteristic value.
     // to classify wheather two Concepts are the same.
@@ -134,23 +134,23 @@ impl Knowledge {
     }
 
     // This function is used to register a new concept to the Knowledge object.
-    // The concept can be a ObjAttrExp or a TExp, and they must be wrapped to `Expression` type.
+    // The concept can be a Intrinsic or a Concept, and they must be wrapped to `Expression` type.
     #[inline]
     #[pyo3(signature = (name, exp))]
     fn register_expression(&mut self, name: String, exp: Expression) -> bool {
         match &exp {
-            Expression::TExp { texp } => {
-                let (kv, kvh, subs_dict) = self.eval_concept_keyvaluehashed(&texp);
+            Expression::Concept { concept } => {
+                let (kv, kvh, subs_dict) = self.eval_concept_keyvaluehashed(&concept);
                 if kvh.is_none() || kvh.is_const() || self.key.contains_key(&kvh) {
                     return false;
                 }
-                let ids: Vec<_> = texp.get_preids().iter().map(|x| *subs_dict.get(&x).unwrap()).collect();
+                let ids: Vec<_> = concept.get_preids().iter().map(|x| *subs_dict.get(&x).unwrap()).collect();
                 let atom = AtomExp::new_variable_ids(name.clone(), ids);
                 self.key.insert(atom, kv, kvh);
             },
-            Expression::ObjAttrExp { objattrexp } => {
-                let (kv, kvh) = self.eval_objattrexp_keyvaluehashed(&objattrexp);
-                // println!("objattrexp = {}", objattrexp);
+            Expression::Intrinsic { intrinsic } => {
+                let (kv, kvh) = self.eval_intrinsic_keyvaluehashed(&intrinsic);
+                // println!("intrinsic = {}", intrinsic);
                 // println!("kvh = {:?}", kvh);
                 if kvh.is_none() || kvh.is_const() || self.key.contains_key(&kvh) || self.key.contains_key(&kvh.inv()) {
                     return false;
@@ -200,9 +200,9 @@ impl Knowledge {
             }
         }
     }
-    pub fn eval_objattr(&self, objattrexp: &ObjAttrExp, objsettings: Vec<Objstructure>) -> Option<ConstData> {
-        match objattrexp {
-            ObjAttrExp::From { sexp } => {
+    pub fn eval_intrinsic(&self, intrinsic: &Intrinsic, objsettings: Vec<Objstructure>) -> Option<ConstData> {
+        match intrinsic {
+            Intrinsic::From { sexp } => {
                 let sexp = sexp.as_ref();
                 match sexp {
                     SExp::Mk { expconfig, exp } => {
@@ -253,23 +253,23 @@ impl Knowledge {
     #[inline]
     pub fn eval_expr_key(&mut self, exp: &Expression) -> KeyValueHashed {
         match exp {
-            Expression::ObjAttrExp { objattrexp } => {
-                self.eval_objattrexp_keyvaluehashed(objattrexp).1
+            Expression::Intrinsic { intrinsic } => {
+                self.eval_intrinsic_keyvaluehashed(intrinsic).1
             }
-            Expression::TExp { texp } => {
-                self.eval_concept_keyvaluehashed(texp).1
+            Expression::Concept { concept } => {
+                self.eval_concept_keyvaluehashed(concept).1
             }
             _ => unimplemented!()
         }
     }
-    pub fn generalize_sexp(&self, sexp: &SExp) -> TExp {
+    pub fn generalize_sexp(&self, sexp: &SExp) -> Concept {
         match sexp {
             SExp::Mk { expconfig, exp } => {
                 self.generalize(exp.as_ref(), expconfig.get_expname())
             }
         }
     }
-    pub fn generalize(&self, expr: &Exp, exp_name: String) -> TExp {
+    pub fn generalize(&self, expr: &Exp, exp_name: String) -> Concept {
         let ref expstructure = *self.experiments.get(&exp_name).unwrap();
         let mut vec = vec![];
         for item in expr.get_allids() {vec.push(item);}
@@ -296,23 +296,23 @@ impl Knowledge {
             let obj = expstructure.get_obj(*i);
             id_objtype_map.insert(*j, obj.obj_type.to_string());
         }
-        let mut texp_res = TExp::Mk0 { exp: Box::new(nexp) };
+        let mut concept_res = Concept::Mk0 { exp: Box::new(nexp) };
         for i in 1..(n+1) {
             let objtype = id_objtype_map.get(&(i as i32)).unwrap();
             // println!("--({}->{}), ", i, objtype);
-            texp_res = TExp::Mksucc {
+            concept_res = Concept::Mksucc {
                 objtype: objtype.clone(),
-                texp: Box::new(texp_res),
+                concept: Box::new(concept_res),
                 id: i as i32,
             };
         }
-        texp_res
+        concept_res
     }
-    pub fn specialize(&self, texp: &TExp, exp_name: String) -> Vec<Exp> {
-        let vec_map = self._get_all_possible_map(&texp.get_objtype_id_map(), exp_name);
+    pub fn specialize(&self, concept: &Concept, exp_name: String) -> Vec<Exp> {
+        let vec_map = self._get_all_possible_map(&concept.get_objtype_id_map(), exp_name);
         let mut res: Vec<Exp> = vec![];
         for dict in vec_map.iter() {
-            let new_exp = texp.substs(dict);
+            let new_exp = concept.substs(dict);
             res.push(new_exp);
         }
         res
@@ -320,9 +320,9 @@ impl Knowledge {
     pub fn specialize_concept(&self, concept_name: String, exp_name: String) -> Vec<AtomExp> {
         let concept = self.concepts.get(&concept_name).unwrap();
         match concept {
-            Expression::ObjAttrExp { objattrexp } => {
-                let vec_map = self._get_all_possible_map(&objattrexp.get_objtype_id_map(), exp_name);
-                let preids = objattrexp.get_preids();
+            Expression::Intrinsic { intrinsic } => {
+                let vec_map = self._get_all_possible_map(&intrinsic.get_objtype_id_map(), exp_name);
+                let preids = intrinsic.get_preids();
                 let mut exp_list = vec![];
                 for dict in vec_map.iter() {
                     let mut ids = vec![];
@@ -333,9 +333,9 @@ impl Knowledge {
                 }
                 exp_list
             }
-            Expression::TExp { texp } => {
-                let vec_map = self._get_all_possible_map(&texp.get_objtype_id_map(), exp_name);
-                let preids = texp.get_preids();
+            Expression::Concept { concept } => {
+                let vec_map = self._get_all_possible_map(&concept.get_objtype_id_map(), exp_name);
+                let preids = concept.get_preids();
                 let mut exp_list = vec![];
                 for dict in vec_map.iter() {
                     let mut ids = vec![];
@@ -398,12 +398,12 @@ impl Knowledge {
                 let atom = atom.as_ref();
                 if let Some(expr) = self.concepts.get(&atom.get_name()) {
                     match expr {
-                        Expression::ObjAttrExp { objattrexp: _ } => {
+                        Expression::Intrinsic { intrinsic: _ } => {
                             exp.clone()
                         }
-                        Expression::TExp { texp } => {
-                            let texp_new = texp.subst(atom.get_vec_ids());
-                            self.raw_definition_exp(&texp_new)
+                        Expression::Concept { concept } => {
+                            let concept_new = concept.subst(atom.get_vec_ids());
+                            self.raw_definition_exp(&concept_new)
                         }
                         _ => unimplemented!()
                     }
@@ -500,7 +500,7 @@ impl Knowledge {
 }
 
 impl Knowledge {
-    // 一个表达式它只由 ObjAttrExp（内禀概念） 和 Number 构成，可以用于判断它显然是守恒的。
+    // 一个表达式它只由 Intrinsic（内禀概念） 和 Number 构成，可以用于判断它显然是守恒的。
     fn _made_of_obj_attr(&self, exp: &Exp) -> bool {
         match exp {
             Exp::Number { num: _ } => true,
@@ -508,10 +508,10 @@ impl Knowledge {
                 let atom = atom.as_ref();
                 if let Some(expr) = self.concepts.get(&atom.get_name()) {
                     match expr {
-                        Expression::ObjAttrExp { objattrexp: _ } => true,
-                        Expression::TExp { texp } => {
-                            let texp_new = texp.subst(atom.get_vec_ids());
-                            self._made_of_obj_attr(&texp_new)
+                        Expression::Intrinsic { intrinsic: _ } => true,
+                        Expression::Concept { concept } => {
+                            let concept_new = concept.subst(atom.get_vec_ids());
+                            self._made_of_obj_attr(&concept_new)
                         }
                         _ => unimplemented!()
                     }
@@ -583,13 +583,13 @@ impl Knowledge {
                         // println!("{} {}", atom, atom.get_name());
                         let expr = self.concepts.get(&atom.get_name()).unwrap();
                         match expr {
-                            Expression::ObjAttrExp { objattrexp } => {
+                            Expression::Intrinsic { intrinsic } => {
                                 let mut objs = vec![];
                                 for id in atom.get_allids().iter() {
                                     objs.push(context.get_obj(*id).clone());
                                 }
                                 let expdata = {
-                                    if let Some(constdata) = self.eval_objattr(objattrexp, objs) {
+                                    if let Some(constdata) = self.eval_intrinsic(intrinsic, objs) {
                                         // println!("constdata = {}", constdata);
                                         ExpData::from_const_data(constdata)
                                     } else {
@@ -599,9 +599,9 @@ impl Knowledge {
                                 context.get_mut_expdata().set_data(atom.clone(), expdata.clone());
                                 expdata
                             }
-                            Expression::TExp { texp } => {
-                                let texp_new = texp.subst(atom.get_vec_ids());
-                                let expdata = self._eval(&texp_new, context);
+                            Expression::Concept { concept } => {
+                                let concept_new = concept.subst(atom.get_vec_ids());
+                                let expdata = self._eval(&concept_new, context);
                                 context.get_mut_expdata().set_data(atom.clone(), expdata.clone());
                                 expdata
                             }

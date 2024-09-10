@@ -15,12 +15,12 @@ match {
 pub Expression: Box<Expression> = {
   <exp: Exp> => Box::new(Expression::Exp{ <> }),
   <sexp: SExp> => Box::new(Expression::SExp{ <> }),
-  <texp: TExp> => Box::new(Expression::TExp{ <> }),
-  <objattrexp: ObjAttrExp> => Box::new(Expression::ObjAttrExp{ <> }),
+  <concept: Concept> => Box::new(Expression::Concept{ <> }),
+  <intrinsic: Intrinsic> => Box::new(Expression::Intrinsic{ <> }),
   <prop: Proposition> => Box::new(Expression::Proposition{ <> }),
 }
-pub ObjAttrExp: Box<ObjAttrExp> = {
-  "[" <sexp: SExp> "]" => Box::new(ObjAttrExp::From{ <> }),
+pub Intrinsic: Box<Intrinsic> = {
+  "[" <sexp: SExp> "]" => Box::new(Intrinsic::From{ <> }),
 }
 pub Exp: Box<Exp> = <addexp: AddExp> => <>;
 pub PrimaryProposition: Box<Proposition> = {
@@ -40,15 +40,15 @@ pub ExpConfig: Box<IExpConfig> = {
 pub SExp: Box<SExp> = {
   <expconfig: ExpConfig> "|-" <exp: Exp> => Box::new(SExp::Mk{ <> }),
 }
-pub TExp: Box<TExp> = {
-  "|-" <exp: Exp> => Box::new(TExp::Mk0{ <> }),
-  // "(" <id:Number> "->" <objtype:Ident> ")" <texp: TExp> => Box::new(TExp::Mksucc{ <> }),
+pub Concept: Box<Concept> = {
+  "|-" <exp: Exp> => Box::new(Concept::Mk0{ <> }),
+  // "(" <id:Number> "->" <objtype:Ident> ")" <concept: Concept> => Box::new(Concept::Mksucc{ <> }),
   <inttoidentvec: IntToIdentVec> "|-" <exp: Exp> => {
-    let mut texp = TExp::Mk0{ exp };
+    let mut concept = Concept::Mk0{ exp };
     for (id, objtype) in inttoidentvec {
-      texp = TExp::Mksucc{ id, objtype, texp: Box::new(texp) };
+      concept = Concept::Mksucc{ id, objtype, concept: Box::new(concept) };
     }
-    Box::new(texp)
+    Box::new(concept)
   },
 }
 

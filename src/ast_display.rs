@@ -2,9 +2,9 @@ use crate::ast::{
     AtomExp,
     Exp,
     SExp,
-    TExp,
+    Concept,
     IExpConfig,
-    ObjAttrExp,
+    Intrinsic,
     Expression,
     MeasureType,
     Proposition,
@@ -55,18 +55,18 @@ impl Display for SExp {
     }
 }
 
-impl TExp {
+impl Concept {
     fn _aux_print(&self, f: &mut Formatter) -> Result {
         match self {
-            TExp::Mk0 {exp:_} => Ok(()),
-            TExp::Mksucc {objtype, texp, id} => {
-                texp._aux_print(f)?;
+            Concept::Mk0 {exp:_} => Ok(()),
+            Concept::Mksucc {objtype, concept, id} => {
+                concept._aux_print(f)?;
                 write!(f, "({}->{}) ", id, objtype)
             },
         }
     }
 }
-impl Display for TExp {
+impl Display for Concept {
     fn fmt(&self, f: &mut Formatter) -> Result {
         self._aux_print(f)?;
         write!(f, "|- {}", self.get_exp())
@@ -81,10 +81,10 @@ impl Display for IExpConfig {
         }
     }
 }
-impl Display for ObjAttrExp {
+impl Display for Intrinsic {
     fn fmt(&self, f: &mut Formatter) -> Result {
         match self {
-            ObjAttrExp::From {sexp} => write!(f, "[{}]", sexp),
+            Intrinsic::From {sexp} => write!(f, "[{}]", sexp),
         }
     }
 }
@@ -93,8 +93,8 @@ impl Display for Expression {
         match self {
             Expression::Exp {exp} => write!(f, "{}", exp),
             Expression::SExp {sexp} => write!(f, "{}", sexp),
-            Expression::TExp {texp} => write!(f, "{}", texp),
-            Expression::ObjAttrExp {objattrexp} => write!(f, "{}", objattrexp),
+            Expression::Concept {concept} => write!(f, "{}", concept),
+            Expression::Intrinsic {intrinsic} => write!(f, "{}", intrinsic),
             Expression::Proposition {prop} => write!(f, "{}", prop),
         }
     }

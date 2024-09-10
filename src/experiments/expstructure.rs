@@ -1,5 +1,5 @@
 use pyo3::prelude::*;
-use crate::ast::{AtomExp, MeasureType, TExp};
+use crate::ast::{AtomExp, MeasureType, Concept};
 use rand::Rng;
 use rand_distr::{Distribution, Normal};
 use std::{fmt, collections::HashMap};
@@ -111,7 +111,7 @@ impl DataStructOfDoExperiment {
             data: HashMap::new(),
         }
     }
-    pub fn add_data(&mut self, key: (TExp, Vec<String>), data: &Array1<f64>) {
+    pub fn add_data(&mut self, key: (Concept, Vec<String>), data: &Array1<f64>) {
         assert_eq!(data.len(), self.n);
         let mut obj_ids = vec![];
         for obj_name in key.1.iter() {
@@ -268,7 +268,7 @@ pub struct ExpConfig {
     pub spdim: usize,
     exp_para: HashMap<String, Parastructure>,
     obj_info: HashMap<String, Objstructure>,
-    data_info: Vec<(TExp, Vec<String>)>,
+    data_info: Vec<(Concept, Vec<String>)>,
     // auto generated
     pub obj_id_map: HashMap<String, (ObjType, i32)>,
     pub obj_name_map: HashMap<i32, (ObjType, String)>,
@@ -278,7 +278,7 @@ impl ExpConfig {
     pub fn new(name: String, spdim: usize,
            exp_para: HashMap<String, Parastructure>,
            obj_info: HashMap<String, Objstructure>,
-           data_info: Vec<(TExp, Vec<String>)>) -> Self {
+           data_info: Vec<(Concept, Vec<String>)>) -> Self {
         let mut obj_id_map: HashMap<String, (ObjType, i32)> = HashMap::new();
         let mut obj_info_dict: HashMap<ObjType, HashMap<i32, String>> = HashMap::new();
         let mut obj_name_map: HashMap<i32, (ObjType, String)> = HashMap::new();
@@ -366,16 +366,16 @@ impl ExpConfig {
         self.get_mut_obj(id).random_sample();
     }
     pub fn create_data_struct_of_do_experiment(&self, t_num: usize) -> DataStructOfDoExperiment {
-        for (data_texp, obj_names) in self.data_info.iter() {
-            let mut texp_temp = data_texp;
+        for (data_concept, obj_names) in self.data_info.iter() {
+            let mut concept_temp = data_concept;
             for obj_name in obj_names {
                 let obj_type = self.obj_id_map.get(obj_name).unwrap().clone().0;
-                match texp_temp {
-                    TExp::Mksucc { objtype, texp, id:_ } => {
+                match concept_temp {
+                    Concept::Mksucc { objtype, concept, id:_ } => {
                         assert_eq!(*objtype, obj_type.to_string());
-                        texp_temp = texp;
+                        concept_temp = concept;
                     }
-                    _ => panic!("DataStructOfDoExperiment: TExp not match, the data info dict has a wrong format."),
+                    _ => panic!("DataStructOfDoExperiment: Concept not match, the data info dict has a wrong format."),
                 }
             }
         }

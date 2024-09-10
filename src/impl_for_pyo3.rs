@@ -1,4 +1,4 @@
-use crate::ast::{Exp, IExpConfig, SExp, TExp, AtomExp, Proposition, ObjAttrExp, MeasureType};
+use crate::ast::{Exp, IExpConfig, SExp, Concept, AtomExp, Proposition, Intrinsic, MeasureType};
 use pyo3::prelude::*;
 use pyo3::callback::IntoPyCallbackOutput;
 
@@ -59,14 +59,14 @@ impl IntoPyCallbackOutput<*mut pyo3::ffi::PyObject> for Box<SExp>
     }
 }
 
-impl FromPyObject<'_> for Box<ObjAttrExp> {
+impl FromPyObject<'_> for Box<Intrinsic> {
     fn extract_bound(ob: &Bound<'_, PyAny>) -> PyResult<Self> {
-        let x = ob.extract::<ObjAttrExp>()?;
+        let x = ob.extract::<Intrinsic>()?;
         // println!("Extracted: {}", x);
         Ok(Box::new(x))
     }
 }
-impl IntoPyCallbackOutput<*mut pyo3::ffi::PyObject> for Box<ObjAttrExp>
+impl IntoPyCallbackOutput<*mut pyo3::ffi::PyObject> for Box<Intrinsic>
 {
     #[inline]
     fn convert(self, py: Python<'_>) -> PyResult<*mut pyo3::ffi::PyObject> {
@@ -88,14 +88,14 @@ impl IntoPyCallbackOutput<*mut pyo3::ffi::PyObject> for Box<MeasureType>
         Ok(self.into_py(py).as_ptr())
     }
 }
-impl FromPyObject<'_> for Box<TExp> {
+impl FromPyObject<'_> for Box<Concept> {
     fn extract_bound(ob: &Bound<'_, PyAny>) -> PyResult<Self> {
-        let x = ob.extract::<TExp>()?;
+        let x = ob.extract::<Concept>()?;
         // println!("Extracted: {}", x);
         Ok(Box::new(x))
     }
 }
-impl IntoPyCallbackOutput<*mut pyo3::ffi::PyObject> for Box<TExp>
+impl IntoPyCallbackOutput<*mut pyo3::ffi::PyObject> for Box<Concept>
 {
     #[inline]
     fn convert(self, py: Python<'_>) -> PyResult<*mut pyo3::ffi::PyObject> {

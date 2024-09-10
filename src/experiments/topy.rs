@@ -2,7 +2,7 @@ use pyo3::prelude::*;
 use std::collections::{HashMap, HashSet};
 use std::hash::{DefaultHasher, Hash, Hasher};
 
-use crate::ast::{AtomExp, MeasureType, TExp};
+use crate::ast::{AtomExp, MeasureType, Concept};
 use super::objects::obj::{ObjType, DATA, ATTR};
 use crate::expdata::expdata::ExpData;
 use super::expstructure::{ExpStructure, Parastructure, Objstructure, ExpConfig, DataStructOfExpData, DataStruct};
@@ -145,7 +145,7 @@ impl ExpConfig {
     #[new]
     fn __new__(name: &str, spdim: usize, exp_para: HashMap<String, Parastructure>,
                obj_info: HashMap<String, Objstructure>,
-               data_info: Vec<(TExp, Vec<String>)>) -> Self {
+               data_info: Vec<(Concept, Vec<String>)>) -> Self {
         ExpConfig::new(name.to_string(), spdim, exp_para, obj_info, data_info)
     }
 }

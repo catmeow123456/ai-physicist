@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use crate::experiments::expstructure::{
     Parastructure, Objstructure
 };
-use crate::ast::TExp;
+use crate::ast::Concept;
 use crate::experiments::objects::obj::{
     ObjType::MassPoint, ATTR, DATA
 };
@@ -31,6 +31,6 @@ impl ATTR {
     pub fn elec() -> Self { ATTR::new(MassPoint,"e") }
 }
 impl DATA {
-    pub fn posx() -> TExp { DATA::data(vec![r!("MassPoint")], r!("posx")) }
-    pub fn posy() -> TExp { DATA::data(vec![r!("MassPoint")], r!("posy")) }
+    pub fn posx() -> Concept { DATA::data(vec![r!("MassPoint")], r!("posx")) }
+    pub fn posy() -> Concept { DATA::data(vec![r!("MassPoint")], r!("posy")) }
 }
