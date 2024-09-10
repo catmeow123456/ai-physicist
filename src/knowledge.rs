@@ -86,7 +86,7 @@ impl Knowledge {
             println!("{}: {}", name, prop);
         }
     }
-    #[inline]
+    #[getter]#[inline]
     fn fetch_experiments(&self) -> Vec<String> {
         let mut res = vec![];
         for (name, _) in self.experiments.iter() {
@@ -94,7 +94,7 @@ impl Knowledge {
         }
         res
     }
-    #[inline]
+    #[getter]#[inline]
     fn fetch_concepts(&self) -> HashMap<String, Expression> {
         self.concepts.clone()
     }
@@ -102,7 +102,7 @@ impl Knowledge {
     fn fetch_concept_by_name(&self, name: String) -> Expression {
         self.concepts.get(&name).unwrap().clone()
     }
-    #[inline]
+    #[getter]#[inline]
     fn fetch_conclusions(&self) -> HashMap<String, Proposition> {
         self.conclusions.clone()
     }
@@ -164,6 +164,7 @@ impl Knowledge {
         true
     }
     #[inline]
+    #[pyo3(signature = (name, prop))]
     fn register_conclusion(&mut self, name: String, prop: Proposition) {
         self.conclusions.insert(name, prop);
     }

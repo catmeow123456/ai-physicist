@@ -21,8 +21,8 @@ print(data.is_conserved)
 
 data = KK.eval(sentence.parse_exp("e[1] + e[2]"), s)
 print(data.is_conserved)
-print(s.obj_info())
-ds = s.data_info()
+print(s.obj_info)
+ds = s.data_info
 print(ds)
 res = search_relations(ds)
 for i in res:

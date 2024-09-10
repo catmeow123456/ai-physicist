@@ -150,6 +150,7 @@ impl KeyValueHashed {
         let val = self.value.as_ref().unwrap()[0];
         val == 1 || val == 0 || val == self.p_mod - 1
     }
+    #[getter]
     pub fn get_data(&self) -> Vec<i32> {
         self.value.as_ref().unwrap().clone()
     }

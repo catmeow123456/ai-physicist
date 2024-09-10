@@ -51,7 +51,7 @@ class SpecificModel:
         这些 specific 的原子表达式由概念库中的概念 specialize 生成，以备后续组合出更复杂的表达式。
         TODO：需要有方向性的智能的随机选取，且这种随机选取方式是可学习的
         """
-        for key in self.memory.fetch_concepts():
+        for key in self.memory.fetch_concepts:
             specific_exprs: list[AtomExp] = self.general.specialize_concept(key, self.exp_name)
             # if len(specific_exprs) > 0:
             #     print(f"specialize_concept({self.exp_name}, {key}) = {specific_exprs}")
@@ -59,11 +59,11 @@ class SpecificModel:
                 self.general.eval(Exp.Atom(atom_exp), self.experiment)
                 # 在这个 eval 过程中，
                 # atom_exp 的计算结果会自动被记录到 self.experiment.data_info() 中
-        for key in self.memory.fetch_objattrexps():
+        for key in self.memory.fetch_objattrexps:
             specific_exprs: list[AtomExp] = self.general.specialize_concept(key, self.exp_name)
             for atom_exp in specific_exprs:
                 self.general.eval(Exp.Atom(atom_exp), self.experiment)
-        return self.experiment.data_info()
+        return self.experiment.data_info
 
     def append_conserved_exp(self, conserved_exp: Exp) -> str:
         hashed_value = self.exp_hashed(conserved_exp)
@@ -102,7 +102,7 @@ class SpecificModel:
         """
         这个函数的目的是将当前实验中的所有的 conserved 和 zero 的表达式整理并取 minimal 表示
         """
-        conclusions: Dict[str, Proposition] = self.memory.fetch_conclusions()
+        conclusions: Dict[str, Proposition] = self.memory.fetch_conclusions
         name_list: List[str] = list(conclusions.keys())
         name_list = sorted(name_list, key=lambda x: self.conclusion_raw_complexity(conclusions[x]))
         # 第一步：提取 DifferentialRing
@@ -195,7 +195,7 @@ class SpecificModel:
 
         relevant_ids = set()
 
-        ids = self.experiment.get_all_ids()
+        ids = self.experiment.all_ids
         for id in ids:
             if not self.experiment_control.__contains__(id):
                 self.experiment_control[id] = []

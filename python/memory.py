@@ -29,11 +29,14 @@ class Memory:
         if name in self.conclusion:
             del self.conclusion[name]
 
+    @property
     def fetch_concepts(self):
         return self.concept.keys()
 
+    @property
     def fetch_objattrexps(self):
         return self.objattrexp.keys()
 
+    @property
     def fetch_conclusions(self) -> Dict[str, Proposition]:
         return self.conclusion

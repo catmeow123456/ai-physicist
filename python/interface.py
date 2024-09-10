@@ -1,8 +1,5 @@
 from typing import List, Dict
 import ai_physicist as aiphy
-# aiphy.Knowledge: class
-#   .fetch_concepts()  .list_concepts()  .list_experiments()
-#   .get_expstruct_pure(name: str)
 from ai_physicist import (
     Proposition,
     Exp,
@@ -55,10 +52,12 @@ class Knowledge:
         obj.K = aiphy.Knowledge()
         return obj
 
+    @property
     def fetch_exps(self) -> List[str]:
-        return self.K.fetch_experiments()
+        return self.K.fetch_experiments
+    @property
     def fetch_concepts(self) -> Dict[str, Expression]:
-        return self.K.fetch_concepts()
+        return self.K.fetch_concepts
     def register_expstruct(self, name: str, expstruct: ExpStructure):
         self.K.register_experiment(name, expstruct)
     def fetch_expstruct(self, name: str) -> ExpStructure:

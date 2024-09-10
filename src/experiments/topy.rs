@@ -34,9 +34,11 @@ impl Objstructure {
 
 #[pymethods]
 impl ExpStructure {
+    #[getter]#[inline]
     fn get_all_ids(&self) -> HashSet<i32> {
         self.get_ref_expconfig().obj_name_map.keys().cloned().collect()
     }
+    #[inline]
     fn get_obj_type(&self, id: i32) -> ObjType {
         self.get_ref_expconfig().obj_name_map.get(&id).unwrap().0.clone()
     }
@@ -44,10 +46,12 @@ impl ExpStructure {
     pub fn get_obj(&self, id: i32) -> Objstructure {
         self.get_ref_expconfig().get_obj(id).clone()
     }
+    #[getter]#[inline]
     fn obj_info(&self) -> HashMap<String, (ObjType, i32)>{
         let expdata = self.get_ref_expconfig();
         expdata.obj_id_map.clone()
     }
+    #[getter]#[inline]
     fn data_info(&self) -> DataStruct{
         if self.expdata_is_none() {
             panic!("The expdata has not been collected yet.");
@@ -58,6 +62,7 @@ impl ExpStructure {
         // }
         expdata.data.clone()
     }
+    #[getter]
     fn spdim(&self) -> usize {
         self.get_ref_expconfig().spdim
     }

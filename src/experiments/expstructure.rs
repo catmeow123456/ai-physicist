@@ -133,15 +133,19 @@ impl DataStructOfDoExperiment {
 
 #[pymethods]
 impl MeasureType {
+    #[getter]#[inline]
     pub fn n(&self) -> usize {
         self.n
     }
+    #[getter]#[inline]
     pub fn repeat_time(&self) -> usize {
         self.repeat_time
     }
+    #[getter]#[inline]
     pub fn error(&self) -> f64 {
         self.error
     }
+    #[getter]#[inline]
     pub fn t_end(&self) -> f64 {
         self.t_end
     }

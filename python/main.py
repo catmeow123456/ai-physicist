@@ -32,7 +32,7 @@ class Theorist:
 
     def __init__(self):
         self.general = Knowledge.default()
-        experiment_list = self.general.fetch_exps()
+        experiment_list = self.general.fetch_exps
         self.specific = {}
         for name in experiment_list:
             self.specific[name] = SpecificModel(name, self.general)
@@ -136,11 +136,11 @@ def work_at_exp(knowledge: Knowledge, exp_name: str) -> ExpStructure:
     exp = knowledge.fetch_expstruct(exp_name)
     exp.random_settings()
     exp.collect_expdata(MeasureType.default())
-    for key in knowledge.fetch_concepts():
+    for key in knowledge.fetch_concepts:
         specific_exprs: list[AtomExp] = knowledge.specialize_concept(key, exp_name)
         for i in specific_exprs:
             knowledge.eval(str(i), exp)
-    data_info: DataStruct = exp.data_info()
+    data_info: DataStruct = exp.data_info
     print(data_info)
     res: List[Tuple[Exp, ExpData]] = search_relations(data_info)
     for (expr, expdata) in res:
