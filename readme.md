@@ -9,6 +9,9 @@ Install Python (>= 3.10.0), conda (or pyenv)
 
 Install Rust (https://www.rust-lang.org/tools/install)
 
+Remember to add the path `{path/to/rust}/bin` to your environment variables.
+And remember to install `maple2024` at `/opt/maple2024`.
+
 Check and build the rust code.
 ```
 cargo check
@@ -18,19 +21,41 @@ cargo build
 
 ## Installation
 
-### use `maturin`
 
-You can use `pyenv, conda` etc. to set up environment. Take pyenv as an example, first create a virtual environment as follows:
+### create `ai_physicist.so` and use it
+
+First, run
 ```
-pyenv virtualenv 3.10.0 aiphysicist  
+cargo build --release
+```
+to produce a `libai_physicist.so` file at `{work folder}/target/release/`.
+Then, change its name and copy the file to `{work folder}/ai_physicist.so`.
+```
+cp target/release/libai_physicist.so python/ai_physicist.so
+```
+
+Now you can use `pyenv, conda` etc. to set up a working environment of python. Take conda as an example, first create a virtual environment as follows:
+```
+conda create -n aiphysicist python=3.10 
 ```
 
 Then, activate the virtual environment.
 ```
-pyenv activate aiphysicist
+conda activate aiphysicist
 ```
 
-Install `maturin`, and run `maturin develop` to build wheel for `ai_physicist`.
+Install all dependencies in `requirements.txt`:
+```
+pip install -r requirements.txt
+```
+Finally, Testing AI-physicist
+```
+python python/test9.py
+```
+ 
+### use `maturin`
+
+Work in a virtual environment. First, activate the environment. Then, install `maturin`, and run `maturin develop` to build wheel for `ai_physicist`.
 
 ```
 pip install maturin
@@ -47,28 +72,8 @@ Testing AI-physicist
 python python/test9.py
 ```
 
-### use `ai_physicist.so`
 
-First, run
-```
-cargo build --release
-```
-to produce a `libai_physicist.so` file at `{work folder}/target/release/`.
-Then, change its name and copy the file to `{work folder}/ai_physicist.so`.
-```
-cp target/release/libai_physicist.so python/ai_physicist.so
-```
-Remember to create a virtual environment with all dependencies in `requirements.txt` are installed:
-```
-conda activate aiphy
-pip install -r requirements.txt
-```
-Finally, Testing AI-physicist
-```
-python python/test9.py
-```
- 
-## QA
+## QA (when running `cargo build`, these errors may occur)
 1.
 Q:
 ```

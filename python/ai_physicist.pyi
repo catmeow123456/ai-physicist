@@ -1,6 +1,27 @@
 from typing import List, Dict, Set, Tuple
 from deprecated.sphinx import deprecated
 
+def search_trivial_relations(ds: DataStruct) -> List[Tuple[Exp, ExpData]]:
+    """
+    Search for trivial relations such as 
+    "a = 0", "a = const", or "da/dt = const"
+    in the data.
+    """
+    ...
+
+def search_relations(ds: DataStruct) -> List[Tuple[Exp, ExpData]]:
+    """
+    Search for simple binary relations in the data.
+    """
+    ...
+
+def search_relations_ver2(ds: DataStruct) -> List[Tuple[Exp, ExpData]]:
+    """
+    Search for binary relations between monomials generated from the data.
+    such as "m1 * v1 + m2 * v2 = const".
+    """
+    ...
+
 class Knowledge:
     ...
     def __new__(cls) -> Knowledge:
