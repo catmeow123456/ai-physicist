@@ -1,0 +1,87 @@
+use std::collections::HashMap;
+use crate::experiments::{
+    objects::obj::{ATTR, ObjType},
+    expstructure::{Objstructure, Parastructure},
+};
+
+grammar;
+
+match {
+  // 跳过空白符和注释
+  r"\s*" => {},
+  r"//[^\n\r]*[\n\r]*" => {},
+  r"/\*.*\*/" => {},    // 匹配 /* ... */
+  // 剩下的情况采用默认方式处理
+  _
+}
+
+pub Objstructure: Objstructure = {
+    "[Objstructure]" 
+    "obj_type:" <obj_type: ObjType> ","
+    "attribute:" "[" <list_attr: VecIdent> ",]" "\n"
+    <attribute_list: AttributeList> "." => {
+        let mut attribute = HashMap::new();
+        for i in 0..list_attr.len() {
+            assert_eq!(list_attr[i], attribute_list[i].0);
+            let attr = ATTR::new(obj_type.clone(), &list_attr[i]);
+            let parastructure = attribute_list[i].1.clone();
+            attribute.insert(attr, parastructure);
+        }
+        Objstructure::new(obj_type.clone(), attribute)
+    }
+
+
+}
+
+ObjType: ObjType = {
+    <ident: Ident> => ObjType::from_str(&ident).unwrap()
+}
+
+pub AttributeList: Vec<(String, Parastructure)> = {
+    "Attribute:" "\n"
+    "|" <attr_name: Ident> ":" <parastructure: Parastructure> 
+        => vec![(attr_name, parastructure)],
+    <attribute_list: AttributeList> "\n"
+    "|" <attr_name: Ident> ":" <parastructure: Parastructure>
+        => {
+            let mut attribute_list = attribute_list;
+            attribute_list.push((attr_name, parastructure));
+            attribute_list
+        }
+}
+
+pub Parastructure: Parastructure = {
+    "[Parastructure]" "value:"
+    <option_float: OptionFloatConst> ","
+    "range:" "(" <low: FloatConst> "," <high: FloatConst> ")"
+    => Parastructure::new_with_value(option_float, (low, high))
+}
+
+VecIdent: Vec<String> = {
+  <ident: Ident> => vec![<>],
+  <identlist: VecIdent> "," <ident: Ident> => {
+    let mut identlist = identlist;
+    identlist.push(ident);
+    identlist
+  },
+}
+
+Ident: String = r"[_a-zA-Z][_a-zA-Z0-9]*" => <>.to_string();
+
+// 对整数字面量的处理方式: 把匹配到的字符串按对应进制转换成数字
+IntConst: i32 = {
+  r"[1-9][0-9]*" => i32::from_str_radix(<>, 10).unwrap(),
+  r"0[0-7]*" => i32::from_str_radix(<>, 8).unwrap(),
+  r"0[xX][0-9a-fA-F]+" => i32::from_str_radix(&<>[2..], 16).unwrap(),
+}
+
+OptionFloatConst: Option<f64> = {
+    "Some(" <float: FloatConst> ")" => Some(float),
+    "None" => None
+}
+
+// copilot 写的
+FloatConst: f64 = {
+  r"[0-9]*\.[0-9]+" => (&<>).parse().unwrap(),
+  r"[0-9]*\.[0-9]+[eE][+-]?[0-9]+" => (&<>).parse().unwrap(),
+}

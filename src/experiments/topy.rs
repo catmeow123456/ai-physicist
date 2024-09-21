@@ -16,6 +16,11 @@ impl ObjType {
 
 #[pymethods]
 impl Objstructure {
+    #[new]
+    fn from_string(content: String) -> Self {
+        use crate::parsing::parse_objstructure;
+        parse_objstructure(&content).unwrap()
+    }
     fn __str__(&self) -> String {
         format!("{}", self)
     }
@@ -138,9 +143,13 @@ impl DATA {
 
 #[pymethods]
 impl ATTR {
-    #[new]
+    #[new]#[inline]
     fn __new__(obj: ObjType, name: &str) -> Self {
         ATTR::Mk { obj, name: name.to_string() }
+    }
+    /// print name
+    fn __str__(&self) -> String {
+        format!("{}", self)
     }
 }
 

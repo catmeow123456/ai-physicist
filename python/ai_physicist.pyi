@@ -24,11 +24,6 @@ def search_relations_ver2(ds: DataStruct) -> List[Tuple[Exp, ExpData]]:
 
 class Knowledge:
     ...
-    def __new__(cls) -> Knowledge:
-        """
-        Create a empty knowledge object.
-        """
-        ...
     def default() -> Knowledge:
         """
         Create a default knowledge object with builtin experiments implemented.
@@ -81,6 +76,9 @@ class Knowledge:
 
 
 class ExpStructure:
+    """
+    一个数据结构，包括实验的配置信息，以及测量数据结果。
+    """
     ...
     @property
     def all_ids(self) -> Set[int]: ...
@@ -111,6 +109,7 @@ class ObjType:
 
 class Objstructure:
     ...
+    def __new__(cls, content: str) -> Objstructure: ...
     def __str__(self) -> str: ...
     def random_settings(self): ...
 

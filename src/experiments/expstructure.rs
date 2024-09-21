@@ -25,9 +25,12 @@ impl Parastructure {
             range: range.unwrap_or((-1e10, 1e10)),
         }
     }
-    // fn set_value(&mut self, value: f64) {
-    //     self.value = Some(value);
-    // }
+    pub fn new_with_value(value: Option<f64>, range: (f64, f64)) -> Self {
+        Parastructure {
+            value,
+            range,
+        }
+    }
     fn random_sample(&mut self) {
         let mut rng = rand::thread_rng();
         let value = rng.gen_range(self.range.0..self.range.1);
@@ -82,16 +85,28 @@ impl Objstructure {
     // }
 }
 
+struct ListATTR(Vec<ATTR>);
+
+impl fmt::Display for ListATTR {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "[")?;
+        for item in self.0.iter() {
+            write!(f, "{},", item)?;
+        }
+        write!(f, "]")
+    }
+}
+
 impl fmt::Display for Objstructure {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "[Objstructure] obj_type: {}, attribute: {:?}",
-               self.obj_type, self.attribute.keys()).unwrap();
-        write!(f, "\nAttribute:").unwrap();
+        let attr_list = ListATTR(self.attribute.keys().cloned().collect());
+        write!(f, "[Objstructure] obj_type: {}, attribute: {}",
+               self.obj_type, attr_list)?;
+        write!(f, "\nAttribute:")?;
         for (name, para) in self.attribute.iter() {
-            write!(f, "\n| {}: {}", name, para).unwrap();
+            write!(f, "\n| {}: {}", name, para)?;
         }
-        write!(f, ".").unwrap();
-        Result::Ok(())
+        write!(f, ".")
     }
 }
 

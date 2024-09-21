@@ -65,6 +65,10 @@ impl Knowledge {
             conclusions: HashMap::new(),
         }
     }
+    pub fn __str__(&self) -> String {
+        format!("Knowledge object")
+        
+    }
     fn list_experiments(&self) {
         for (name, _) in self.experiments.iter() {
             println!("{}", name);

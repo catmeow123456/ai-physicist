@@ -13,7 +13,7 @@ print(concept)
 concept: Expression = theorist.generalize("oscillation", "D[posx[1]'']/D[posx[1]]")
 print(concept)
 theorist.register_expr(str(concept), "concept")
-assert(concept.unwrap_concept == theorist.fetch_concept_concept("concept"))
+assert(concept.unwrap_concept == theorist.fetch_concept_by_name("concept"))
 
 print(theorist.fetch_concepts)
 res: list[AtomExp] = theorist.specialize_concept("concept", "oscillation")

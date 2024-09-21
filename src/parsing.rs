@@ -2,6 +2,16 @@ use crate::r;
 use pyo3::prelude::*;
 use lalrpop_util::lalrpop_mod;
 lalrpop_mod!(expr);
+lalrpop_mod!(expstructure);
+
+use crate::experiments::expstructure::Objstructure;
+#[pyfunction]
+pub fn parse_objstructure(input: &str) -> PyResult<Objstructure> {
+    let res: Objstructure = expstructure::ObjstructureParser::new().parse(input).unwrap();
+    Ok(res)
+}
+
+
 use crate::ast::{Proposition, AtomExp, Exp, SExp, Concept, IExpConfig, Intrinsic, Expression};
 // mod ast;
 
