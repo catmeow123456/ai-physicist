@@ -62,9 +62,13 @@ impl ExpStructure {
         // }
         expdata.data.clone()
     }
-    #[getter]
+    #[getter]#[inline]
     fn spdim(&self) -> usize {
         self.get_ref_expconfig().spdim
+    }
+    #[getter]#[inline]
+    fn get_original_data(&self) -> Vec<AtomExp> {
+        self.get_ref_expconfig().get_original_data()
     }
     fn random_settings(&mut self) {
         self.random_sample();
@@ -142,11 +146,18 @@ impl ATTR {
 
 #[pymethods]
 impl ExpConfig {
-    #[new]
+    #[new]#[inline]
     fn __new__(name: &str, spdim: usize, exp_para: HashMap<String, Parastructure>,
                obj_info: HashMap<String, Objstructure>,
                data_info: Vec<(Concept, Vec<String>)>) -> Self {
         ExpConfig::new(name.to_string(), spdim, exp_para, obj_info, data_info)
+    }
+    #[getter]#[inline]
+    fn get_original_data(&self) -> Vec<AtomExp> {
+        let original_data = self.original_data();
+        original_data.iter().map(|(concept, obj_ids)| {
+            concept.to_atomexp(obj_ids.clone())
+        }).collect()
     }
 }
 

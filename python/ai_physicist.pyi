@@ -78,6 +78,8 @@ class Knowledge:
     def parse_atomexp_to_sympy_str(self, input: AtomExp, argument: str) -> str: ...
     def parse_exp_to_sympy_str(self, input: Exp, argument: str) -> str: ...
 
+
+
 class ExpStructure:
     ...
     @property
@@ -97,6 +99,11 @@ class ExpStructure:
     def collect_expdata(self, measure_type: MeasureType) -> ExpData: ...
 
     def copy(self) -> ExpStructure: ...
+
+    @property
+    def original_data(self) -> List[AtomExp]: ...   # 实验的原始测量数据的名字，如 t[0], posx[1] 等
+
+
 
 class ObjType:
     ...

@@ -54,7 +54,7 @@ class Theorist:
         assert (exp_name in self.specific)
         spm: SpecificModel = self.specific[exp_name]
         data_info: DataStruct = spm.pick_relevant_exprs()
-        list_datainfo(data_info)
+        # list_datainfo(data_info)
 
         if ver is None:
             res: List[Tuple[Exp, ExpData]] = search_relations(data_info)

@@ -1,7 +1,7 @@
 import sympy as sp
 from typing import List, Tuple, Dict, Set
 from interface import (
-    Knowledge, ExpData,
+    Knowledge, ExpData, DataStruct,
     ExpStructure, Exp, AtomExp, Proposition, MeasureType,
     is_conserved_const_list
 )
@@ -51,19 +51,22 @@ class SpecificModel:
         这些 specific 的原子表达式由概念库中的概念 specialize 生成，以备后续组合出更复杂的表达式。
         TODO：需要有方向性的智能的随机选取，且这种随机选取方式是可学习的
         """
+        DS = DataStruct.empty()
+        for atomexp in self.experiment.original_data:
+            DS.add_data(atomexp, self.general.eval(Exp.Atom(atomexp), self.experiment))
         for key in self.memory.fetch_concepts:
             specific_exprs: list[AtomExp] = self.general.specialize_concept(key, self.exp_name)
             # if len(specific_exprs) > 0:
             #     print(f"specialize_concept({self.exp_name}, {key}) = {specific_exprs}")
             for atom_exp in specific_exprs:
-                self.general.eval(Exp.Atom(atom_exp), self.experiment)
-                # 在这个 eval 过程中，
-                # atom_exp 的计算结果会自动被记录到 self.experiment.data_info() 中
+                DS.add_data(atom_exp,
+                            self.general.eval(Exp.Atom(atom_exp), self.experiment))
         for key in self.memory.fetch_intrinsics:
             specific_exprs: list[AtomExp] = self.general.specialize_concept(key, self.exp_name)
             for atom_exp in specific_exprs:
-                self.general.eval(Exp.Atom(atom_exp), self.experiment)
-        return self.experiment.data_info
+                DS.add_data(atom_exp,
+                            self.general.eval(Exp.Atom(atom_exp), self.experiment))
+        return DS
 
     def append_conserved_exp(self, conserved_exp: Exp) -> str:
         hashed_value = self.exp_hashed(conserved_exp)

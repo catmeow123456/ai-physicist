@@ -260,6 +260,9 @@ impl DataStructOfExpData {
     }
 }
 
+// Store the configuration of an experiment.
+// Use `original_data` to get the original measured data in the experiment.
+// Such as '[t[0], posx[1]]' in 'motion' experiment.
 #[pyclass]
 #[derive(Clone)]
 pub struct ExpConfig {
@@ -268,7 +271,7 @@ pub struct ExpConfig {
     pub spdim: usize,
     exp_para: HashMap<String, Parastructure>,
     obj_info: HashMap<String, Objstructure>,
-    data_info: Vec<(Concept, Vec<String>)>,
+    pub data_info: Vec<(Concept, Vec<String>)>,
     // auto generated
     pub obj_id_map: HashMap<String, (ObjType, i32)>,
     pub obj_name_map: HashMap<i32, (ObjType, String)>,
@@ -349,6 +352,7 @@ impl ExpConfig {
         let name = self.obj_info_dict.get(&obj.obj_type).unwrap().get(&id).unwrap();
         self.obj_info.insert(name.clone(), obj);
     }
+    #[inline]
     fn random_sample(&mut self) {
         for (_, para) in self.exp_para.iter_mut() {
             para.random_sample();
@@ -357,11 +361,13 @@ impl ExpConfig {
             obj.random_sample();
         }
     }
+    #[inline]
     fn random_set_exp_para(&mut self) {
         for (_, para) in self.exp_para.iter_mut() {
             para.random_sample();
         }
     }
+    #[inline]
     fn random_set_obj(&mut self, id: i32) {
         self.get_mut_obj(id).random_sample();
     }
@@ -383,6 +389,19 @@ impl ExpConfig {
             t_num,
             self.obj_id_map.clone()
         )
+    }
+    #[inline]
+    pub fn original_data(&self) -> Vec<(Concept, Vec<i32>)> {
+        let mut original_data = vec![];
+        for key in self.data_info.iter() {
+            let mut obj_ids = vec![];
+            for obj_name in key.1.iter() {
+                let id = self.obj_id_map.get(obj_name).unwrap().1;
+                obj_ids.push(id);
+            }
+            original_data.push((key.0.clone(), obj_ids));
+        }
+        original_data
     }
 }
 
