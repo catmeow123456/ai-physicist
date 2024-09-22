@@ -1,5 +1,8 @@
-from typing import Dict, List
+from typing import Dict, Any
 from interface import Proposition, Concept, Intrinsic
+
+def dict_to_json(d: Dict[str, Any]) -> Dict[str, str]:
+    return {k: str(v) for k, v in d.items()}
 
 class Memory:
     concept: Dict[str, Concept]
@@ -12,6 +15,22 @@ class Memory:
         self.intrinsic = {}
         self.conclusion = {}
         self.conclusion_id = 0
+
+    def to_json(self):
+        return {
+            "concept": dict_to_json(self.concept),
+            "intrinsic": dict_to_json(self.intrinsic),
+            "conclusion": dict_to_json(self.conclusion),
+            "conclusion_id": self.conclusion_id
+        }
+
+    def from_json(data: Dict[str, Any]) -> "Memory":
+        obj = object.__new__(Memory)
+        obj.concept = {k: Concept(v) for k, v in data["concept"].items()}
+        obj.intrinsic = {k: Intrinsic(v) for k, v in data["intrinsic"].items()}
+        obj.conclusion = {k: Proposition(v) for k, v in data["conclusion"].items()}
+        obj.conclusion_id = data["conclusion_id"]
+        return obj
 
     def register_concept(self, concept: Concept, name: str):
         self.concept[name] = concept

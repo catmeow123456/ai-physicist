@@ -1,6 +1,6 @@
 use itertools::Itertools;
 use pyo3::prelude::*;
-use core::panic;
+use core::{fmt, panic};
 use std::collections::{HashMap, HashSet};
 use crate::exprcharacter::{KeyState, KeyValue, KeyValueHashed};
 use crate::experiments::objects::obj::ObjType;
@@ -65,9 +65,13 @@ impl Knowledge {
             conclusions: HashMap::new(),
         }
     }
-    pub fn __str__(&self) -> String {
-        format!("Knowledge object")
-        
+    fn __str__(&self) -> String {
+        format!("{}", self)
+    }
+    #[staticmethod]
+    fn from_string(s: String) -> Self {
+        use crate::parsing::parse_knowledge;
+        parse_knowledge(&s).unwrap()
     }
     fn list_experiments(&self) {
         for (name, _) in self.experiments.iter() {
@@ -114,6 +118,10 @@ impl Knowledge {
     fn fetch_conclusion_by_name(&self, name: String) -> Proposition {
         self.conclusions.get(&name).unwrap().clone()
     }
+    #[getter]#[inline]
+    fn fetch_object_keys(&self) -> Vec<String> {
+        self.objects.keys().cloned().collect()
+    }
     #[inline]
     fn fetch_object_by_name(&self, name: String) -> Objstructure {
         self.objects.get(&name).unwrap().clone()
@@ -126,7 +134,7 @@ impl Knowledge {
     // This function is used to register a new (obj: `Objstructure`) to the Knowledge object.
     #[inline]
     #[pyo3(signature = (name, obj))]
-    fn register_object(&mut self, name: String, obj: Objstructure) {
+    pub fn register_object(&mut self, name: String, obj: Objstructure) {
         self.objects.insert(name, obj);
     }
 
@@ -141,7 +149,7 @@ impl Knowledge {
     // The concept can be a Intrinsic or a Concept, and they must be wrapped to `Expression` type.
     #[inline]
     #[pyo3(signature = (name, exp))]
-    fn register_expression(&mut self, name: String, exp: Expression) -> bool {
+    pub fn register_expression(&mut self, name: String, exp: Expression) -> bool {
         match &exp {
             Expression::Concept { concept } => {
                 let (kv, kvh, subs_dict) = self.eval_concept_keyvaluehashed(&concept);
@@ -169,12 +177,16 @@ impl Knowledge {
     }
     #[inline]
     #[pyo3(signature = (name, prop))]
-    fn register_conclusion(&mut self, name: String, prop: Proposition) {
+    pub fn register_conclusion(&mut self, name: String, prop: Proposition) {
         self.conclusions.insert(name, prop);
     }
     #[inline]
     fn remove_conclusion(&mut self, name: String) {
         self.conclusions.remove(&name);
+    }
+    #[inline]
+    fn remove_object(&mut self, name: String) {
+        self.objects.remove(&name);
     }
     #[inline]
     fn fetch_expstruct(&self, name: String) -> ExpStructure {
@@ -621,6 +633,29 @@ impl Knowledge {
             Exp::DiffExp { ref left, ref right, ord} =>
                 (&self._eval(&*left, context)).diff_n(&self._eval(&*right, context), *ord as usize),
         }
+    }
+}
+
+impl fmt::Display for Knowledge {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "[Knowledge]\n")?;
+        for (name, obj) in self.objects.iter() {
+            write!(f, "{} := {}\n", name, obj)?;
+        }
+        let name_list = self.concepts.keys().cloned().collect::<Vec<String>>();
+        let name_list = name_list.iter().sorted_by_key(
+            |x|
+            // 将 x_123 分割为 (x, 123)，取 123 为 key
+            x.split('_').last().unwrap().parse::<i32>().unwrap()
+        );
+        for name in name_list {
+            write!(f, "{} := {}\n", name, self.concepts.get(name).unwrap())?;
+        }
+        for (name, prop) in self.conclusions.iter() {
+            write!(f, "{} := {}\n", name, prop)?;
+        }
+        write!(f, "[end]\n")?;
+        Ok(())
     }
 }
 

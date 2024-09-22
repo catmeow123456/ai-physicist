@@ -1,5 +1,5 @@
 import sympy as sp
-from typing import List, Tuple, Dict, Set
+from typing import List, Tuple, Dict, Set, Any
 from interface import (
     Knowledge, ExpData, DataStruct,
     ExpStructure, Exp, AtomExp, Proposition, MeasureType,
@@ -39,6 +39,23 @@ class SpecificModel:
         self.experiment_control = {}
         self.conserved_list = []
         self.zero_list = []
+
+    def to_json(self) -> Dict[str, str]:
+        return {
+            "exp_name": self.exp_name,
+            "memory": self.memory.to_json(),
+            "conserved_list": [
+                (i, str(j)) for i, j in self.conserved_list
+            ],
+            "zero_list": [
+                (i, str(j)) for i, j in self.zero_list
+            ],
+        }
+
+    def load_json(self, data: Dict[str, Any]):
+        self.memory = Memory.from_json(data["memory"])
+        self.conserved_list = [(i, Exp(j)) for i, j in data["conserved_list"]]
+        self.zero_list = [(i, Exp(j)) for i, j in data["zero_list"]]
 
     def exp_hashed(self, exp: Exp):
         return self.general.K.eval_exp_keyvaluehashed(exp)

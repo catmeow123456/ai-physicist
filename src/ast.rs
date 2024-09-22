@@ -303,6 +303,10 @@ impl SExp {
     pub fn get_objtype_id_map(&self) -> HashMap<String, HashSet<i32>> {
         self.get_expconfig().get_objtype_id_map()
     }
+    #[getter]#[inline]
+    fn get_relevant_objs(&self) -> HashSet<String> {
+        self.get_expconfig().get_relevant_objs()
+    }
 }
 
 #[pyclass(eq)]
@@ -454,6 +458,18 @@ impl IExpConfig {
             },
         }
     }
+    #[getter]#[inline]
+    fn get_relevant_objs(&self) -> HashSet<String> {
+        match self {
+            IExpConfig::From {name: _} => HashSet::new(),
+            IExpConfig::Mk {objtype: _, expconfig, id: _} => expconfig.get_relevant_objs(),
+            IExpConfig::Mkfix {object, expconfig, id: _} => {
+                let mut s = expconfig.get_relevant_objs();
+                s.insert(object.clone());
+                s
+            }
+        }
+    }
 }
 
 #[pyclass(eq)]
@@ -484,6 +500,10 @@ impl Intrinsic {
     pub fn from_string(str: String) -> Self {
         use super::parsing::parse_intrinsic;
         parse_intrinsic(&str).unwrap()
+    }
+    #[getter]#[inline]
+    fn get_relevant_objs(&self) -> HashSet<String> {
+        self.get_sexp().get_relevant_objs()
     }
 }
 

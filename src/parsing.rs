@@ -2,12 +2,17 @@ use crate::r;
 use pyo3::prelude::*;
 use lalrpop_util::lalrpop_mod;
 lalrpop_mod!(expr);
-lalrpop_mod!(expstructure);
 
 use crate::experiments::expstructure::Objstructure;
 #[pyfunction]
 pub fn parse_objstructure(input: &str) -> PyResult<Objstructure> {
-    let res: Objstructure = expstructure::ObjstructureParser::new().parse(input).unwrap();
+    let res: Objstructure = expr::ObjstructureParser::new().parse(input).unwrap();
+    Ok(res)
+}
+use crate::knowledge::Knowledge;
+#[pyfunction]
+pub fn parse_knowledge(input: &str) -> PyResult<Knowledge> {
+    let res: Knowledge = expr::KnowledgeParser::new().parse(input).unwrap();
     Ok(res)
 }
 

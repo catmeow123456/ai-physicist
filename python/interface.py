@@ -1,4 +1,4 @@
-from typing import List, Dict
+from typing import List, Dict, Set
 import ai_physicist as aiphy
 from ai_physicist import (
     Proposition,
@@ -41,6 +41,8 @@ class Knowledge:
     conclusion_id: int = 0
     object_id: int = 0
 
+    obj_tmp: Set[str] = set()
+
     def default() -> "Knowledge":
         """
         创建一个新的 Knowledge 对象，
@@ -49,6 +51,25 @@ class Knowledge:
         obj = object.__new__(Knowledge)
         obj.K = aiphy.Knowledge.default()
         return obj
+
+    def read_from_file(filename: str) -> "Knowledge":
+        """
+        从文件中读取知识库。
+        """
+        obj = object.__new__(Knowledge)
+        with open(filename, "r") as f:
+            obj.K = aiphy.Knowledge.from_string(f.read().strip())
+        for obj_name in obj.K.fetch_object_keys:
+            obj.obj_tmp.add(obj_name)
+        return obj
+
+    def save_to_file(self, filename: str):
+        """
+        将当前知识库保存到文件中。
+        """
+        self.remove_useless_objects()
+        with open(filename, "w") as f:
+            f.write(str(self.K))
 
     @property
     def fetch_exps(self) -> List[str]:
@@ -67,7 +88,11 @@ class Knowledge:
         """
         if isinstance(expr, str):
             expr = Exp(expr)
-        return self.K.eval(expr, expstruct)
+        try:
+            return self.K.eval(expr, expstruct)
+        except:
+            print("Failed to eval", expr)
+            raise Exception("Failed to eval")
 
     def register_object(self, objstruct: Objstructure, name: str = None) -> str:
         """
@@ -87,6 +112,12 @@ class Knowledge:
         name = self.auto_concept_name() if name is None else name
         expr: Expression = Expression(definition) if isinstance(definition, str) else definition
         if self.K.register_expression(name, expr):
+            # 概念注册成功
+            if expr.expr_type == "Intrinsic":
+                # 如果是内禀概念，那么将其相关的物体名字加入 obj_tmp
+                intr: Intrinsic = expr.unwrap_intrinsic
+                for obj_name in intr.relevant_objs:
+                    self.obj_tmp.add(obj_name)
             return name
         else:
             return None
@@ -102,6 +133,13 @@ class Knowledge:
         prop: Proposition = Proposition(definition)
         self.K.register_conclusion(name, prop)
         return name
+    def remove_useless_objects(self):
+        """
+        移除那些没有被任何内禀概念引用的物体。
+        """
+        for obj_name in self.K.fetch_object_keys:
+            if obj_name not in self.obj_tmp:
+                self.K.remove_object(obj_name)
 
     def auto_object_name(self) -> str:
         self.object_id += 1

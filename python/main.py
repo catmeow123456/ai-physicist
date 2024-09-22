@@ -1,3 +1,4 @@
+import json
 from typing import Dict, List, Tuple, Set
 from memory import Memory
 from specific_model import SpecificModel
@@ -32,11 +33,36 @@ class Theorist:
 
     def __init__(self):
         self.general = Knowledge.default()
+        self.memory = Memory()
         experiment_list = self.general.fetch_exps
         self.specific = {}
         for name in experiment_list:
             self.specific[name] = SpecificModel(name, self.general)
         self.objmodel = {}
+
+    def read_from_file(filename_for_knowledge: str, filename_for_memory: str) -> "Theorist":
+        obj = object.__new__(Theorist)
+        obj.general = Knowledge.read_from_file(filename_for_knowledge)
+        with open(filename_for_memory, "r") as f:
+            memory_dict = json.load(f)
+        obj.memory = Memory.from_json(memory_dict["general"])
+        obj.specific = {}
+        for name in obj.general.fetch_exps:
+            obj.specific[name] = SpecificModel(name, obj.general)
+            obj.specific[name].load_json(memory_dict["specific"][name])
+        obj.objmodel = {}
+        return obj
+
+    def save_to_file(self, filename_for_knowledge: str, filename_for_memory: str):
+        self.general.save_to_file(filename_for_knowledge)
+        memory_dict = {
+            "general": self.memory.to_json(),
+            "specific": {
+                key: value.to_json() for key, value in self.specific.items()
+            }
+        }
+        with open(filename_for_memory, "w") as f:
+            json.dump(memory_dict, f, indent=4)
 
     def newObjectModel(self, obj_type: str) -> ObjectModel:
         return ObjectModel(obj_type, self.general)
