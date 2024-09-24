@@ -1,4 +1,5 @@
 from typing import List, Dict, Set
+import json
 import ai_physicist as aiphy
 from ai_physicist import (
     Proposition,
@@ -58,7 +59,14 @@ class Knowledge:
         """
         obj = object.__new__(Knowledge)
         with open(filename, "r") as f:
-            obj.K = aiphy.Knowledge.from_string(f.read().strip())
+            s = f.read().strip()
+            s1 = s[:s.find("[end]") + 5]
+            s2 = s[s.find("[end]") + 5:].strip()
+            obj.K = aiphy.Knowledge.from_string(s1)
+            id_dict = json.loads(s2)
+            obj.concept_id = id_dict["concept_id"]
+            obj.conclusion_id = id_dict["conclusion_id"]
+            obj.object_id = id_dict["object_id"]
         for obj_name in obj.K.fetch_object_keys:
             obj.obj_tmp.add(obj_name)
         return obj
@@ -70,6 +78,11 @@ class Knowledge:
         self.remove_useless_objects()
         with open(filename, "w") as f:
             f.write(str(self.K))
+            json.dump({
+                "concept_id": self.concept_id,
+                "conclusion_id": self.conclusion_id,
+                "object_id": self.object_id
+            }, f)
 
     @property
     def fetch_exps(self) -> List[str]:

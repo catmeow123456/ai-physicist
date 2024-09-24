@@ -1,0 +1,80 @@
+[Knowledge]
+Obj_02 := [Objstructure] obj_type: Spring, attribute: [freel,thickness,]
+Attribute:
+| freel: [Parastructure] value: Some(10.959840094668628), range: (9.0, 11.0)
+| thickness: [Parastructure] value: Some(2.0914338847034113), range: (2.0, 2.2).
+Obj_01 := [Objstructure] obj_type: Spring, attribute: [freel,thickness,]
+Attribute:
+| freel: [Parastructure] value: Some(10.959840094668628), range: (9.0, 11.0)
+| thickness: [Parastructure] value: Some(2.0914338847034113), range: (2.0, 2.2).
+C_01 := (1->MassPoint) (2->Clock) |- D[posx[1]]/D[t[2]]
+C_02 := (1->Clock) (2->MassPoint) |- D[t[1]]/D[posx[2]]
+C_03 := (1->MassPoint) (2->Clock) |- D[C_01[1, 2]]/D[t[2]]
+C_04 := (1->Clock) (2->MassPoint) |- D[t[1]]/D[C_01[2, 1]]
+C_06 := [#oscillation (1->MassPoint) [2->Obj_01] |- D[C_03[1, 0]]/D[posx[1]]]
+C_07 := (1->MassPoint) (2->Clock) |- D[C_03[1, 2]]/D[posx[1]]
+C_08 := [#oscillation (1->MassPoint) [2->Obj_02] |- D[C_03[1, 0]]/D[posr[2]]]
+C_09 := (1->MassPoint) (2->Clock) (3->Spring) |- D[C_03[1, 2]]/D[posr[3]]
+C_11 := (1->MassPoint) (2->Clock) |- D[posx[1]]/D[C_03[1, 2]]
+C_12 := (1->MassPoint) (2->Spring) |- (posx[1] / posr[2])
+C_13 := (1->MassPoint) (2->Spring) |- D[posx[1]]/D[posr[2]]
+C_15 := (1->Spring) (2->MassPoint) (3->Clock) |- D[posr[1]]/D[C_03[2, 3]]
+C_16 := (1->Spring) (2->MassPoint) |- (posr[1] - posx[2])
+C_17 := (1->Spring) (2->MassPoint) |- (posr[1] / posx[2])
+C_18 := (1->Spring) (2->MassPoint) |- D[posr[1]]/D[posx[2]]
+C_23 := (1->Clock) (2->MassPoint) |- D[C_02[1, 2]]/D[t[1]]
+C_34 := (1->MassPoint) (2->Clock) |- D[posx[1]]/D[(C_01[1, 2] * t[2])]
+C_40 := (1->Clock) (2->MassPoint) |- D[t[1]]/D[(C_02[1, 2] * posx[2])]
+C_67 := (1->MassPoint) (2->Clock) |- D[(posx[1] * C_08[1])]/D[(C_01[1, 2] * t[2])]
+C_71 := (1->Clock) (2->MassPoint) (3->MassPoint) |- D[(t[1] * C_08[2])]/D[(C_01[3, 1] * posx[2])]
+C_72 := (1->Clock) (2->MassPoint) |- D[(t[1] * C_08[2])]/D[(C_02[1, 2] * posx[2])]
+C_73 := (1->Clock) (2->MassPoint) (3->MassPoint) |- D[(t[1] * C_08[2])]/D[(C_01[2, 1] * posx[3])]
+C_75 := (1->Clock) (2->MassPoint) (3->MassPoint) |- D[(t[1] * C_08[2])]/D[(C_02[1, 3] * posx[3])]
+C_78 := (1->MassPoint) |- ((C_06[1] * posx[1]) - (posx[1] * C_08[1]))
+C_81 := [#collision (2->MassPoint) |- D[(C_06[2] * posx[2])]/D[(C_01[2, 0] * t[0])]]
+C_82 := (1->MassPoint) (2->Clock) |- D[(C_06[1] * posx[1])]/D[(C_01[1, 2] * t[2])]
+C_85 := (1->MassPoint) (2->Clock) |- ((C_06[1] * t[2]) - (t[2] * C_08[1]))
+C_87 := (1->MassPoint) (2->Clock) (3->MassPoint) |- D[(C_06[1] * t[2])]/D[(C_01[3, 2] * posx[1])]
+C_88 := (1->MassPoint) (2->Clock) |- D[(C_06[1] * t[2])]/D[(C_02[2, 1] * posx[1])]
+C_89 := (1->MassPoint) (2->Clock) (3->MassPoint) |- D[(C_06[1] * t[2])]/D[(C_01[1, 2] * posx[3])]
+C_91 := (1->MassPoint) (2->Clock) (3->MassPoint) |- D[(C_06[1] * t[2])]/D[(C_02[2, 3] * posx[3])]
+C_97 := [#collision (1->MassPoint) |- D[(C_08[1] * posx[2])]/D[(C_01[2, 0] * t[0])]]
+C_98 := (1->MassPoint) (2->MassPoint) (3->Clock) |- D[(C_08[1] * posx[2])]/D[(C_01[2, 3] * t[3])]
+C_103 := [#collision (1->MassPoint) |- D[(C_08[1] * t[0])]/D[(C_02[0, 2] * posx[2])]]
+C_105 := [#collision (1->MassPoint) |- D[(C_08[1] * t[0])]/D[(C_02[0, 1] * posx[1])]]
+C_110 := (1->MassPoint) (2->MassPoint) (3->Clock) |- D[(posx[1] * C_08[2])]/D[(C_02[3, 2] * t[3])]
+C_113 := (1->MassPoint) (2->MassPoint) |- ((posx[1] * C_06[2]) - (posx[1] * C_08[2]))
+C_115 := (1->MassPoint) (2->MassPoint) (3->Clock) |- D[(posx[1] * C_06[2])]/D[(C_01[1, 3] * t[3])]
+C_116 := (1->MassPoint) (2->MassPoint) (3->Clock) |- D[(posx[1] * C_06[2])]/D[(C_02[3, 2] * t[3])]
+C_122 := [#collision (1->MassPoint) |- D[(posx[1] * C_08[1])]/D[(C_01[1, 0] * t[0])]]
+C_128 := (1->MassPoint) (2->Clock) (3->MassPoint) |- D[(C_01[1, 2] * posx[3])]/D[(t[2] * C_08[3])]
+C_129 := (1->MassPoint) (2->Clock) (3->MassPoint) |- D[(C_01[1, 2] * posx[3])]/D[(C_06[3] * t[2])]
+C_130 := (1->MassPoint) (2->Clock) (3->MassPoint) |- D[(C_01[1, 2] * posx[3])]/D[(C_01[3, 2] * posx[1])]
+C_131 := (1->MassPoint) (2->Clock) (3->MassPoint) |- D[(C_01[1, 2] * posx[3])]/D[(C_06[1] * t[2])]
+C_132 := (1->MassPoint) (2->Clock) |- D[(C_01[1, 2] * t[2])]/D[posx[1]]
+C_133 := (1->MassPoint) (2->Clock) (3->MassPoint) |- D[(C_01[1, 2] * t[2])]/D[(posx[1] * C_08[3])]
+C_134 := (1->MassPoint) (2->Clock) (3->MassPoint) |- D[(C_01[1, 2] * t[2])]/D[(posx[1] * C_06[3])]
+C_136 := (1->MassPoint) (2->Clock) |- D[(C_01[1, 2] * t[2])]/D[(posx[1] * C_08[1])]
+C_137 := (1->MassPoint) (2->Clock) |- D[(C_01[1, 2] * t[2])]/D[(C_06[1] * posx[1])]
+C_140 := (1->MassPoint) (2->Clock) (3->MassPoint) |- ((C_01[1, 2] * C_06[3]) - (C_01[1, 2] * C_08[3]))
+C_151 := (1->Clock) (2->MassPoint) |- D[(C_02[1, 2] * posx[2])]/D[t[1]]
+C_152 := (1->Clock) (2->MassPoint) |- D[(C_02[1, 2] * posx[2])]/D[(t[1] * C_08[2])]
+C_153 := (1->Clock) (2->MassPoint) |- D[(C_02[1, 2] * posx[2])]/D[(C_06[2] * t[1])]
+C_155 := (1->Clock) (2->MassPoint) (3->MassPoint) |- D[(C_02[1, 2] * posx[2])]/D[(C_08[3] * t[1])]
+C_156 := (1->Clock) (2->MassPoint) (3->MassPoint) |- D[(C_02[1, 2] * posx[2])]/D[(C_06[3] * t[1])]
+C_157 := (1->Clock) (2->MassPoint) (3->MassPoint) |- D[(C_02[1, 2] * posx[2])]/D[(C_02[1, 3] * posx[3])]
+C_158 := (1->Clock) (2->MassPoint) (3->MassPoint) |- D[(C_02[1, 2] * t[1])]/D[(posx[3] * C_08[2])]
+C_159 := (1->Clock) (2->MassPoint) (3->MassPoint) |- D[(C_02[1, 2] * t[1])]/D[(posx[3] * C_06[2])]
+C_160 := (1->Clock) (2->MassPoint) (3->MassPoint) |- D[(C_02[1, 2] * t[1])]/D[(C_06[3] * posx[3])]
+C_163 := (1->Clock) (2->MassPoint) |- ((C_02[1, 2] * C_06[2]) - (C_02[1, 2] * C_08[2]))
+C_189 := (1->MassPoint) (2->Clock) |- ((C_01[1, 2] * C_06[1]) - (C_01[1, 2] * C_08[1]))
+C_194 := (1->MassPoint) (2->Clock) (3->MassPoint) |- ((C_01[1, 2] * C_08[3]) + (C_01[3, 2] * C_08[1]))
+C_195 := (1->MassPoint) (2->Clock) (3->MassPoint) |- ((C_01[1, 2] * C_08[3]) + (C_01[3, 2] * C_06[1]))
+C_201 := (1->MassPoint) (2->Clock) (3->MassPoint) |- D[(C_01[1, 2] * posx[3])]/D[(t[2] * C_08[1])]
+C_223 := (1->MassPoint) (2->Clock) (3->MassPoint) |- D[(C_06[1] * posx[1])]/D[(C_02[2, 3] * t[2])]
+C_233 := (1->MassPoint) (2->Clock) (3->MassPoint) |- ((C_06[1] * C_02[2, 3]) - (C_02[2, 3] * C_08[1]))
+C_240 := (1->MassPoint) (2->MassPoint) (3->Clock) |- ((C_06[1] * C_01[2, 3]) + (C_01[1, 3] * C_06[2]))
+C_285 := (1->Clock) (2->MassPoint) (3->MassPoint) |- ((C_02[1, 2] * C_06[2]) + (C_02[1, 3] * C_08[3]))
+C_286 := (1->Clock) (2->MassPoint) (3->MassPoint) |- ((C_02[1, 2] * C_06[2]) + (C_02[1, 3] * C_06[3]))
+[end]
+{"concept_id": 290, "conclusion_id": 0, "object_id": 78}
