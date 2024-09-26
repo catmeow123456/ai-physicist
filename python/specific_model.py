@@ -25,6 +25,7 @@ class SpecificModel:
     # id = -1 代表保持所有实验对象不变，只改变实验控制参数
     conserved_list: List[Tuple[str, Exp]]
     zero_list: List[Tuple[str, Exp]]
+    # 保证 conserved_list 与 zero_list 对应了 memory.conclusion 中的结论
 
     def __init__(self, exp_name: str, general: Knowledge):
         """
@@ -62,28 +63,13 @@ class SpecificModel:
 
     # 待修改（下面的所有函数都处于最 naive 的实现，之后需要添加更多的逻辑来进行优化）
 
-    def pick_relevant_exprs(self) -> ExpStructure:
+    def pick_relevant_exprs(self) -> DataStruct:
         """
         这个函数的目的是选取当前实验中的一些 specific 的原子表达式 （ 例如 posx[1], v[2] 等等 ） 。
         这些 specific 的原子表达式由概念库中的概念 specialize 生成，以备后续组合出更复杂的表达式。
         TODO：需要有方向性的智能的随机选取，且这种随机选取方式是可学习的
         """
-        DS = DataStruct.empty()
-        for atomexp in self.experiment.original_data:
-            DS.add_data(atomexp, self.general.eval(Exp.Atom(atomexp), self.experiment))
-        for key in self.memory.fetch_concepts:
-            specific_exprs: list[AtomExp] = self.general.specialize_concept(key, self.exp_name)
-            # if len(specific_exprs) > 0:
-            #     print(f"specialize_concept({self.exp_name}, {key}) = {specific_exprs}")
-            for atom_exp in specific_exprs:
-                DS.add_data(atom_exp,
-                            self.general.eval(Exp.Atom(atom_exp), self.experiment))
-        for key in self.memory.fetch_intrinsics:
-            specific_exprs: list[AtomExp] = self.general.specialize_concept(key, self.exp_name)
-            for atom_exp in specific_exprs:
-                DS.add_data(atom_exp,
-                            self.general.eval(Exp.Atom(atom_exp), self.experiment))
-        return DS
+        return self.memory.pick_relevant_exprs(self.experiment, self.general)
 
     def append_conserved_exp(self, conserved_exp: Exp) -> str:
         hashed_value = self.exp_hashed(conserved_exp)

@@ -68,12 +68,20 @@ impl ExpStructure {
         expdata.data.clone()
     }
     #[getter]#[inline]
-    fn spdim(&self) -> usize {
+    fn get_exp_name(&self) -> String {
+        self.get_ref_expconfig().name.clone()
+    }
+    #[getter]#[inline]
+    fn get_spdim(&self) -> usize {
         self.get_ref_expconfig().spdim
     }
     #[getter]#[inline]
     fn get_original_data(&self) -> Vec<AtomExp> {
         self.get_ref_expconfig().get_original_data()
+    }
+    #[getter]#[inline]
+    fn get_original_concept(&self) -> HashSet<Concept> {
+        self.get_ref_expconfig().get_original_concept()
     }
     fn random_settings(&mut self) {
         self.random_sample();
@@ -167,6 +175,15 @@ impl ExpConfig {
         original_data.iter().map(|(concept, obj_ids)| {
             concept.to_atomexp(obj_ids.clone())
         }).collect()
+    }
+    #[getter]#[inline]
+    fn get_original_concept(&self) -> HashSet<Concept> {
+        let original_data = self.original_data();
+        let mut res = HashSet::new();
+        for (concept, _) in original_data.iter() {
+            res.insert(concept.clone());
+        }
+        res
     }
 }
 

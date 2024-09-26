@@ -210,6 +210,10 @@ impl DataStruct {
         self.data.iter()
     }
     #[inline]
+    pub fn has_t(&self) -> bool {
+        self.data.contains_key(&AtomExp::get_t())
+    }
+    #[inline]
     pub fn get_t(&self) -> ExpData {
         self.get_data_by_key(&AtomExp::get_t()).unwrap()
     }
@@ -282,7 +286,7 @@ impl DataStructOfExpData {
 #[derive(Clone)]
 pub struct ExpConfig {
     // provided
-    name: String,
+    pub name: String,
     pub spdim: usize,
     exp_para: HashMap<String, Parastructure>,
     obj_info: HashMap<String, Objstructure>,

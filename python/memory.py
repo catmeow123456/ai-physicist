@@ -1,10 +1,20 @@
 from typing import Dict, Any
-from interface import Proposition, Concept, Intrinsic
+from interface import (
+    AtomExp, Exp, Knowledge,
+    Proposition, Concept, Intrinsic, DataStruct, ExpStructure
+)
 
 def dict_to_json(d: Dict[str, Any]) -> Dict[str, str]:
     return {k: str(v) for k, v in d.items()}
 
 class Memory:
+    """
+    AI 的记忆仓库，其中包括了各种概念或者其他抽象的表达，
+    且每一个概念拥有一个权重（ TODO ）。
+    给记忆仓库一个 pick_relevant_exprs 指令，并传入特定实验 experiment、Knowledge，
+    它会根据记忆联想到与实验 experiment 相关的一些特定的原子表达式。
+    后续会接入神经网络来调节这一部分。
+    """
     concept: Dict[str, Concept]
     intrinsic: Dict[str, Intrinsic]
     conclusion: Dict[str, Proposition]
@@ -59,3 +69,22 @@ class Memory:
     @property
     def fetch_conclusions(self) -> Dict[str, Proposition]:
         return self.conclusion
+
+    def pick_relevant_exprs(self, experiment: ExpStructure, knowledge: Knowledge) -> DataStruct:
+        """
+        根据记忆联想到与 experiment 相关的一些表达式
+        """
+        DS = DataStruct.empty()
+        for atom_exp in experiment.original_data:
+            DS.add_data(atom_exp, knowledge.eval(Exp.Atom(atom_exp), experiment))
+        for key in self.fetch_concepts:
+            specific_exprs: list[AtomExp] = knowledge.specialize_concept(key, experiment.exp_name)
+            for atom_exp in specific_exprs:
+                DS.add_data(atom_exp,
+                            knowledge.eval(Exp.Atom(atom_exp), experiment))
+        for key in self.fetch_intrinsics:
+            specific_exprs: list[AtomExp] = knowledge.specialize_concept(key, experiment.exp_name)
+            for atom_exp in specific_exprs:
+                DS.add_data(atom_exp,
+                            knowledge.eval(Exp.Atom(atom_exp), experiment))
+        return DS

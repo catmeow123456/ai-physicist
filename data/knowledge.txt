@@ -1,26 +1,26 @@
 [Knowledge]
-Obj_01 := [Objstructure] obj_type: Spring, attribute: [thickness,freel,]
+Obj_02 := [Objstructure] obj_type: Spring, attribute: [freel,thickness,]
 Attribute:
-| thickness: [Parastructure] value: Some(2.0914338847034113), range: (2.0, 2.2)
-| freel: [Parastructure] value: Some(10.959840094668628), range: (9.0, 11.0).
-Obj_02 := [Objstructure] obj_type: Spring, attribute: [thickness,freel,]
+| freel: [Parastructure] value: Some(10.76179033425791), range: (9.0, 11.0)
+| thickness: [Parastructure] value: Some(2.120201400300155), range: (2.0, 2.2).
+Obj_01 := [Objstructure] obj_type: Spring, attribute: [freel,thickness,]
 Attribute:
-| thickness: [Parastructure] value: Some(2.0914338847034113), range: (2.0, 2.2)
-| freel: [Parastructure] value: Some(10.959840094668628), range: (9.0, 11.0).
+| freel: [Parastructure] value: Some(10.76179033425791), range: (9.0, 11.0)
+| thickness: [Parastructure] value: Some(2.120201400300155), range: (2.0, 2.2).
 C_01 := (1->MassPoint) (2->Clock) |- D[posx[1]]/D[t[2]]
 C_02 := (1->Clock) (2->MassPoint) |- D[t[1]]/D[posx[2]]
 C_03 := (1->MassPoint) (2->Clock) |- D[C_01[1, 2]]/D[t[2]]
 C_04 := (1->Clock) (2->MassPoint) |- D[t[1]]/D[C_01[2, 1]]
-C_06 := [#oscillation (1->MassPoint) [2->Obj_01] |- D[C_03[1, 0]]/D[posx[1]]]
-C_07 := (1->MassPoint) (2->Clock) |- D[C_03[1, 2]]/D[posx[1]]
-C_08 := [#oscillation (1->MassPoint) [2->Obj_02] |- D[C_03[1, 0]]/D[posr[2]]]
-C_09 := (1->MassPoint) (2->Clock) (3->Spring) |- D[C_03[1, 2]]/D[posr[3]]
-C_11 := (1->MassPoint) (2->Clock) |- D[posx[1]]/D[C_03[1, 2]]
-C_12 := (1->MassPoint) (2->Spring) |- (posx[1] / posr[2])
-C_13 := (1->MassPoint) (2->Spring) |- D[posx[1]]/D[posr[2]]
-C_15 := (1->Spring) (2->MassPoint) (3->Clock) |- D[posr[1]]/D[C_03[2, 3]]
-C_16 := (1->Spring) (2->MassPoint) |- (posr[1] - posx[2])
-C_17 := (1->Spring) (2->MassPoint) |- (posr[1] / posx[2])
-C_18 := (1->Spring) (2->MassPoint) |- D[posr[1]]/D[posx[2]]
+C_06 := (1->Spring) (2->MassPoint) |- (posr[1] / posx[2])
+C_07 := (1->Spring) (2->MassPoint) |- D[posr[1]]/D[posx[2]]
+C_08 := [#oscillation (1->MassPoint) [2->Obj_01] |- D[posr[2]]/D[C_03[1, 0]]]
+C_09 := (1->Spring) (2->MassPoint) (3->Clock) |- D[posr[1]]/D[C_03[2, 3]]
+C_10 := (1->MassPoint) (2->Spring) |- (posx[1] - posr[2])
+C_11 := (1->MassPoint) (2->Spring) |- (posx[1] / posr[2])
+C_12 := (1->MassPoint) (2->Spring) |- D[posx[1]]/D[posr[2]]
+C_13 := [#oscillation (1->MassPoint) [2->Obj_02] |- D[posx[1]]/D[C_03[1, 0]]]
+C_14 := (1->MassPoint) (2->Clock) |- D[posx[1]]/D[C_03[1, 2]]
+C_16 := (1->MassPoint) (2->Clock) (3->Spring) |- D[C_03[1, 2]]/D[posr[3]]
+C_18 := (1->MassPoint) (2->Clock) |- D[C_03[1, 2]]/D[posx[1]]
 [end]
 {"concept_id": 18, "conclusion_id": 0, "object_id": 4}

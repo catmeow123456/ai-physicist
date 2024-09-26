@@ -7,11 +7,13 @@ use crate::knowledge::apply_binary_op;
 #[pyfunction]
 pub fn search_trivial_relations(fn_list: &DataStruct) -> Vec<(Exp, ExpData)> {
     let mut list: Vec<(Exp, ExpData)> = vec![];
-    let tdata = fn_list.get_t();
+
+    let tdata = if fn_list.has_t() { Some(fn_list.get_t()) } else { None };
     for (atom, value) in fn_list.iter() {
         if value.is_conserved() {
             list.push((Exp::Atom { atom: Box::new(atom.clone()) }, value.clone()));
-        } else {
+        } else 
+        if let Some(ref tdata) = tdata {
             let valuedt = value.diff(&tdata);
             if valuedt.is_conserved() {
                 let exp = Exp::DiffExp { left: Box::new(Exp::Atom { atom: Box::new(atom.clone()) }), right: Box::new(Exp::get_t()), ord: 1 };

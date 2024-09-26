@@ -106,6 +106,16 @@ impl MeasureType {
     }
 }
 
+impl Hash for MeasureType {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.t_end.to_bits().hash(state);
+        self.n.hash(state);
+        self.repeat_time.hash(state);
+        self.error.to_bits().hash(state);
+    }
+}
+
+impl Eq for MeasureType { }
 
 #[pyclass(eq)]
 #[derive(Clone, PartialEq, Eq, Hash, Debug)]
@@ -116,7 +126,7 @@ pub enum AtomExp {
 
 
 #[pyclass(eq)]
-#[derive(Clone, PartialEq)]
+#[derive(Clone, PartialEq, Hash, Eq)]
 pub enum Exp {
     // ExpConfig -> MeasureData -> ExpData
     Number {num: i32},
@@ -140,8 +150,7 @@ impl Exp {
             _ => panic!("Error: unwrap_atom failed"),
         }
     }
-    #[inline]
-    #[getter]
+    #[getter]#[inline]
     fn get_complexity(&self) -> i32 {
         self.complexity()
     }
@@ -310,7 +319,7 @@ impl SExp {
 }
 
 #[pyclass(eq)]
-#[derive(Clone, PartialEq)]
+#[derive(Clone, PartialEq, Hash, Eq)]
 pub enum Concept {
     // {ObjStructure} -> ExpConfig -> MeasureData -> ExpData
     Mk0 {exp: Box<Exp>},
@@ -352,14 +361,20 @@ impl Concept {
 }
 #[pymethods]
 impl Concept {
-    #[new]
-    #[inline]
+    #[new]#[inline]
     fn from_string(str: String) -> Self {
         use super::parsing::parse_concept;
         parse_concept(&str).unwrap()
     }
+    #[inline]
     fn __str__(&self) -> String {
         format!("{}", self)
+    }
+    #[inline]
+    fn __hash__(&self) -> u64 {
+        let mut s = DefaultHasher::new();
+        self.hash(&mut s);
+        s.finish()
     }
     pub fn subst(&self, idlist: Vec<i32>) -> Exp {
         self._subst(idlist, HashMap::new())
@@ -367,16 +382,14 @@ impl Concept {
     fn subst_by_dict(&self, sub_dict: HashMap<i32, i32>) -> Exp {
         self.substs(&sub_dict)
     }
-    #[getter]
-    #[inline]
+    #[getter]#[inline]
     pub fn get_exp(&self) -> Exp {
         match self {
             Concept::Mk0 {exp} => (**exp).clone(),
             Concept::Mksucc {objtype: _, concept, id: _} => concept.get_exp(),
         }
     }
-    #[getter]
-    #[inline]
+    #[getter]#[inline]
     pub fn get_preids(&self) -> Vec<i32> {
         match self {
             Concept::Mk0 {exp:_} => vec![],
@@ -387,8 +400,7 @@ impl Concept {
             },
         }
     }
-    #[getter]
-    #[inline]
+    #[getter]#[inline]
     pub fn get_objtype_id_map(&self) -> HashMap<String, HashSet<i32>> {
         match self {
             Concept::Mk0 {exp:_} => HashMap::new(),
@@ -398,6 +410,14 @@ impl Concept {
                 res_objtype.insert(*id);
                 res
             },
+        }
+    }
+    #[getter]#[inline]
+    pub fn get_atomexp_name(&self) -> String {
+        let x: Exp = self.get_exp();
+        match x {
+            Exp::Atom {atom} => atom.get_name(),
+            _ => panic!("Error: Concept to AtomExp Failed"),
         }
     }
 }

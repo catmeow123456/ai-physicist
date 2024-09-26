@@ -18,10 +18,11 @@ def list_datainfo(data_info: DataStruct):
 
 class Theorist:
     """
-    Theorist 类，由一个主要 Knowledge 类 `general` 和一系列次要 Knowledge 类 `specific`,`objmodel` 组成。
+    Theorist 类，由一个主要 Knowledge 类 `general` 
+    和一系列特殊 Model 类 `specific`,`objmodel` 组成。
     general 是一个全局的知识库。
-    specific 代表了关于每一个实验的知识库。
-    objmodel 代表了关于每一个物体的知识库。
+    specific 代表了关于每一个实验的知识库（也被叫做“具体模型”）。
+    objmodel 代表了关于每一个物体的知识库（刻画了对物体的认识）。
     理论家的主要工作就是不断地做实验，然后从实验中发现一些规律，将这些规律注册到 general 或者具体的 specific 中，
     如果这个过程中发现一些关于物理对象的具体知识，这个知识会被注册到 objmodel 中。
     理论家可以调用不同知识库的记忆，来辅助推理分析，也可以将推理分析的结果注册到不同的知识库中。
