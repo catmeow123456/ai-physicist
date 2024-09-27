@@ -117,6 +117,38 @@ impl NormalData {
         }
         true
     }
+    #[inline]
+    fn __add__(&self, other: &NormalData) -> PyResult<NormalData> {
+        Ok(self + other)
+    }
+    #[inline]
+    fn __sub__(&self, other: &NormalData) -> PyResult<NormalData> {
+        Ok(self - other)
+    }
+    #[inline]
+    fn __mul__(&self, other: &NormalData) -> PyResult<NormalData> {
+        Ok(self * other)
+    }
+    #[inline]
+    fn __truediv__(&self, other: &NormalData) -> PyResult<NormalData> {
+        Ok(self / other)
+    }
+    #[inline]
+    fn __neg__(&self) -> PyResult<NormalData> {
+        Ok(-self)
+    }
+    #[inline]
+    fn __powi__(&self, other: i32) -> PyResult<NormalData> {
+        Ok(self.powi(other))
+    }
+    #[inline]
+    fn __difftau__(&self) -> PyResult<NormalData> {
+        Ok(self.diff_tau())
+    }
+    #[inline]
+    fn __diff__(&self, other: &NormalData) -> PyResult<NormalData> {
+        Ok(self.diff_tau() / other.diff_tau())
+    }
 }
 
 
@@ -496,6 +528,6 @@ fn weighted_mean_error(value: &Array1<f64>, std: &Array1<f64>) -> (f64, f64) {
     assert_eq!(n, std.len());
     let weight = std.mapv(|x| 1. / x.powi(2));
     let mean = weighted_sum(value, &weight);
-    let std = (value - mean).mapv(|x| x.powi(2)).sum();
-    (mean, (std / (n - 1) as f64).sqrt())
+    let var = weighted_sum(&(value - mean).mapv(|x| x.powi(2)), &weight);
+    (mean, (var / n as f64).sqrt())
 }

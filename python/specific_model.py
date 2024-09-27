@@ -224,7 +224,8 @@ class SpecificModel:
                         self.memory.remove_conclusion(name)
                         del self.conserved_list[name]
                     else:
-                        # print(prop.unwrap_exp, '-->', sp_expr, ' --eq_reduced--> ', eq_reduced)
+                        if debug:
+                            print('| ', prop.unwrap_exp, ' reduce to ', eq_reduced)
                         ideal = insert_to_ideal(ideal, sp_expr - sp.Symbol(name))
                 else:
                     if debug:

@@ -19,6 +19,7 @@ from ai_physicist import (
 from ai_physicist import (
     ExpData,
     ConstData,
+    NormalData,
     is_conserved_const_list,
 )
 from ai_physicist import (

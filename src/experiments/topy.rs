@@ -134,6 +134,14 @@ impl DataStruct {
 }
 
 #[pymethods]
+impl DataStructOfExpData {
+    #[getter]#[inline]
+    fn get_datastruct(&self) -> DataStruct {
+        self.data.clone()
+    }
+}
+
+#[pymethods]
 impl DATA {
     #[new]
     fn __new__(obj: ObjType, name: &str) -> Self {

@@ -98,6 +98,10 @@ impl ExpData {
             _ => panic!("unwrap_const_data called on non-ConstData")
         }
     }
+    #[inline]
+    fn get_normal_form(&self, n: usize, repeat_time: usize) -> NormalData {
+        self.to_normal_data(n, repeat_time)
+    }
     #[staticmethod]
     #[inline]
     fn from_elem(mean: f64, std: f64, n: usize, repeat_time: usize) -> ExpData {
