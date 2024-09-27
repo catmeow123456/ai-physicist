@@ -96,42 +96,46 @@ class Theorist:
                 name = spm.append_zero_exp(expr)
             elif expdata.is_conserved:
                 name = spm.append_conserved_exp(expr)
-                is_intrinsic, relevant_id = spm.check_intrinsic(expr)
-                if relevant_id is not None:
-                    relevant_id: List[int] = list(relevant_id)
-                    if is_intrinsic and len(relevant_id) == 1:
-                        print(f"Found intrinsic relation: {expr} with relevant_id = {relevant_id}")
-                        id, obj_type = relevant_id[0], str(spm.experiment.get_obj_type(relevant_id[0]))
-                        iexp_config = IExpConfig.Mk(
-                            obj_type,
-                            IExpConfig.From(exp_name),
-                            id
-                        )
-                        intrinsic = Intrinsic.From(SExp.Mk(iexp_config, expr))
-                        self.register_new_intrinsic(obj_type, intrinsic)
-                    if is_intrinsic and len(relevant_id) == 2:
-                        print(f"Found intrinsic relation: {expr} with relevant_id = {relevant_id}")
-                        id, obj_type = relevant_id[0], str(spm.experiment.get_obj_type(relevant_id[0]))
-                        iexp_config = IExpConfig.Mk(
-                            obj_type,
-                            IExpConfig.From(exp_name),
-                            id
-                        )
-                        id1 = relevant_id[1]
-                        standard_object_name = self.general.register_object(spm.experiment.get_obj(relevant_id[1]))
-                        iexp_config = IExpConfig.Mkfix(
-                            standard_object_name,
-                            iexp_config,
-                            id1
-                        )
-                        intrinsic = Intrinsic.From(SExp.Mk(iexp_config, expr))
-                        self.register_new_intrinsic(obj_type, intrinsic)
             else:
                 raise ValueError("search_relations(data_info) returned an unexpected result")
             if name is not None:
                 expression: Expression = self.general.generalize(exp_name, expr)
                 self.register_concept(expression.unwrap_concept)
+        # 去除冗余关系
         self.specific[exp_name].reduce_conclusions(debug=False)
+        # 将 intrinsic_buffer 中的内禀概念注册到知识库中
+        for name, info in self.specific[exp_name].intrinsic_buffer.items():
+            assert info.is_intrinsic and info.relevant_id is not None
+            relevant_id = list(info.relevant_id)
+            expr = info.exp
+            if len(relevant_id) == 1:
+                print(f"Found intrinsic relation: {expr} with relevant_id = {relevant_id}")
+                id, obj_type = relevant_id[0], str(spm.experiment.get_obj_type(relevant_id[0]))
+                iexp_config = IExpConfig.Mk(
+                    obj_type,
+                    IExpConfig.From(exp_name),
+                    id
+                )
+                intrinsic = Intrinsic.From(SExp.Mk(iexp_config, expr))
+                self.register_new_intrinsic(obj_type, intrinsic)
+            if len(relevant_id) == 2:
+                print(f"Found intrinsic relation: {expr} with relevant_id = {relevant_id}")
+                id, obj_type = relevant_id[0], str(spm.experiment.get_obj_type(relevant_id[0]))
+                iexp_config = IExpConfig.Mk(
+                    obj_type,
+                    IExpConfig.From(exp_name),
+                    id
+                )
+                id1 = relevant_id[1]
+                standard_object_name = self.general.register_object(spm.experiment.get_obj(relevant_id[1]))
+                iexp_config = IExpConfig.Mkfix(
+                    standard_object_name,
+                    iexp_config,
+                    id1
+                )
+                intrinsic = Intrinsic.From(SExp.Mk(iexp_config, expr))
+                self.register_new_intrinsic(obj_type, intrinsic)
+        self.specific[exp_name].intrinsic_buffer = {}
         # for name, expr in self.specific[exp_name].conserved_list:
         #     expression: Expression = self.general.generalize(exp_name, expr)
         #     self.register_concept(expression.unwrap_concept)

@@ -164,7 +164,7 @@ impl Knowledge {
                 let (kv, kvh) = self.eval_intrinsic_keyvaluehashed(&intrinsic);
                 // println!("intrinsic = {}", intrinsic);
                 // println!("kvh = {:?}", kvh);
-                if kvh.is_none() || kvh.is_const() || self.key.contains_key(&kvh) || self.key.contains_key(&kvh.inv()) {
+                if kvh.is_none() || kvh.is_const() || self.key.contains_key(&kvh) {
                     return false;
                 }
                 let atom = AtomExp::new_variable(name.clone());

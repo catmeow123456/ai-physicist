@@ -12,12 +12,15 @@ class DifferentialRing:
     # blocks define the block order of the variables
     blocks: List[Tuple[str, List[Union[sp.Symbol, sp.Function]]]]
 
+    def __str__(self):
+        return 'DifferentialRing:\n' + '\n'.join([block[0] + ': ' + ', '.join([str(var) for var in block[1]]) for block in self.blocks])
+
     def __init__(self, blocks: List[Tuple[str, List[Union[sp.Symbol, sp.Function]]]]):
-        self.blocks = blocks
+        self.blocks = [block for block in blocks if len(block[1]) > 0]
         derivs = set()
-        for item in blocks:
+        for item in self.blocks:
             assert item[0] in ['grlexA', 'grlexB', 'degrevlexA', 'degrevlexB', 'lex']
-            # assert len(item[1]) > 0
+            assert len(item[1]) > 0
             for var in item[1]:
                 temp = str(var).replace(' ', '')
                 if var.is_Function:
