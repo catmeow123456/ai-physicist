@@ -1,7 +1,7 @@
 import json
 from typing import Dict, List, Tuple, Set
 from memory import Memory
-from specific_model import SpecificModel
+from specific_model import SpecificModel, ConservedInfo
 from object_model import ObjectModel
 from interface import Knowledge
 from interface import (
@@ -102,15 +102,21 @@ class Theorist:
                 expression: Expression = self.general.generalize(exp_name, expr)
                 self.register_concept(expression.unwrap_concept)
         # 去除冗余关系
-        self.specific[exp_name].reduce_conclusions(debug=False)
+        spm.reduce_conclusions(debug=False)
         # 将 intrinsic_buffer 中的内禀概念注册到知识库中
-        for name, info in self.specific[exp_name].intrinsic_buffer.items():
+        self.register_intrinsics(spm.intrinsic_buffer)
+        spm.intrinsic_buffer.clear()
+
+    def register_intrinsics(self, CQinfos: Dict[str, ConservedInfo]):
+        for name, info in CQinfos.items():
             assert info.is_intrinsic and info.relevant_id is not None
+            exp_name = info.exp_name
+            experiment = self.specific[exp_name].experiment
             relevant_id = list(info.relevant_id)
             expr = info.exp
             if len(relevant_id) == 1:
                 print(f"Found intrinsic relation: {expr} with relevant_id = {relevant_id}")
-                id, obj_type = relevant_id[0], str(spm.experiment.get_obj_type(relevant_id[0]))
+                id, obj_type = relevant_id[0], str(experiment.get_obj_type(relevant_id[0]))
                 iexp_config = IExpConfig.Mk(
                     obj_type,
                     IExpConfig.From(exp_name),
@@ -120,14 +126,14 @@ class Theorist:
                 self.register_new_intrinsic(obj_type, intrinsic)
             if len(relevant_id) == 2:
                 print(f"Found intrinsic relation: {expr} with relevant_id = {relevant_id}")
-                id, obj_type = relevant_id[0], str(spm.experiment.get_obj_type(relevant_id[0]))
+                id, obj_type = relevant_id[0], str(experiment.get_obj_type(relevant_id[0]))
                 iexp_config = IExpConfig.Mk(
                     obj_type,
                     IExpConfig.From(exp_name),
                     id
                 )
                 id1 = relevant_id[1]
-                standard_object_name = self.general.register_object(spm.experiment.get_obj(relevant_id[1]))
+                standard_object_name = self.general.register_object(experiment.get_obj(relevant_id[1]))
                 iexp_config = IExpConfig.Mkfix(
                     standard_object_name,
                     iexp_config,
@@ -135,10 +141,6 @@ class Theorist:
                 )
                 intrinsic = Intrinsic.From(SExp.Mk(iexp_config, expr))
                 self.register_new_intrinsic(obj_type, intrinsic)
-        self.specific[exp_name].intrinsic_buffer = {}
-        # for name, expr in self.specific[exp_name].conserved_list:
-        #     expression: Expression = self.general.generalize(exp_name, expr)
-        #     self.register_concept(expression.unwrap_concept)
 
     def register_concept(self, concept: Concept):
         """
