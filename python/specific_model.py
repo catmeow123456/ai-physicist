@@ -201,11 +201,12 @@ class SpecificModel:
             print('prepare ring', ring)
         def insert_to_ideal(ideal: diffalg, new_eq: sp.Expr):
             if debug:
-                print('add new eq to ideal', new_eq)
+                tqdm.write(f'add new eq to ideal {new_eq}')
             return ideal._insert_new_eq(new_eq)
         for name in tqdm(name_list):
-            prop = conclusions[name]
-            sp_expr = sp.simplify(self._sympy_of_raw_defi(prop.unwrap_exp))
+            prop: Proposition = conclusions[name]
+            sp_expr = self._sympy_of_raw_defi(prop.unwrap_exp)
+            if_print = False
             if prop.prop_type == "IsConserved":
                 info: ConservedInfo = self.conserved_list.get(name)
                 flag = info.is_intrinsic
@@ -213,8 +214,6 @@ class SpecificModel:
                 reduce_diff_eq_result: sp.Expr = ideal.gb[0].reduce(diff_eq)
                 if reduce_diff_eq_result.is_zero:
                     eq_reduced = ideal.gb[0].reduce(sp_expr)
-                    # if debug:
-                    #     print(sp_expr, 'reduce to', eq_reduced)
                     if eq_reduced.diff(argument).is_zero:
                         # if eq_reduced is composed by all const value, then remove it
                         if info.is_intrinsic:
@@ -223,17 +222,15 @@ class SpecificModel:
                                 flag = False
                             else:
                                 ideal = insert_to_ideal(ideal, sp_expr - sp.Symbol(name))
+                                if_print = True
                         self.memory.remove_conclusion(name)
                         del self.conserved_list[name]
                     else:
-                        if debug:
-                            print('| ', prop.unwrap_exp, ' reduce to ', eq_reduced)
                         ideal = insert_to_ideal(ideal, sp_expr - sp.Symbol(name))
+                        if_print = True
                 else:
-                    if debug:
-                        print('| ', sp_expr, ' reduce to ', ideal.gb[0].reduce(sp_expr))
-                        print('| ', diff_eq, ' reduce to', reduce_diff_eq_result)
                     ideal = insert_to_ideal(ideal, sp_expr - sp.Symbol(name))
+                    if_print = True
                 if flag:
                     self.intrinsic_buffer[name] = info
             elif prop.prop_type == "IsZero":
@@ -243,6 +240,9 @@ class SpecificModel:
                     del self.zero_list[name]
                 else:
                     ideal = insert_to_ideal(ideal, sp_expr)
+                    if_print = True
+            if if_print:
+                tqdm.write(f'Insert to ideal: {prop.unwrap_exp}')
 
     def check_intrinsic(self, exp: Exp) -> Tuple[bool, Set[int] | None]:
         """

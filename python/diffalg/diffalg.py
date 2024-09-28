@@ -22,7 +22,6 @@ class DifferentialRing:
             assert item[0] in ['grlexA', 'grlexB', 'degrevlexA', 'degrevlexB', 'lex']
             assert len(item[1]) > 0
             for var in item[1]:
-                temp = str(var).replace(' ', '')
                 if var.is_Function:
                     derivs |= set(var.args)
         self.derivations = list(derivs)
@@ -31,16 +30,19 @@ class DifferentialRing:
     def default(cls, vars: List[Union[sp.Symbol, sp.Function]]):
         return cls([('lex', vars)])
 
-    def ring_to_maple(self, trans_table: Literal['ver1', 'ver2'] = 'ver1') -> str:
+    def ring_to_maple(self, trans_table: Literal['ver1', 'ver2'] = 'ver1',
+                      symbs = set[sp.Symbol | sp.Function]) -> str:
         derivs_arg = '[' + ', '.join([deriv.name for deriv in self.derivations]) + ']'
+        blocks = [(block[0], [var for var in block[1] if var in symbs]) for block in self.blocks]
+        blocks = [block for block in blocks if len(block[1]) > 0]
         if (trans_table == 'ver1'):
             blocks_arg = '[' + ', '.join([block[0] + '[' +
                                           ','.join([var.name for var in block[1]]) +
-                                          ']' for block in self.blocks]) + ']'
+                                          ']' for block in blocks]) + ']'
         else:
             blocks_arg = '[' + ', '.join(['[' +
                                           ','.join([aux(var) for var in block[1]]) +
-                                          ']' for block in self.blocks]) + ']'
+                                          ']' for block in blocks]) + ']'
         return f'DifferentialRing(blocks = {blocks_arg}, derivations = {derivs_arg})'
 
 
@@ -60,7 +62,10 @@ class RegularDifferentialChain:
         solver = mapleIO()
         solver.import_lib('DifferentialAlgebra')
         solver.import_lib('Tools')
-        solver.append_command(f'R := {self.ring.ring_to_maple(trans_table="ver2")}')
+        symbs = eq.atoms(sp.Symbol, sp.Function)
+        for i in self.gb:
+            symbs |= i.atoms(sp.Symbol, sp.Function)
+        solver.append_command(f'R := {self.ring.ring_to_maple(trans_table="ver2", symbs=symbs)}')
         eqs_arg = ', '.join([eq_to_maple(self.ring, i, trans_table="ver2") for i in self.gb])
         solver.append_command(f'eqs := [{eqs_arg}]')
         solver.append_command(f'ideal := PretendRegularDifferentialChain(eqs, R)')
@@ -95,7 +100,12 @@ class diffalg:
             ineqs = []
         solver = mapleIO()
         solver.import_lib('DifferentialAlgebra')
-        solver.append_command(f'R := {ring.ring_to_maple()}')
+        symbs = set()
+        for i in eqs:
+            symbs |= i.atoms(sp.Symbol, sp.Function)
+        for i in ineqs:
+            symbs |= i.atoms(sp.Symbol, sp.Function)
+        solver.append_command(f'R := {ring.ring_to_maple(symbs=symbs)}')
         eqs_args = [eq_to_maple(ring, i) for i in eqs] + [eq_to_maple(ring, i) + '<> 0' for i in ineqs]
         args = ', '.join(eqs_args)
         solver.append_command(f'eqs := [{args}]')
@@ -126,13 +136,18 @@ class diffalg:
         symbols = set()
         for i in self.gb:
             for j in i.gb:
-                symbols |= set(j.free_symbols)
-        if not eq.free_symbols.issubset(symbols):
+                symbols |= (j.free_symbols & set(self.ring.derivations))
+        if not (eq.free_symbols & set(self.ring.derivations)).issubset(symbols):
             return False
         solver = mapleIO()
         solver.import_lib('DifferentialAlgebra')
         solver.import_lib('Tools')
-        solver.append_command(f'R := {self.ring.ring_to_maple(trans_table="ver2")}')
+        symbs = eq.atoms(sp.Symbol, sp.Function)
+        for i in self.eqs:
+            symbs |= i.atoms(sp.Symbol, sp.Function)
+        for i in self.ineqs:
+            symbs |= i.atoms(sp.Symbol, sp.Function)
+        solver.append_command(f'R := {self.ring.ring_to_maple(trans_table="ver2", symbs=symbs)}')
         arg_lst = []
         for ideal in self.gb:
             eqs_arg = ', '.join([eq_to_maple(self.ring, i, trans_table="ver2") for i in ideal.gb])

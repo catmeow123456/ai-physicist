@@ -50,3 +50,35 @@ https://zhuanlan.zhihu.com/p/565617662
 6. 新概念如果比旧概念定义更简单，需要进行替换，这个还没做。
 7. 发现的守恒量与之前发现的守恒量做 PCA 寻找它们之间的非线性关系（例如 ma - kx = kr + kl）。
 8. PCA 找守恒量
+9. reduce conclusion 完善，对于守恒的符号变量，先用简单策略化简。保证通过 `test9/step_three` 测试的条件下，获得最好的 minimal 表示
+目前的效果：
+```json
+"oscillation": {
+    "conclusion": {
+        "P1": "posl[2] is conserved",
+        "P4": "D[posx[1]]/D[C_03[1, 0]] is conserved",
+        "P5": "(posr[2] - posx[1]) is zero",
+        "P38": "D[C_04[0, 1]]/D[(posr[2] * C_04[0, 1])] is conserved",
+        "P191": "D[(C_04[0, 1] * C_10[2, 1])]/D[(posr[2] * C_04[0, 1])] is conserved",
+        "P195": "D[(C_04[0, 1] * C_10[2, 1])]/D[(posx[1] * C_04[0, 1])] is conserved",
+        "P206": "D[(C_04[0, 1] * C_06[1, 2])]/D[(posr[2] * C_04[0, 1])] is conserved",
+        "P210": "D[(C_04[0, 1] * C_06[1, 2])]/D[(posx[1] * C_04[0, 1])] is conserved",
+        "P234": "D[(C_13[1, 0] * C_04[0, 1])]/D[(posr[2] * C_04[0, 1])] is conserved",
+        "P238": "D[(C_13[1, 0] * C_04[0, 1])]/D[(posx[1] * C_04[0, 1])] is conserved",
+        "P239": "D[(C_13[1, 0] * C_04[0, 1])]/D[(posl[2] * C_04[0, 1])] is conserved",
+        "P363": "D[(C_08[1, 0] * C_04[0, 1])]/D[(posr[2] * C_04[0, 1])] is conserved",
+        "P366": "D[(C_08[1, 0] * C_04[0, 1])]/D[(posx[1] * C_04[0, 1])] is conserved",
+        "P575": "D[(C_07[1, 2] * C_04[0, 1])]/D[(posr[2] * C_04[0, 1])] is conserved",
+        "P578": "D[(C_07[1, 2] * C_04[0, 1])]/D[(posx[1] * C_04[0, 1])] is conserved",
+        "P668": "D[(C_16[2] * C_01[1, 0])]/D[(C_13[1, 0] * C_01[1, 0])] is conserved",
+        "P1015": "D[(posl[2] * C_04[0, 1])]/D[(posr[2] * C_04[0, 1])] is conserved",
+        "P1020": "D[(posl[2] * C_04[0, 1])]/D[(posx[1] * C_04[0, 1])] is conserved",
+        "P1163": "D[(C_12[2, 1, 0] * C_04[0, 1])]/D[(posr[2] * C_04[0, 1])] is conserved",
+        "P1168": "D[(C_12[2, 1, 0] * C_04[0, 1])]/D[(posx[1] * C_04[0, 1])] is conserved",
+        "P1299": "D[(C_15[1] * C_01[1, 0])]/D[(C_13[1, 0] * C_01[1, 0])] is conserved",
+        "P1750": "D[(C_11[2, 1] * C_04[0, 1])]/D[(posr[2] * C_04[0, 1])] is conserved",
+        "P1755": "D[(C_11[2, 1] * C_04[0, 1])]/D[(posx[1] * C_04[0, 1])] is conserved",
+        "P1756": "D[(C_11[2, 1] * C_04[0, 1])]/D[(posl[2] * C_04[0, 1])] is conserved"
+    }
+}
+```
