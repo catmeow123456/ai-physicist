@@ -63,7 +63,12 @@ class Knowledge:
             s = f.read().strip()
             s1 = s[:s.find("[end]") + 5]
             s2 = s[s.find("[end]") + 5:].strip()
-            obj.K = aiphy.Knowledge.from_string(s1)
+            try:
+                obj.K = aiphy.Knowledge.from_string(s1)
+            except:
+                print("Failed to load knowledge from string")
+                print(s1)
+                raise Exception("Failed to load knowledge from string")
             id_dict = json.loads(s2)
             obj.concept_id = id_dict["concept_id"]
             obj.conclusion_id = id_dict["conclusion_id"]

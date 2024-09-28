@@ -9,6 +9,7 @@ from interface import (
     search_relations, DataStruct, ExpStructure, MeasureType, Proposition,
     Exp, Concept, SExp, IExpConfig, Intrinsic, AtomExp, ExpData, DataStruct, Expression
 )
+from tqdm import tqdm
 
 
 def list_datainfo(data_info: DataStruct):
@@ -82,7 +83,6 @@ class Theorist:
         spm: SpecificModel = self.specific[exp_name]
         data_info: DataStruct = spm.pick_relevant_exprs()
         # list_datainfo(data_info)
-
         if ver is None:
             res: List[Tuple[Exp, ExpData]] = search_relations(data_info)
         elif ver == 'ver2':
@@ -90,7 +90,7 @@ class Theorist:
         elif ver == 'trivial':
             res: List[Tuple[Exp, ExpData]] = search_trivial_relations(data_info)
         print(f"Found {len(res)} relations")
-        for (expr, expdata) in res:
+        for (expr, expdata) in tqdm(res):
             name: str = None
             if expdata.is_zero:
                 name = spm.append_zero_exp(expr)
@@ -102,6 +102,7 @@ class Theorist:
                 expression: Expression = self.general.generalize(exp_name, expr)
                 self.register_concept(expression.unwrap_concept)
         # 去除冗余关系
+        print(f"Reducing {len(spm.memory.fetch_conclusions)} conclusions")
         spm.reduce_conclusions(debug=False)
         # 将 intrinsic_buffer 中的内禀概念注册到知识库中
         self.register_intrinsics(spm.intrinsic_buffer)
@@ -126,21 +127,22 @@ class Theorist:
                 self.register_new_intrinsic(obj_type, intrinsic)
             if len(relevant_id) == 2:
                 print(f"Found intrinsic relation: {expr} with relevant_id = {relevant_id}")
-                id, obj_type = relevant_id[0], str(experiment.get_obj_type(relevant_id[0]))
-                iexp_config = IExpConfig.Mk(
-                    obj_type,
-                    IExpConfig.From(exp_name),
-                    id
-                )
-                id1 = relevant_id[1]
-                standard_object_name = self.general.register_object(experiment.get_obj(relevant_id[1]))
-                iexp_config = IExpConfig.Mkfix(
-                    standard_object_name,
-                    iexp_config,
-                    id1
-                )
-                intrinsic = Intrinsic.From(SExp.Mk(iexp_config, expr))
-                self.register_new_intrinsic(obj_type, intrinsic)
+                for ita in range(2):
+                    id, obj_type = relevant_id[ita], str(experiment.get_obj_type(relevant_id[ita]))
+                    iexp_config = IExpConfig.Mk(
+                        obj_type,
+                        IExpConfig.From(exp_name),
+                        id
+                    )
+                    id1 = relevant_id[1 - ita]
+                    standard_object_name = self.general.register_object(experiment.get_obj(relevant_id[1-ita]))
+                    iexp_config = IExpConfig.Mkfix(
+                        standard_object_name,
+                        iexp_config,
+                        id1
+                    )
+                    intrinsic = Intrinsic.From(SExp.Mk(iexp_config, expr))
+                    self.register_new_intrinsic(obj_type, intrinsic)
 
     def register_concept(self, concept: Concept):
         """
@@ -152,7 +154,7 @@ class Theorist:
         expression: Expression = Expression.Concept(concept=concept)
         name = self.general.register_expr(expression)
         if name is not None:
-            print(f"\033[1m" + f"Registered New Concept: {name} = {concept}" + f"\033[0m")
+            tqdm.write(f"\033[1m" + f"Registered New Concept: {name} = {concept}" + f"\033[0m")
             for key in self.specific:
                 self.specific[key].memory.register_concept(concept, name)
 

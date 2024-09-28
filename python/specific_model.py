@@ -1,4 +1,6 @@
 import sympy as sp
+
+from tqdm import tqdm
 from typing import List, Tuple, Dict, Set, Any
 from interface import (
     Knowledge, ExpData, DataStruct,
@@ -201,7 +203,7 @@ class SpecificModel:
             if debug:
                 print('add new eq to ideal', new_eq)
             return ideal._insert_new_eq(new_eq)
-        for name in name_list:
+        for name in tqdm(name_list):
             prop = conclusions[name]
             sp_expr = sp.simplify(self._sympy_of_raw_defi(prop.unwrap_exp))
             if prop.prop_type == "IsConserved":

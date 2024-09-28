@@ -1,12 +1,12 @@
 [Knowledge]
-Obj_02 := [Objstructure] obj_type: MassPoint, attribute: [e,m,]
-Attribute:
-| e: [Parastructure] value: Some(3.1041546659863205e-9), range: (0.0, 1e-8)
-| m: [Parastructure] value: Some(4.2827547431717425), range: (1.0, 5.0).
 Obj_01 := [Objstructure] obj_type: Spring, attribute: [thickness,freel,]
 Attribute:
 | thickness: [Parastructure] value: Some(2.182977145393873), range: (2.0, 2.2)
 | freel: [Parastructure] value: Some(10.064228232417058), range: (9.0, 11.0).
+Obj_02 := [Objstructure] obj_type: MassPoint, attribute: [e,m,]
+Attribute:
+| e: [Parastructure] value: Some(3.1041546659863205e-9), range: (0.0, 1e-8)
+| m: [Parastructure] value: Some(4.2827547431717425), range: (1.0, 5.0).
 C_01 := (1->MassPoint) (2->Clock) |- D[posx[1]]/D[t[2]]
 C_02 := (1->Clock) (2->MassPoint) |- D[t[1]]/D[posx[2]]
 C_03 := (1->MassPoint) (2->Clock) |- D[C_01[1, 2]]/D[t[2]]
@@ -22,5 +22,6 @@ C_13 := (1->MassPoint) (2->Clock) |- D[C_03[1, 2]]/D[posx[1]]
 C_14 := (1->MassPoint) (2->Clock) (3->Spring) |- D[C_03[1, 2]]/D[posr[3]]
 C_15 := [#oscillation (1->MassPoint) [2->Obj_01] |- D[posx[1]]/D[C_03[1, 0]]]
 C_16 := [#oscillation (2->Spring) [1->Obj_02] |- D[posx[1]]/D[C_03[1, 0]]]
+C_29 := (1->MassPoint) (2->Spring) |- (posx[1] - posr[2])
 [end]
-{"concept_id": 16, "conclusion_id": 0, "object_id": 2}
+{"concept_id": 35, "conclusion_id": 0, "object_id": 6}

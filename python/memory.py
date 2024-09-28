@@ -87,4 +87,5 @@ class Memory:
             for atom_exp in specific_exprs:
                 DS.add_data(atom_exp,
                             knowledge.eval(Exp.Atom(atom_exp), experiment))
+        # print('DataKeys:',[str(i) for i in DS.data_keys])
         return DS
