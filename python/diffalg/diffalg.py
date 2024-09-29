@@ -37,7 +37,7 @@ class DifferentialRing:
         blocks = [block for block in blocks if len(block[1]) > 0]
         if sp.Symbol('temp') in symbs:
             # 在 diffalg.reduce 中，会用到 temp 变量来辅助化简
-            blocks[0][1].append(sp.Symbol('temp'))
+            blocks = [('lex', [sp.Symbol('temp')])] + blocks
         if (trans_table == 'ver1'):
             blocks_arg = '[' + ', '.join([block[0] + '[' +
                                           ','.join([var.name for var in block[1]]) +
@@ -187,7 +187,10 @@ class diffalg:
         solver.append_command(f'eq := NormalForm({eq_arg}, ideal[1])')
         solver.append_command(f'print(eq)')
         stdout = solver.exec_maple()
-        return eq_from_maple(self.ring, stdout[-1])
+        result = eq_from_maple(self.ring, stdout[-1])
+        if result == sp.Symbol('temp'):
+            return eq
+        return result
 
 
 def eq_to_maple(ring: DifferentialRing, eq: sp.Expr, trans_table: Literal['ver1', 'ver2'] = 'ver1') -> str:

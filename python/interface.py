@@ -15,11 +15,13 @@ from ai_physicist import (
     search_trivial_relations,
     search_relations,
     search_relations_ver2,
+    search_relations_ver3
 )
 from ai_physicist import (
     ExpData,
     ConstData,
     NormalData,
+    KeyValueHashed,
     is_conserved_const_list,
 )
 from ai_physicist import (

@@ -35,6 +35,7 @@ use experiments::topy::register_experiment;
 use pyo3::prelude::*;
 use parsing::register_sentence;
 use knowledge::Knowledge;
+use exprcharacter::KeyValueHashed;
 use regression::{
     search_relations,
     search_relations_ver2,
@@ -58,6 +59,7 @@ fn ai_physicist(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<ast::Intrinsic>()?;
     m.add_class::<ast::MeasureType>()?;
     m.add_class::<Knowledge>()?;
+    m.add_class::<KeyValueHashed>()?;
     m.add_function(wrap_pyfunction!(search_relations, m)?)?;
     m.add_function(wrap_pyfunction!(search_relations_ver2, m)?)?;
     m.add_function(wrap_pyfunction!(search_trivial_relations, m)?)?;

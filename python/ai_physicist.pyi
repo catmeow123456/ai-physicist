@@ -1,6 +1,10 @@
 from typing import List, Dict, Set, Tuple
 from deprecated.sphinx import deprecated
 
+
+def search_relations_ver3(ds: DataStruct) -> List[Tuple[Exp, ExpData]]:
+    ...
+
 def search_trivial_relations(ds: DataStruct) -> List[Tuple[Exp, ExpData]]:
     """
     Search for trivial relations such as 

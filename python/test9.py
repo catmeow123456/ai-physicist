@@ -47,6 +47,16 @@ def step_three():
     theorist.specific["oscillation"].print_sympy_conclusion()
     theorist.save_to_file("data/knowledge3.txt", "data/memory3.json")
 
+def step_four():
+    theorist: Theorist = Theorist.read_from_file("data/knowledge0.txt", "data/memory0.json")
+    print('\033[1m'+('-'*20)+'\033[0m')
+    theorist.theoretical_analysis("collision", ver='trivial')
+    theorist.specific["collision"].print_sympy_conclusion()
+    print('\033[1m'+('-'*20)+'\033[0m')
+    theorist.theoretical_analysis("collision", ver='ver3')
+    theorist.specific["collision"].print_sympy_conclusion()
+    theorist.save_to_file("data/knowledge4.txt", "data/memory4.json")
+
 
 step_three()
 

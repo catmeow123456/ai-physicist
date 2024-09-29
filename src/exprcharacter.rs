@@ -218,7 +218,7 @@ impl KeyValue {
     fn const_value(value: i32, value_len: usize, p_mod: i32) -> Self {
         assert!(value >=0 && value < p_mod);
         let mut v: Vec<i32> = vec![0; value_len+DIFF_TIMES];
-        v[0] = random_mod_ne_zero(value);
+        v[0] = value;
         Self::new(v, value_len, p_mod, 0)
     }
     fn random_value(value_len: usize, p_mod: i32) -> Self {
@@ -501,6 +501,7 @@ impl Knowledge {
         (res_kv, res_kvh, res_dict)
     }
     pub fn eval_keyvalue(&mut self, exp0: &Exp) -> KeyValue {
+        let result = 
         match exp0 {
             Exp::Number { num } => {
                 self.key.gen_const_value(*num)
@@ -552,6 +553,8 @@ impl Knowledge {
                     *ord as usize
                 )
             },
-        }
+        };
+        // println!("eval_keyvalue: {} {:?}", exp0, result.value);
+        result
     }
 }

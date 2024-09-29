@@ -5,7 +5,7 @@ from typing import List, Tuple, Dict, Set, Any
 from interface import (
     Knowledge, ExpData, DataStruct,
     ExpStructure, Exp, AtomExp, Proposition, MeasureType,
-    is_conserved_const_list
+    KeyValueHashed, is_conserved_const_list
 )
 from memory import Memory
 from diffalg.diffalg import DifferentialRing, diffalg
@@ -122,7 +122,7 @@ class SpecificModel:
             info = ZeroInfo.from_json(item)
             self.zero_list[info.name] = info
 
-    def exp_hashed(self, exp: Exp):
+    def exp_hashed(self, exp: Exp) -> KeyValueHashed:
         return self.general.K.eval_exp_keyvaluehashed(exp)
 
     # 待修改（下面的所有函数都处于最 naive 的实现，之后需要添加更多的逻辑来进行优化）
@@ -144,7 +144,8 @@ class SpecificModel:
         # print(f"conserved exp = {conserved_exp} hashed_value = {hashed_value.get_data()}")
         for _, info in self.conserved_list.items():
             if self.exp_hashed(info.exp) == hashed_value:
-                # print(f"exp = {self.exp_hashed(info.exp).get_data()}, conserved_exp = {conserved_exp.exp_hashed(exp).get_data()}")
+                # print(f"exp = {info.exp}, conserved_exp = {conserved_exp}")
+                # print(f"exp = {self.exp_hashed(info.exp).data}, conserved_exp = {hashed_value.data}")
                 return None
         name = self.memory.register_conclusion(Proposition.IsConserved(conserved_exp))
         self.conserved_list[name] = self.make_conserved_info(name, conserved_exp)
@@ -226,6 +227,8 @@ class SpecificModel:
                 reduce_diff_eq_result: sp.Expr = ideal.gb[0].reduce(diff_eq)
                 if reduce_diff_eq_result.is_zero:
                     eq_reduced = ideal.reduce(sp_expr)
+                    if debug:
+                        tqdm.write(f'{prop.unwrap_exp} eq_reduced = {eq_reduced}')
                     if eq_reduced.diff(argument).is_zero:
                         # if eq_reduced is composed by all const value, then remove it
                         if info.is_intrinsic:

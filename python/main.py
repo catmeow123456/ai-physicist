@@ -5,7 +5,7 @@ from specific_model import SpecificModel, ConservedInfo
 from object_model import ObjectModel
 from interface import Knowledge
 from interface import (
-    search_relations_ver2, search_trivial_relations,
+    search_relations_ver2, search_trivial_relations, search_relations_ver3,
     search_relations, DataStruct, ExpStructure, MeasureType, Proposition,
     Exp, Concept, SExp, IExpConfig, Intrinsic, AtomExp, ExpData, DataStruct, Expression
 )
@@ -88,6 +88,8 @@ class Theorist:
             res: List[Tuple[Exp, ExpData]] = search_relations(data_info)
         elif ver == 'ver2':
             res: List[Tuple[Exp, ExpData]] = search_relations_ver2(data_info)
+        elif ver == 'ver3':
+            res: List[Tuple[Exp, ExpData]] = search_relations_ver3(data_info)
         elif ver == 'trivial':
             res: List[Tuple[Exp, ExpData]] = search_trivial_relations(data_info)
         print(f"Found {len(res)} relations")

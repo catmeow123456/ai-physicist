@@ -104,20 +104,29 @@ pub fn search_relations_ver3(fn_list: &DataStruct) -> Vec<(Exp, ExpData)> {
                 };
                 for (exp0, value0) in list.iter() {
                     for op in vec![BinaryOp::Add, BinaryOp::Sub] {
-                        let value = apply_binary_op(&op, value0, &value);
-                        if value.is_conserved() {
-                            let exp = Exp::BinaryExp {
+                        let valuenew = apply_binary_op(&op, value0, &value);
+                        if valuenew.is_conserved() {
+                            let expnew = Exp::BinaryExp {
                                 left: Box::new(exp0.clone()),
                                 right: Box::new(exp.clone()),
                                 op: op.clone()
                             };
-                            result.push((exp, value));
+                            if format!("{}", exp) == "(C_16[1] * (C_01[1, 0] ** 2))".to_string() {
+                                if format!("{}", exp0) == "(C_16[2] * (C_01[2, 0] ** 2))".to_string() {
+                                    println!("!!!!!!!!!! {}", expnew)
+                                }
+                            }
+                            result.push((expnew, valuenew));
                         }
                     }
                 }
                 list.push((exp, value));
             }
         }
+    }
+    println!("search_relations_ver3 from list");
+    for (exp, _) in list.iter() {
+        println!("exp: {}", exp);
     }
     result
 }
