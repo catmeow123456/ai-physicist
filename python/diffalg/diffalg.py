@@ -170,7 +170,7 @@ class diffalg:
     def reduce(self, eq: sp.Expr) -> sp.Expr:
         solver = mapleIO()
         solver.import_lib('DifferentialAlgebra')
-        symbs = {sp.Symbol('temp')}
+        symbs = {sp.Symbol('temp')} | eq.atoms(sp.Symbol, sp.Function)
         for i in self.eqs:
             symbs |= i.atoms(sp.Symbol, sp.Function)
         for i in self.ineqs:
