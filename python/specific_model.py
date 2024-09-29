@@ -201,19 +201,31 @@ class SpecificModel:
             print('prepare ring', ring)
         def insert_to_ideal(ideal: diffalg, new_eq: sp.Expr):
             if debug:
-                tqdm.write(f'add new eq to ideal {new_eq}')
+                tqdm.write(f'add new eq to ideal {new_eq} = 0')
             return ideal._insert_new_eq(new_eq)
+        def insert_to_ideal_both(ideal: diffalg, new_eq: sp.Expr, new_ineqs: sp.Expr):
+            if debug:
+                tqdm.write(f'add new eq to ideal {new_eq} = 0 and {new_ineqs} <> 0')
+            return ideal._insert_new_eqs_and_ineqs([new_eq], [new_ineqs])
+        subs_dict = dict()
+        inverse_dict = dict()
         for name in tqdm(name_list):
             prop: Proposition = conclusions[name]
-            sp_expr = self._sympy_of_raw_defi(prop.unwrap_exp)
+            sp_expr = sp.simplify(
+                self._sympy_of_raw_defi(prop.unwrap_exp)
+                .subs(subs_dict, simultaneous=True)
+            ).subs(inverse_dict, simultaneous=True)
             if_print = False
             if prop.prop_type == "IsConserved":
+                if sp_expr.is_Function:
+                    subs_dict[sp_expr] = sp.Symbol(sp_expr.name)
+                    inverse_dict[sp.Symbol(sp_expr.name)] = sp_expr
                 info: ConservedInfo = self.conserved_list.get(name)
                 flag = info.is_intrinsic
                 diff_eq = sp.diff(sp_expr, argument).as_numer_denom()[0]
                 reduce_diff_eq_result: sp.Expr = ideal.gb[0].reduce(diff_eq)
                 if reduce_diff_eq_result.is_zero:
-                    eq_reduced = ideal.gb[0].reduce(sp_expr)
+                    eq_reduced = ideal.reduce(sp_expr)
                     if eq_reduced.diff(argument).is_zero:
                         # if eq_reduced is composed by all const value, then remove it
                         if info.is_intrinsic:
@@ -221,15 +233,15 @@ class SpecificModel:
                             if symbs.issubset(all_intrinsic_symbols):
                                 flag = False
                             else:
-                                ideal = insert_to_ideal(ideal, sp_expr - sp.Symbol(name))
+                                ideal = insert_to_ideal_both(ideal, sp_expr - sp.Symbol(name), sp.Symbol(name))
                                 if_print = True
                         self.memory.remove_conclusion(name)
                         del self.conserved_list[name]
                     else:
-                        ideal = insert_to_ideal(ideal, sp_expr - sp.Symbol(name))
+                        ideal = insert_to_ideal_both(ideal, sp_expr - sp.Symbol(name), sp.Symbol(name))
                         if_print = True
                 else:
-                    ideal = insert_to_ideal(ideal, sp_expr - sp.Symbol(name))
+                    ideal = insert_to_ideal_both(ideal, sp_expr - sp.Symbol(name), sp.Symbol(name))
                     if_print = True
                 if flag:
                     self.intrinsic_buffer[name] = info
@@ -239,6 +251,16 @@ class SpecificModel:
                     self.memory.remove_conclusion(name)
                     del self.zero_list[name]
                 else:
+                    if new_eq.func == sp.Add and len(new_eq.args) == 2:
+                        atom1 = new_eq.args[0]
+                        atom2 = new_eq.args[1]
+                        def is_neg_symbol(x: sp.Expr):
+                            return x.func == sp.Mul and x.args[0] == -1 and x.args[1].is_Symbol
+                        if is_neg_symbol(atom2):
+                            atom2 = -atom2
+                        else:
+                            atom1 = -atom1
+                        subs_dict[atom2] = atom1
                     ideal = insert_to_ideal(ideal, sp_expr)
                     if_print = True
             if if_print:

@@ -31,10 +31,13 @@ class DifferentialRing:
         return cls([('lex', vars)])
 
     def ring_to_maple(self, trans_table: Literal['ver1', 'ver2'] = 'ver1',
-                      symbs = set[sp.Symbol | sp.Function]) -> str:
+                      symbs: set[sp.Symbol | sp.Function] = None) -> str:
         derivs_arg = '[' + ', '.join([deriv.name for deriv in self.derivations]) + ']'
-        blocks = [(block[0], [var for var in block[1] if var in symbs]) for block in self.blocks]
+        blocks = [(block[0], [var for var in block[1] if symbs is None or var in symbs]) for block in self.blocks]
         blocks = [block for block in blocks if len(block[1]) > 0]
+        if sp.Symbol('temp') in symbs:
+            # 在 diffalg.reduce 中，会用到 temp 变量来辅助化简
+            blocks[0][1].append(sp.Symbol('temp'))
         if (trans_table == 'ver1'):
             blocks_arg = '[' + ', '.join([block[0] + '[' +
                                           ','.join([var.name for var in block[1]]) +
@@ -132,6 +135,9 @@ class diffalg:
     def _insert_new_ineqs(self, eq: sp.Expr) -> 'diffalg':
         return diffalg.from_eqs(self.ring, self.eqs, self.ineqs + [eq])
 
+    def _insert_new_eqs_and_ineqs(self, eqs: List[sp.Expr], ineqs: List[sp.Expr]) -> 'diffalg':
+        return diffalg.from_eqs(self.ring, self.eqs + eqs, self.ineqs + ineqs)
+
     def belongs_to(self, eq: sp.Expr) -> bool:
         symbols = set()
         for i in self.gb:
@@ -160,6 +166,28 @@ class diffalg:
         result = stdout[-1].strip('[] ')
         assert result in ['true', 'false']
         return result == 'true'
+
+    def reduce(self, eq: sp.Expr) -> sp.Expr:
+        solver = mapleIO()
+        solver.import_lib('DifferentialAlgebra')
+        symbs = {sp.Symbol('temp')}
+        for i in self.eqs:
+            symbs |= i.atoms(sp.Symbol, sp.Function)
+        for i in self.ineqs:
+            symbs |= i.atoms(sp.Symbol, sp.Function)
+        solver.append_command(f'R := {self.ring.ring_to_maple(symbs=symbs)}')
+        eqs_args = [eq_to_maple(self.ring, i) for i in self.eqs]
+        eqs_args.append(eq_to_maple(self.ring, eq - sp.Symbol('temp')))
+        eqs_args + [eq_to_maple(self.ring, i) + '<> 0' for i in self.ineqs]
+        args = ', '.join(eqs_args)
+        solver.append_command(f'eqs := [{args}]')
+        solver.append_command(f'ideal := RosenfeldGroebner(eqs, R)')
+        solver.append_command(f'print(Equations(ideal))')
+        eq_arg = eq_to_maple(self.ring, sp.Symbol('temp'))
+        solver.append_command(f'eq := NormalForm({eq_arg}, ideal[1])')
+        solver.append_command(f'print(eq)')
+        stdout = solver.exec_maple()
+        return eq_from_maple(self.ring, stdout[-1])
 
 
 def eq_to_maple(ring: DifferentialRing, eq: sp.Expr, trans_table: Literal['ver1', 'ver2'] = 'ver1') -> str:

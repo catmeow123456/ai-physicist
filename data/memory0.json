@@ -17,12 +17,7 @@
                     "C_06": "(1->MassPoint) (2->Clock) |- D[C_03[1, 2]]/D[posx[1]]",
                     "C_07": "(1->MassPoint) (2->Clock) (3->Spring) |- D[C_03[1, 2]]/D[posr[3]]",
                     "C_08": "(1->MassPoint) (2->Clock) |- D[posx[1]]/D[C_03[1, 2]]",
-                    "C_09": "(1->MassPoint) (2->Spring) |- (posx[1] / posr[2])",
-                    "C_10": "(1->MassPoint) (2->Spring) |- D[posx[1]]/D[posr[2]]",
-                    "C_11": "(1->Spring) (2->MassPoint) (3->Clock) |- D[posr[1]]/D[C_03[2, 3]]",
-                    "C_12": "(1->Spring) (2->MassPoint) |- (posr[1] - posx[2])",
-                    "C_13": "(1->Spring) (2->MassPoint) |- (posr[1] / posx[2])",
-                    "C_14": "(1->Spring) (2->MassPoint) |- D[posr[1]]/D[posx[2]]"
+                    "C_11": "(1->Spring) (2->MassPoint) (3->Clock) |- D[posr[1]]/D[C_03[2, 3]]"
                 },
                 "intrinsic": {
                     "C_15": "[#oscillation (2->Spring) [1->Obj_01] |- D[C_03[1, 0]]/D[posx[1]]]",
@@ -55,12 +50,7 @@
                     "C_06": "(1->MassPoint) (2->Clock) |- D[C_03[1, 2]]/D[posx[1]]",
                     "C_07": "(1->MassPoint) (2->Clock) (3->Spring) |- D[C_03[1, 2]]/D[posr[3]]",
                     "C_08": "(1->MassPoint) (2->Clock) |- D[posx[1]]/D[C_03[1, 2]]",
-                    "C_09": "(1->MassPoint) (2->Spring) |- (posx[1] / posr[2])",
-                    "C_10": "(1->MassPoint) (2->Spring) |- D[posx[1]]/D[posr[2]]",
-                    "C_11": "(1->Spring) (2->MassPoint) (3->Clock) |- D[posr[1]]/D[C_03[2, 3]]",
-                    "C_12": "(1->Spring) (2->MassPoint) |- (posr[1] - posx[2])",
-                    "C_13": "(1->Spring) (2->MassPoint) |- (posr[1] / posx[2])",
-                    "C_14": "(1->Spring) (2->MassPoint) |- D[posr[1]]/D[posx[2]]"
+                    "C_11": "(1->Spring) (2->MassPoint) (3->Clock) |- D[posr[1]]/D[C_03[2, 3]]"
                 },
                 "intrinsic": {
                     "C_15": "[#oscillation (2->Spring) [1->Obj_01] |- D[C_03[1, 0]]/D[posx[1]]]",
@@ -111,12 +101,7 @@
                     "C_06": "(1->MassPoint) (2->Clock) |- D[C_03[1, 2]]/D[posx[1]]",
                     "C_07": "(1->MassPoint) (2->Clock) (3->Spring) |- D[C_03[1, 2]]/D[posr[3]]",
                     "C_08": "(1->MassPoint) (2->Clock) |- D[posx[1]]/D[C_03[1, 2]]",
-                    "C_09": "(1->MassPoint) (2->Spring) |- (posx[1] / posr[2])",
-                    "C_10": "(1->MassPoint) (2->Spring) |- D[posx[1]]/D[posr[2]]",
-                    "C_11": "(1->Spring) (2->MassPoint) (3->Clock) |- D[posr[1]]/D[C_03[2, 3]]",
-                    "C_12": "(1->Spring) (2->MassPoint) |- (posr[1] - posx[2])",
-                    "C_13": "(1->Spring) (2->MassPoint) |- (posr[1] / posx[2])",
-                    "C_14": "(1->Spring) (2->MassPoint) |- D[posr[1]]/D[posx[2]]"
+                    "C_11": "(1->Spring) (2->MassPoint) (3->Clock) |- D[posr[1]]/D[C_03[2, 3]]"
                 },
                 "intrinsic": {
                     "C_15": "[#oscillation (2->Spring) [1->Obj_01] |- D[C_03[1, 0]]/D[posx[1]]]",
@@ -139,12 +124,7 @@
                     "C_06": "(1->MassPoint) (2->Clock) |- D[C_03[1, 2]]/D[posx[1]]",
                     "C_07": "(1->MassPoint) (2->Clock) (3->Spring) |- D[C_03[1, 2]]/D[posr[3]]",
                     "C_08": "(1->MassPoint) (2->Clock) |- D[posx[1]]/D[C_03[1, 2]]",
-                    "C_09": "(1->MassPoint) (2->Spring) |- (posx[1] / posr[2])",
-                    "C_10": "(1->MassPoint) (2->Spring) |- D[posx[1]]/D[posr[2]]",
-                    "C_11": "(1->Spring) (2->MassPoint) (3->Clock) |- D[posr[1]]/D[C_03[2, 3]]",
-                    "C_12": "(1->Spring) (2->MassPoint) |- (posr[1] - posx[2])",
-                    "C_13": "(1->Spring) (2->MassPoint) |- (posr[1] / posx[2])",
-                    "C_14": "(1->Spring) (2->MassPoint) |- D[posr[1]]/D[posx[2]]"
+                    "C_11": "(1->Spring) (2->MassPoint) (3->Clock) |- D[posr[1]]/D[C_03[2, 3]]"
                 },
                 "intrinsic": {
                     "C_15": "[#oscillation (2->Spring) [1->Obj_01] |- D[C_03[1, 0]]/D[posx[1]]]",

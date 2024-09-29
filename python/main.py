@@ -69,7 +69,7 @@ class Theorist:
     def newObjectModel(self, obj_type: str) -> ObjectModel:
         return ObjectModel(obj_type, self.general)
 
-    def register_new_intrinsic(self, obj_type: str, intrinsic: Intrinsic):
+    def register_new_intrinsic(self, obj_type: str, intrinsic: Intrinsic) -> str:
         if not self.objmodel.__contains__(obj_type):
             self.objmodel[obj_type] = self.newObjectModel(obj_type)
         name = self.objmodel[obj_type].register_intrinsic(intrinsic)
@@ -77,6 +77,7 @@ class Theorist:
             print("\033[1m" + f"Registered New Concept: {name} = {intrinsic}" + "\033[0m")
             for key in self.specific:
                 self.specific[key].memory.register_intrinsic(intrinsic, name)
+        return name
 
     def theoretical_analysis(self, exp_name: str, ver: str | None = None):
         assert (exp_name in self.specific)
@@ -127,22 +128,28 @@ class Theorist:
                 self.register_new_intrinsic(obj_type, intrinsic)
             if len(relevant_id) == 2:
                 print(f"Found intrinsic relation: {expr} with relevant_id = {relevant_id}")
-                for ita in range(2):
-                    id, obj_type = relevant_id[ita], str(experiment.get_obj_type(relevant_id[ita]))
-                    iexp_config = IExpConfig.Mk(
-                        obj_type,
-                        IExpConfig.From(exp_name),
-                        id
+
+                id, obj_type = relevant_id[1], str(experiment.get_obj_type(relevant_id[1]))
+                iexp_config = IExpConfig.Mk(
+                    obj_type, IExpConfig.From(exp_name), id
+                )
+                id1, obj_type1 = relevant_id[0], str(experiment.get_obj_type(relevant_id[0]))
+                standard_object_name = self.general.register_object(experiment.get_obj(relevant_id[0]))
+                iexp_config = IExpConfig.Mkfix(
+                    standard_object_name, iexp_config, id1
+                )
+                intrinsic = Intrinsic.From(SExp.Mk(iexp_config, expr))
+                name = self.register_new_intrinsic(obj_type, intrinsic)
+                if name is None:
+                    continue
+                new_exp = Exp.Atom(AtomExp.VariableIds(name, [id])) / expr
+                new_info = self.specific[exp_name].make_conserved_info(None, new_exp)
+                if new_info.is_intrinsic and new_info.relevant_id == {id1}:
+                    new_iexp_config = IExpConfig.Mk(
+                        obj_type1, IExpConfig.From(exp_name), id1
                     )
-                    id1 = relevant_id[1 - ita]
-                    standard_object_name = self.general.register_object(experiment.get_obj(relevant_id[1-ita]))
-                    iexp_config = IExpConfig.Mkfix(
-                        standard_object_name,
-                        iexp_config,
-                        id1
-                    )
-                    intrinsic = Intrinsic.From(SExp.Mk(iexp_config, expr))
-                    self.register_new_intrinsic(obj_type, intrinsic)
+                    intrinsic = Intrinsic.From(SExp.Mk(new_iexp_config, new_exp))
+                    self.register_new_intrinsic(obj_type1, intrinsic)
 
     def register_concept(self, concept: Concept):
         """
