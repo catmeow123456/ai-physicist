@@ -247,7 +247,7 @@ class SpecificModel:
                     self.intrinsic_buffer[name] = info
             elif prop.prop_type == "IsZero":
                 new_eq = sp_expr.as_numer_denom()[0]
-                if ideal.belongs_to(new_eq):
+                if ideal.reduce(new_eq).is_zero:
                     self.memory.remove_conclusion(name)
                     del self.zero_list[name]
                 else:

@@ -4,6 +4,7 @@ use crate::experiments::expstructure::DataStruct;
 use crate::ast::{BinaryOp, Exp};
 use crate::knowledge::apply_binary_op;
 
+// 对于给定的数据 f(t), ... ， 提取出所有形如 f(t), f'(t) 的守恒量
 #[pyfunction]
 pub fn search_trivial_relations(fn_list: &DataStruct) -> Vec<(Exp, ExpData)> {
     let mut list: Vec<(Exp, ExpData)> = vec![];
@@ -24,8 +25,10 @@ pub fn search_trivial_relations(fn_list: &DataStruct) -> Vec<(Exp, ExpData)> {
     list
 }
 
-#[pyfunction]
-pub fn search_relations_ver2(fn_list: &DataStruct) -> Vec<(Exp, ExpData)> {
+
+/// 对于给定的数据 f(t), g(t), ... ，
+/// 生成所有不超过二次的 （形如 f(t), f(t)g(t) ） 的非守恒单项式
+fn gen_monomials(fn_list: &DataStruct) -> Vec<(Exp, ExpData)> {
     let ref origin_list = fn_list.iter().collect::<Vec<_>>();
     let mut list: Vec<(Exp, ExpData)> = vec![];
     for (atom, value) in origin_list {
@@ -34,10 +37,7 @@ pub fn search_relations_ver2(fn_list: &DataStruct) -> Vec<(Exp, ExpData)> {
         }
     }
     for id1 in 0..origin_list.len() {
-        for id2 in 0..id1 {
-            if id1 == id2 {
-                continue;
-            }
+        for id2 in 0..(id1+1) {
             let (atom1, value1) = origin_list[id1];
             let (atom2, value2) = origin_list[id2];
             if value1.is_err() || value2.is_err() {
@@ -57,9 +57,74 @@ pub fn search_relations_ver2(fn_list: &DataStruct) -> Vec<(Exp, ExpData)> {
             }
         }
     }
+    list
+}
+
+
+// 对于给定的数据 f(t), g(t), ... ，
+// 提取出所有形如 h1(t) o h2(t), f1(t)g1(t) o h(t) 或 f1(t)g1(t) o f2(t)g2(t) 的守恒量
+// 这里的 o 表示二元运算符， 包括加减乘除和求导
+#[pyfunction]
+pub fn search_relations_ver2(fn_list: &DataStruct) -> Vec<(Exp, ExpData)> {
+    let list = gen_monomials(fn_list);
     search_relations_aux(&list)
 }
 
+
+// 对于给定的数据 f(t), g(t), ... ，
+// 提取出所有形如
+// h1(t) o h2(t), f1(t)g1(t) o h(t), f1(t)g1(t) o f2(t)g2(t),
+// f1(t)g1(t)^2 +/- f2(t)g2(t)^2 的守恒量
+// 这里的 o 表示二元运算符， 包括加减乘除和求导
+#[pyfunction]
+pub fn search_relations_ver3(fn_list: &DataStruct) -> Vec<(Exp, ExpData)> {
+    let ref origin_list = fn_list.iter().collect::<Vec<_>>();
+    let mut list = gen_monomials(fn_list);
+    let mut result = search_relations_aux(&list);
+    for id1 in 0..origin_list.len() {
+        for id2 in 0..origin_list.len() {
+            let (atom1, value1) = origin_list[id1];
+            let (atom2, value2) = origin_list[id2];
+            if value1.is_err() || value2.is_err() {
+                continue;
+            }
+            if value1.is_conserved() && value2.is_conserved() {
+                continue;
+            }
+            let value = value1 * &value2.powi(2);
+            if value.is_normal() {
+                let exp = Exp::BinaryExp {
+                    left: Box::new(Exp::Atom { atom: Box::new(atom1.clone()) }),
+                    right: Box::new(Exp::BinaryExp {
+                            left: Box::new(Exp::Atom { atom: Box::new(atom2.clone()) }),
+                            op: BinaryOp::Pow,
+                            right: Box::new(Exp::Number { num: 2 })
+                        }),
+                    op: BinaryOp::Mul
+                };
+                for (exp0, value0) in list.iter() {
+                    for op in vec![BinaryOp::Add, BinaryOp::Sub] {
+                        let value = apply_binary_op(&op, value0, &value);
+                        if value.is_conserved() {
+                            let exp = Exp::BinaryExp {
+                                left: Box::new(exp0.clone()),
+                                right: Box::new(exp.clone()),
+                                op: op.clone()
+                            };
+                            result.push((exp, value));
+                        }
+                    }
+                }
+                list.push((exp, value));
+            }
+        }
+    }
+    result
+}
+
+
+// 对于给定的数据 f(t), g(t), ... ，
+// 提取出所有形如 f(t) o g(t) 的守恒量（这里的 f(t) 和 g(t) 被要求是非守恒的）
 #[pyfunction]
 pub fn search_relations(fn_list: &DataStruct) -> Vec<(Exp, ExpData)> {
     let mut list: Vec<(Exp, ExpData)> = vec![];
