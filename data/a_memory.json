@@ -1,0 +1,214 @@
+{
+    "general": {
+        "concept": {},
+        "intrinsic": {},
+        "conclusion": {},
+        "conclusion_id": 0
+    },
+    "specific": {
+        "motion": {
+            "exp_name": "motion",
+            "memory": {
+                "concept": {
+                    "C_01": "(1->MassPoint) (2->Clock) |- D[posx[1]]/D[t[2]]",
+                    "C_02": "(1->Clock) (2->MassPoint) |- D[t[1]]/D[posx[2]]",
+                    "C_03": "(1->MassPoint) (2->Clock) |- D[C_01[1, 2]]/D[t[2]]",
+                    "C_04": "(1->Clock) (2->MassPoint) |- D[t[1]]/D[C_01[2, 1]]",
+                    "C_05": "(1->Spring) (2->Clock) |- D[posr[1]]/D[t[2]]",
+                    "C_06": "(1->Spring) (2->Clock) |- D[posl[1]]/D[t[2]]",
+                    "C_07": "(1->Clock) (2->Spring) |- D[t[1]]/D[posr[2]]",
+                    "C_08": "(1->Clock) (2->Spring) |- D[t[1]]/D[posl[2]]",
+                    "C_19": "(1->MassPoint) (2->Clock) |- D[C_03[1, 2]]/D[posx[1]]",
+                    "C_20": "(1->MassPoint) (2->Clock) (3->Spring) |- D[C_03[1, 2]]/D[posr[3]]",
+                    "C_22": "(1->MassPoint) (2->Clock) |- D[posx[1]]/D[C_03[1, 2]]"
+                },
+                "intrinsic": {
+                    "C_12": "[#stringmotion0 (1->Spring) |- (posl[1] - posr[1])]",
+                    "C_36": "[#oscillation (2->Spring) [1->Obj_01] |- D[C_03[1, 0]]/D[posx[1]]]",
+                    "C_37": "[#oscillation (1->MassPoint) |- (C_36[2] / D[C_03[1, 0]]/D[posx[1]])]"
+                },
+                "conclusion": {
+                    "P1": "D[C_01[1, 0]]/D[t[0]] is conserved"
+                },
+                "conclusion_id": 2
+            },
+            "conserved_list": [
+                [
+                    "motion",
+                    "P1",
+                    "D[C_01[1, 0]]/D[t[0]]",
+                    false,
+                    []
+                ]
+            ],
+            "zero_list": []
+        },
+        "collision": {
+            "exp_name": "collision",
+            "memory": {
+                "concept": {
+                    "C_01": "(1->MassPoint) (2->Clock) |- D[posx[1]]/D[t[2]]",
+                    "C_02": "(1->Clock) (2->MassPoint) |- D[t[1]]/D[posx[2]]",
+                    "C_03": "(1->MassPoint) (2->Clock) |- D[C_01[1, 2]]/D[t[2]]",
+                    "C_04": "(1->Clock) (2->MassPoint) |- D[t[1]]/D[C_01[2, 1]]",
+                    "C_05": "(1->Spring) (2->Clock) |- D[posr[1]]/D[t[2]]",
+                    "C_06": "(1->Spring) (2->Clock) |- D[posl[1]]/D[t[2]]",
+                    "C_07": "(1->Clock) (2->Spring) |- D[t[1]]/D[posr[2]]",
+                    "C_08": "(1->Clock) (2->Spring) |- D[t[1]]/D[posl[2]]",
+                    "C_19": "(1->MassPoint) (2->Clock) |- D[C_03[1, 2]]/D[posx[1]]",
+                    "C_20": "(1->MassPoint) (2->Clock) (3->Spring) |- D[C_03[1, 2]]/D[posr[3]]",
+                    "C_22": "(1->MassPoint) (2->Clock) |- D[posx[1]]/D[C_03[1, 2]]"
+                },
+                "intrinsic": {
+                    "C_12": "[#stringmotion0 (1->Spring) |- (posl[1] - posr[1])]",
+                    "C_36": "[#oscillation (2->Spring) [1->Obj_01] |- D[C_03[1, 0]]/D[posx[1]]]",
+                    "C_37": "[#oscillation (1->MassPoint) |- (C_36[2] / D[C_03[1, 0]]/D[posx[1]])]"
+                },
+                "conclusion": {},
+                "conclusion_id": 0
+            },
+            "conserved_list": [],
+            "zero_list": []
+        },
+        "oscillation": {
+            "exp_name": "oscillation",
+            "memory": {
+                "concept": {
+                    "C_01": "(1->MassPoint) (2->Clock) |- D[posx[1]]/D[t[2]]",
+                    "C_02": "(1->Clock) (2->MassPoint) |- D[t[1]]/D[posx[2]]",
+                    "C_03": "(1->MassPoint) (2->Clock) |- D[C_01[1, 2]]/D[t[2]]",
+                    "C_04": "(1->Clock) (2->MassPoint) |- D[t[1]]/D[C_01[2, 1]]",
+                    "C_05": "(1->Spring) (2->Clock) |- D[posr[1]]/D[t[2]]",
+                    "C_06": "(1->Spring) (2->Clock) |- D[posl[1]]/D[t[2]]",
+                    "C_07": "(1->Clock) (2->Spring) |- D[t[1]]/D[posr[2]]",
+                    "C_08": "(1->Clock) (2->Spring) |- D[t[1]]/D[posl[2]]",
+                    "C_19": "(1->MassPoint) (2->Clock) |- D[C_03[1, 2]]/D[posx[1]]",
+                    "C_20": "(1->MassPoint) (2->Clock) (3->Spring) |- D[C_03[1, 2]]/D[posr[3]]",
+                    "C_22": "(1->MassPoint) (2->Clock) |- D[posx[1]]/D[C_03[1, 2]]",
+                    "C_38": "(1->Spring) |- posl[1] - posr[1] - C_12[1]"
+                },
+                "intrinsic": {
+                    "C_12": "[#stringmotion0 (1->Spring) |- (posl[1] - posr[1])]",
+                    "C_36": "[#oscillation (2->Spring) [1->Obj_01] |- D[C_03[1, 0]]/D[posx[1]]]",
+                    "C_37": "[#oscillation (1->MassPoint) |- (C_36[2] / D[C_03[1, 0]]/D[posx[1]])]"
+                },
+                "conclusion": {
+                    "P2": "posl[2] is conserved",
+                    "P7": "D[C_03[1, 0]]/D[posx[1]] is conserved",
+                    "P15": "(posr[2] - posx[1]) is zero"
+                },
+                "conclusion_id": 23
+            },
+            "conserved_list": [
+                [
+                    "oscillation",
+                    "P2",
+                    "posl[2]",
+                    false,
+                    []
+                ],
+                [
+                    "oscillation",
+                    "P7",
+                    "D[C_03[1, 0]]/D[posx[1]]",
+                    true,
+                    [
+                        1,
+                        2
+                    ]
+                ]
+            ],
+            "zero_list": [
+                [
+                    "oscillation",
+                    "P15",
+                    "(posr[2] - posx[1])"
+                ]
+            ]
+        },
+        "motion0": {
+            "exp_name": "motion0",
+            "memory": {
+                "concept": {
+                    "C_01": "(1->MassPoint) (2->Clock) |- D[posx[1]]/D[t[2]]",
+                    "C_02": "(1->Clock) (2->MassPoint) |- D[t[1]]/D[posx[2]]",
+                    "C_03": "(1->MassPoint) (2->Clock) |- D[C_01[1, 2]]/D[t[2]]",
+                    "C_04": "(1->Clock) (2->MassPoint) |- D[t[1]]/D[C_01[2, 1]]",
+                    "C_05": "(1->Spring) (2->Clock) |- D[posr[1]]/D[t[2]]",
+                    "C_06": "(1->Spring) (2->Clock) |- D[posl[1]]/D[t[2]]",
+                    "C_07": "(1->Clock) (2->Spring) |- D[t[1]]/D[posr[2]]",
+                    "C_08": "(1->Clock) (2->Spring) |- D[t[1]]/D[posl[2]]",
+                    "C_19": "(1->MassPoint) (2->Clock) |- D[C_03[1, 2]]/D[posx[1]]",
+                    "C_20": "(1->MassPoint) (2->Clock) (3->Spring) |- D[C_03[1, 2]]/D[posr[3]]",
+                    "C_22": "(1->MassPoint) (2->Clock) |- D[posx[1]]/D[C_03[1, 2]]"
+                },
+                "intrinsic": {
+                    "C_12": "[#stringmotion0 (1->Spring) |- (posl[1] - posr[1])]",
+                    "C_36": "[#oscillation (2->Spring) [1->Obj_01] |- D[C_03[1, 0]]/D[posx[1]]]",
+                    "C_37": "[#oscillation (1->MassPoint) |- (C_36[2] / D[C_03[1, 0]]/D[posx[1]])]"
+                },
+                "conclusion": {
+                    "P1": "D[posx[1]]/D[t[0]] is conserved"
+                },
+                "conclusion_id": 2
+            },
+            "conserved_list": [
+                [
+                    "motion0",
+                    "P1",
+                    "D[posx[1]]/D[t[0]]",
+                    false,
+                    []
+                ]
+            ],
+            "zero_list": []
+        },
+        "stringmotion0": {
+            "exp_name": "stringmotion0",
+            "memory": {
+                "concept": {
+                    "C_01": "(1->MassPoint) (2->Clock) |- D[posx[1]]/D[t[2]]",
+                    "C_02": "(1->Clock) (2->MassPoint) |- D[t[1]]/D[posx[2]]",
+                    "C_03": "(1->MassPoint) (2->Clock) |- D[C_01[1, 2]]/D[t[2]]",
+                    "C_04": "(1->Clock) (2->MassPoint) |- D[t[1]]/D[C_01[2, 1]]",
+                    "C_05": "(1->Spring) (2->Clock) |- D[posr[1]]/D[t[2]]",
+                    "C_06": "(1->Spring) (2->Clock) |- D[posl[1]]/D[t[2]]",
+                    "C_07": "(1->Clock) (2->Spring) |- D[t[1]]/D[posr[2]]",
+                    "C_08": "(1->Clock) (2->Spring) |- D[t[1]]/D[posl[2]]",
+                    "C_19": "(1->MassPoint) (2->Clock) |- D[C_03[1, 2]]/D[posx[1]]",
+                    "C_20": "(1->MassPoint) (2->Clock) (3->Spring) |- D[C_03[1, 2]]/D[posr[3]]",
+                    "C_22": "(1->MassPoint) (2->Clock) |- D[posx[1]]/D[C_03[1, 2]]"
+                },
+                "intrinsic": {
+                    "C_12": "[#stringmotion0 (1->Spring) |- (posl[1] - posr[1])]",
+                    "C_36": "[#oscillation (2->Spring) [1->Obj_01] |- D[C_03[1, 0]]/D[posx[1]]]",
+                    "C_37": "[#oscillation (1->MassPoint) |- (C_36[2] / D[C_03[1, 0]]/D[posx[1]])]"
+                },
+                "conclusion": {
+                    "P1": "D[posr[1]]/D[t[0]] is conserved",
+                    "P6": "(posl[1] - posr[1]) is conserved"
+                },
+                "conclusion_id": 7
+            },
+            "conserved_list": [
+                [
+                    "stringmotion0",
+                    "P1",
+                    "D[posr[1]]/D[t[0]]",
+                    false,
+                    []
+                ],
+                [
+                    "stringmotion0",
+                    "P6",
+                    "(posl[1] - posr[1])",
+                    true,
+                    [
+                        1
+                    ]
+                ]
+            ],
+            "zero_list": []
+        }
+    }
+}

@@ -26,6 +26,7 @@ pub mod experiments{
         pub mod motion;
         pub mod collision;
         pub mod oscillation;
+        pub mod stringmotion0;
     }
 }
 
@@ -69,6 +70,7 @@ fn ai_physicist(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(experiments::simulation::collision::struct_collision, m)?)?;
     m.add_function(wrap_pyfunction!(experiments::simulation::oscillation::struct_oscillation, m)?)?;
     m.add_function(wrap_pyfunction!(experiments::simulation::collision::do_collision, m)?)?;
+    m.add_function(wrap_pyfunction!(experiments::simulation::stringmotion0::struct_stringmotion0, m)?)?;
     register_experiment(m)?;
     register_data(m)?;
     Ok(())

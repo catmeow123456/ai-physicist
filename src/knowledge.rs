@@ -11,6 +11,7 @@ use crate::experiments::simulation::{
     collision::struct_collision,
     motion::struct_motion,
     motion0::struct_motion0,
+    stringmotion0::struct_stringmotion0,
 };
 use crate::expdata::{
     expdata::{ExpData, Diff},
@@ -58,6 +59,7 @@ impl Knowledge {
                 (r!("collision"), struct_collision()),
                 (r!("motion"), struct_motion()),
                 (r!("motion0"), struct_motion0()),
+                (r!("stringmotion0"), struct_stringmotion0())
             ]),
             concepts: HashMap::new(),
             objects: HashMap::new(),
