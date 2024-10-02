@@ -84,6 +84,7 @@ class Knowledge:
         将当前知识库保存到文件中。
         """
         self.remove_useless_objects()
+        print("Saving knowledge to", filename)
         with open(filename, "w") as f:
             f.write(str(self.K))
             json.dump({

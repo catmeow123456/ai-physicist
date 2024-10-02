@@ -1,22 +1,17 @@
 [Knowledge]
-Obj_01 := [Objstructure] obj_type: MassPoint, attribute: [m,e,]
+Obj_01 := [Objstructure] obj_type: MassPoint, attribute: [e,m,]
 Attribute:
-| m: [Parastructure] value: Some(2.2593632651587603), range: (1.0, 5.0)
-| e: [Parastructure] value: Some(3.562152837291148e-9), range: (0.0, 1e-8).
+| e: [Parastructure] value: Some(9.169250500423869e-9), range: (0.0, 1e-8)
+| m: [Parastructure] value: Some(1.1564769566375297), range: (1.0, 5.0).
 C_01 := (1->MassPoint) (2->Clock) |- D[posx[1]]/D[t[2]]
-C_02 := (1->Clock) (2->MassPoint) |- D[t[1]]/D[posx[2]]
-C_03 := (1->MassPoint) (2->Clock) |- D[C_01[1, 2]]/D[t[2]]
-C_04 := (1->Clock) (2->MassPoint) |- D[t[1]]/D[C_01[2, 1]]
-C_05 := (1->Spring) (2->Clock) |- D[posr[1]]/D[t[2]]
-C_06 := (1->Spring) (2->Clock) |- D[posl[1]]/D[t[2]]
-C_07 := (1->Clock) (2->Spring) |- D[t[1]]/D[posr[2]]
-C_08 := (1->Clock) (2->Spring) |- D[t[1]]/D[posl[2]]
-C_12 := [#stringmotion0 (1->Spring) |- (posl[1] - posr[1])]
-C_19 := (1->MassPoint) (2->Clock) |- D[C_03[1, 2]]/D[posx[1]]
-C_20 := (1->MassPoint) (2->Clock) (3->Spring) |- D[C_03[1, 2]]/D[posr[3]]
-C_22 := (1->MassPoint) (2->Clock) |- D[posx[1]]/D[C_03[1, 2]]
-C_36 := [#oscillation (2->Spring) [1->Obj_01] |- D[C_03[1, 0]]/D[posx[1]]]
-C_37 := [#oscillation (1->MassPoint) |- (C_36[2] / D[C_03[1, 0]]/D[posx[1]])]
-C_38 := (1->Spring) |- (posl[1] - posr[1] - C_12[1])
+C_02 := (1->MassPoint) (2->Clock) |- D[C_01[1, 2]]/D[t[2]]
+C_03 := (1->Spring) (2->Clock) |- D[posl[1]]/D[t[2]]
+C_04 := (1->Spring) (2->Clock) |- D[posr[1]]/D[t[2]]
+C_05 := (1->Spring) |- (posr[1] - posl[1])
+C_06 := [#stringmotion0 (1->Spring) |- (posr[1] - posl[1])]
+C_08 := (1->MassPoint) (2->Clock) (3->Spring) |- D[C_02[1, 2]]/D[posr[3]]
+C_09 := (1->MassPoint) (2->Spring) |- (posx[1] - posr[2])
+C_10 := [#oscillation (2->Spring) [1->Obj_01] |- D[C_02[1, 0]]/D[posr[2]]]
+C_11 := [#oscillation (1->MassPoint) |- (C_10[2] / D[C_02[1, 0]]/D[posr[2]])]
 [end]
-{"concept_id": 38, "conclusion_id": 0, "object_id": 1}
+{"concept_id": 11, "conclusion_id": 0, "object_id": 1}

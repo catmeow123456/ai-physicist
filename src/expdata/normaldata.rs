@@ -66,6 +66,18 @@ impl NormalData {
         let arr2 = Array2::from_elem((repeat_time, n), mean);
         Self::new(add_errors(&arr2, std))
     }
+    #[staticmethod]
+    pub fn from_const_data(content: &ConstData, n: usize, repeat_time: usize) -> Self {
+        match content {
+            ConstData::Data { mean, std } => {
+                let arr = add_errors(&Array1::from_elem(repeat_time, *mean), *std);
+                Self::new(Array2::from_shape_fn((repeat_time, n), |(i, _)| arr[i]))
+            },
+            ConstData::Exact { value } => {
+                Self::new(Array2::from_elem((repeat_time, n), *value as f64))
+            },
+        }
+    }
     #[getter]
     fn data(&self) -> PyResult<Vec<Vec<f64>> > {
         let mut res = Vec::new();

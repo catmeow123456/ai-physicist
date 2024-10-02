@@ -245,12 +245,7 @@ impl ExpData {
                 assert_eq!(repeat_time, content.repeat_time);
                 content.clone()
             },
-            ExpData::Const { content } => {
-                match content {
-                    ConstData::Data { mean, std } => NormalData::from_elem(*mean, *std, n, repeat_time),
-                    ConstData::Exact { value } => NormalData::from_elem(*value as f64, 0.0, n, repeat_time),
-                }
-            },
+            ExpData::Const { content } => NormalData::from_const_data(content, n, repeat_time),
             ExpData::Zero { } => NormalData::zero(n, repeat_time),
             ExpData::Err { } => panic!("Cannot convert ErrData to NormalData"),
         }

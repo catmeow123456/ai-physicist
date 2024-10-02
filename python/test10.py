@@ -27,6 +27,5 @@ def step_two():
     theorist = Theorist.read_from_file("data/a_knowledge.txt", "data/a_memory.json")
     theorist.theoretical_analysis("oscillation", ver='ver3')    
 
-# step_one()
-
+step_one()
 step_two()

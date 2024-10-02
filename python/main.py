@@ -83,6 +83,7 @@ class Theorist:
         assert (exp_name in self.specific)
         spm: SpecificModel = self.specific[exp_name]
         data_info: DataStruct = spm.pick_relevant_exprs()
+        conclusion_before = set(spm.memory.fetch_conclusions.keys())
         # list_datainfo(data_info)
         if ver is None:
             res: List[Tuple[Exp, ExpData]] = search_relations(data_info)
@@ -101,12 +102,16 @@ class Theorist:
                 name = spm.append_conserved_exp(expr)
             else:
                 raise ValueError("search_relations(data_info) returned an unexpected result")
-            if name is not None:
-                expression: Expression = self.general.generalize(exp_name, expr)
-                self.register_concept(expression.unwrap_concept)
         # 去除冗余关系
         print(f"Reducing {len(spm.memory.fetch_conclusions)} conclusions")
         spm.reduce_conclusions(debug=False)
+        # 注册概念
+        conclusion_after = set(spm.memory.fetch_conclusions.keys())
+        conclusion_diff = conclusion_after - conclusion_before
+        for name in conclusion_diff:
+            expr: Exp = spm.memory.fetch_conclusions[name].unwrap_exp
+            expression: Expression = self.general.generalize(exp_name, expr)
+            self.register_concept(expression.unwrap_concept)
         # 将 intrinsic_buffer 中的内禀概念注册到知识库中
         self.register_intrinsics(spm.intrinsic_buffer)
         spm.intrinsic_buffer.clear()
