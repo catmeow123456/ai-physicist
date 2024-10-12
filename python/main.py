@@ -76,14 +76,14 @@ class Theorist:
         if name is not None:
             print("\033[1m" + f"Registered New Concept: {name} = {intrinsic}" + "\033[0m")
             for key in self.specific:
-                self.specific[key].memory.register_intrinsic(intrinsic, name)
+                self.specific[key].memory.register_action(name)
         return name
 
     def theoretical_analysis(self, exp_name: str, ver: str | None = None):
         assert (exp_name in self.specific)
         spm: SpecificModel = self.specific[exp_name]
         data_info: DataStruct = spm.pick_relevant_exprs()
-        conclusion_before = set(spm.memory.fetch_conclusions.keys())
+        conclusion_before = set(spm.conclusions.keys())
         # list_datainfo(data_info)
         if ver is None:
             res: List[Tuple[Exp, ExpData]] = search_relations(data_info)
@@ -103,18 +103,29 @@ class Theorist:
             else:
                 raise ValueError("search_relations(data_info) returned an unexpected result")
         # 去除冗余关系
-        print(f"Reducing {len(spm.memory.fetch_conclusions)} conclusions")
+        print(f"Reducing {len(spm.conclusions.keys())} conclusions")
         spm.reduce_conclusions(debug=False)
         # 注册概念
-        conclusion_after = set(spm.memory.fetch_conclusions.keys())
+        rewards = {}
+        conclusion_after = set(spm.conclusions.keys())
         conclusion_diff = conclusion_after - conclusion_before
         for name in conclusion_diff:
-            expr: Exp = spm.memory.fetch_conclusions[name].unwrap_exp
+            expr: Exp = spm.conclusions.get(name).unwrap_exp
             expression: Expression = self.general.generalize(exp_name, expr)
             self.register_concept(expression.unwrap_concept)
+            actions: Set[str] = {i.name for i in expr.all_atoms}
+            for action in actions: # 枚举表达式的原子，计算 action reward
+                rewards[action] = rewards.get(action, 0) + 1 / len(actions)
         # 将 intrinsic_buffer 中的内禀概念注册到知识库中
         self.register_intrinsics(spm.intrinsic_buffer)
+        for key in spm.intrinsic_buffer:
+            cqinfo = spm.intrinsic_buffer[key]
+            actions: Set[str] = {i.name for i in cqinfo.exp.all_atoms}
+            for action in actions:
+                rewards[action] = rewards.get(action, 0) + 1 / len(actions)
         spm.intrinsic_buffer.clear()
+        # update reward to spm.memory
+        spm.memory.update_rewards(rewards)
 
     def register_intrinsics(self, CQinfos: Dict[str, ConservedInfo]):
         for name, info in CQinfos.items():
@@ -170,7 +181,7 @@ class Theorist:
         if name is not None:
             tqdm.write(f"\033[1m" + f"Registered New Concept: {name} = {concept}" + f"\033[0m")
             for key in self.specific:
-                self.specific[key].memory.register_concept(concept, name)
+                self.specific[key].memory.register_action(name)
 
 
 def work_at_exp(knowledge: Knowledge, exp_name: str) -> ExpStructure:

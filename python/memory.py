@@ -1,4 +1,5 @@
-from typing import Dict, Any
+from typing import Dict, Any, List
+from ucb import nsUCB
 from interface import (
     AtomExp, Exp, Knowledge,
     Proposition, Concept, Intrinsic, DataStruct, ExpStructure
@@ -15,77 +16,36 @@ class Memory:
     它会根据记忆联想到与实验 experiment 相关的一些特定的原子表达式。
     后续会接入神经网络来调节这一部分。
     """
-    concept: Dict[str, Concept]
-    intrinsic: Dict[str, Intrinsic]
-    conclusion: Dict[str, Proposition]
-    conclusion_id: int
+    actions: Dict[str, nsUCB]
 
     def __init__(self):
-        self.concept = {}
-        self.intrinsic = {}
-        self.conclusion = {}
-        self.conclusion_id = 0
+        self.actions = {}
 
     def to_json(self):
-        return {
-            "concept": dict_to_json(self.concept),
-            "intrinsic": dict_to_json(self.intrinsic),
-            "conclusion": dict_to_json(self.conclusion),
-            "conclusion_id": self.conclusion_id
-        }
+        return {key: value.to_json() for key, value in self.actions.items()}
 
     def from_json(data: Dict[str, Any]) -> "Memory":
         obj = object.__new__(Memory)
-        obj.concept = {k: Concept(v) for k, v in data["concept"].items()}
-        obj.intrinsic = {k: Intrinsic(v) for k, v in data["intrinsic"].items()}
-        obj.conclusion = {k: Proposition(v) for k, v in data["conclusion"].items()}
-        obj.conclusion_id = data["conclusion_id"]
+        obj.actions = {key: nsUCB.from_json(value) for key, value in data.items()}
         return obj
 
-    def register_concept(self, concept: Concept, name: str):
-        self.concept[name] = concept
-
-    def register_intrinsic(self, intrinsic: Intrinsic, name: str):
-        self.intrinsic[name] = intrinsic
-
-    def register_conclusion(self, prop: Proposition):
-        self.conclusion_id += 1
-        name = f"P{self.conclusion_id}"
-        self.conclusion[name] = prop
-        return name
-
-    def remove_conclusion(self, name: str):
-        if name in self.conclusion:
-            del self.conclusion[name]
-
-    @property
-    def fetch_concepts(self):
-        return self.concept.keys()
-
-    @property
-    def fetch_intrinsics(self):
-        return self.intrinsic.keys()
-
-    @property
-    def fetch_conclusions(self) -> Dict[str, Proposition]:
-        return self.conclusion
-
-    def pick_relevant_exprs(self, experiment: ExpStructure, knowledge: Knowledge) -> DataStruct:
+    def register_action(self, name: str, info: str = None):
         """
-        根据记忆联想到与 experiment 相关的一些表达式
+        新注册一个动作
         """
-        DS = DataStruct.empty()
-        for atom_exp in experiment.original_data:
-            DS.add_data(atom_exp, knowledge.eval(Exp.Atom(atom_exp), experiment))
-        for key in self.fetch_concepts:
-            specific_exprs: list[AtomExp] = knowledge.specialize_concept(key, experiment.exp_name)
-            for atom_exp in specific_exprs:
-                DS.add_data(atom_exp,
-                            knowledge.eval(Exp.Atom(atom_exp), experiment))
-        for key in self.fetch_intrinsics:
-            specific_exprs: list[AtomExp] = knowledge.specialize_concept(key, experiment.exp_name)
-            for atom_exp in specific_exprs:
-                DS.add_data(atom_exp,
-                            knowledge.eval(Exp.Atom(atom_exp), experiment))
-        # print('DataKeys:',[str(i) for i in DS.data_keys])
-        return DS
+        self.actions[name] = nsUCB(info)
+
+    def choose_actions(self, num: int) -> List[str]:
+        """
+        以 ub 值为排序，选择最优的 num 个动作
+        """
+        v = [(i, self.actions[i].ucb()) for i in self.actions]
+        v.sort(key=lambda x: x[1], reverse=True)
+        return [i[0] for i in v[:num]]
+
+    def update_rewards(self, rewards: Dict[str, float]):
+        """
+        选定的动作获得了回报，更新每个动作的 nsUCB。
+        """
+        for key, item in self.actions.items():
+            item.update(rewards.get(key, None))

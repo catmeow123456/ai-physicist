@@ -1,13 +1,14 @@
 import sympy as sp
 
 from tqdm import tqdm
-from typing import List, Tuple, Dict, Set, Any
+from typing import List, Tuple, Dict, Set, Any, Literal
+from _collections_abc import Iterator
+from memory import dict_to_json, Memory
 from interface import (
-    Knowledge, ExpData, DataStruct,
-    ExpStructure, Exp, AtomExp, Proposition, MeasureType,
+    Knowledge, ExpData, DataStruct, ExpStructure,
+    Exp, AtomExp, Proposition, Concept, MeasureType,
     KeyValueHashed, is_conserved_const_list
 )
-from memory import Memory
 from diffalg.diffalg import DifferentialRing, diffalg
 
 
@@ -64,6 +65,104 @@ class ConservedInfo:
         return res
 
 
+class ConclusionSet:
+    """
+    ConclusionSet 类是一个用来存储一组结论的类
+    """
+    knowledge: Knowledge
+    conclusion: Dict[str, Proposition]
+    conclusion_id: int
+    zero_list: Dict[str, ZeroInfo]
+    conserved_list: Dict[str, ConservedInfo]
+
+    def __init__(self, knowledge: Knowledge):
+        self.knowledge = knowledge
+        self.conclusion = {}
+        self.conclusion_id = 0
+        self.zero_list = {}
+        self.conserved_list = {}
+
+    def __iter__(self) -> Iterator[str]:
+        return iter(self.conclusion)
+
+    def to_json(self) -> Dict[str, Any]:
+        return {
+            "conclusion": dict_to_json(self.conclusion),
+            "conclusion_id": self.conclusion_id,
+            "conserved_list": [item.to_json() for item in self.conserved_list.values()],
+            "zero_list": [item.to_json() for item in self.zero_list.values()],
+        }
+
+    def load_json(self, data: Dict[str, Any]):
+        self.conclusion = {k: Proposition(v) for k, v in data["conclusion"].items()}
+        self.conclusion_id = data["conclusion_id"]
+        self.conserved_list = {}
+        for item in data["conserved_list"]:
+            info = ConservedInfo.from_json(item)
+            self.conserved_list[info.name] = info
+        self.zero_list = {}
+        for item in data["zero_list"]:
+            info = ZeroInfo.from_json(item)
+            self.zero_list[info.name] = info
+
+    def keys(self):
+        return self.conclusion.keys()
+
+    def values(self):
+        return self.conclusion.values()
+
+    def get(self, key: str) -> Proposition:
+        return self.conclusion.get(key)
+
+    def remove_conclusion(self, name: str):
+        if name in self.conclusion:
+            del self.conclusion[name]
+        if name in self.zero_list:
+            del self.zero_list[name]
+        if name in self.conserved_list:
+            del self.conserved_list[name]
+
+    def __register_conclusion(self, prop: Proposition):
+        self.conclusion_id += 1
+        name = f"P{self.conclusion_id}"
+        self.conclusion[name] = prop
+        return name
+
+    def print_conclusions(self):
+        for name, prop in self.conclusion.items():
+            print(name, prop)
+
+    def exp_hashed(self, exp: Exp) -> KeyValueHashed:
+        return self.knowledge.K.eval_exp_keyvaluehashed(exp)
+
+    def already_exist(self, exp: Exp, exp_type: Literal["zero", "const"]) -> bool:
+        hashed_value = self.exp_hashed(exp)
+        match exp_type:
+            case "zero":
+                if hashed_value.is_none or hashed_value.is_zero:
+                    return True
+                for _, info in self.zero_list.items():
+                    if self.exp_hashed(info.exp) == hashed_value:
+                        return True
+            case "const":
+                if hashed_value.is_none or hashed_value.is_const:
+                    return True
+                for _, info in self.conserved_list.items():
+                    if self.exp_hashed(info.exp) == hashed_value:
+                        return True
+        return False
+
+    def append_conserved_exp(self, conserved_exp: Exp, info: ConservedInfo) -> str:
+        info.name = self.__register_conclusion(Proposition.IsConserved(conserved_exp))
+        self.conserved_list[info.name] = info
+        return info.name
+
+    def append_zero_exp(self, zero_exp: Exp, info: ZeroInfo) -> str:
+        info.name = self.__register_conclusion(Proposition.IsZero(zero_exp))
+        self.zero_list[info.name] = info
+        return info.name
+
+
 class SpecificModel:
     """
     SpecificModel 类是专注于特定实验的物理学家模型，
@@ -78,8 +177,7 @@ class SpecificModel:
     experiment_control: Dict[int, List[ExpStructure]]
     # 保持其他实验对象不变，改变实验对象 id 并进行实验获得的结果存储在 experiment_control[id] 中
     # id = -1 代表保持所有实验对象不变，只改变实验控制参数
-    conserved_list: Dict[str, ConservedInfo]
-    zero_list: Dict[str, ZeroInfo]
+    conclusions: ConclusionSet
     intrinsic_buffer: Dict[str, ConservedInfo]
     # 保证 conserved_list 与 zero_list 对应了 memory.conclusion 中的结论
 
@@ -94,36 +192,22 @@ class SpecificModel:
         self.experiment.random_settings()
         self.experiment.collect_expdata(MeasureType.default())
         self.experiment_control = {}
-
-        self.conserved_list = {}
-        self.zero_list = {}
+        for concept in self.experiment.original_concept:
+            self.memory.register_action(concept.atomexp_name, str(concept))
+        self.conclusions = ConclusionSet(self.general)
         self.intrinsic_buffer = {}
 
     def to_json(self) -> Dict[str, str]:
         return {
             "exp_name": self.exp_name,
+            "conclusions": self.conclusions.to_json(),
             "memory": self.memory.to_json(),
-            "conserved_list": [
-                item.to_json() for item in self.conserved_list.values()
-            ],
-            "zero_list": [
-                item.to_json() for item in self.zero_list.values()
-            ],
         }
 
     def load_json(self, data: Dict[str, Any]):
+        assert data["exp_name"] == self.exp_name
         self.memory = Memory.from_json(data["memory"])
-        self.conserved_list = {}
-        for item in data["conserved_list"]:
-            info = ConservedInfo.from_json(item)
-            self.conserved_list[info.name] = info
-        self.zero_list = {}
-        for item in data["zero_list"]:
-            info = ZeroInfo.from_json(item)
-            self.zero_list[info.name] = info
-
-    def exp_hashed(self, exp: Exp) -> KeyValueHashed:
-        return self.general.K.eval_exp_keyvaluehashed(exp)
+        self.conclusions.load_json(data["conclusions"])
 
     # 待修改（下面的所有函数都处于最 naive 的实现，之后需要添加更多的逻辑来进行优化）
 
@@ -133,35 +217,21 @@ class SpecificModel:
         这些 specific 的原子表达式由概念库中的概念 specialize 生成，以备后续组合出更复杂的表达式。
         TODO：需要有方向性的智能的随机选取，且这种随机选取方式是可学习的
         """
-        return self.memory.pick_relevant_exprs(self.experiment, self.general)
-
-    def append_conserved_exp(self, conserved_exp: Exp) -> str:
-        hashed_value = self.exp_hashed(conserved_exp)
-        if hashed_value.is_none or hashed_value.is_const:
-            # is_const 代表这个表达式是平凡的守恒量，例如 m[1] * m[2] / k[3], -1 等等
-            # is_none 是极个别特殊情况，代表在计算哈希值时出现了无法计算的情况。
-            return None
-        # print(f"conserved exp = {conserved_exp} hashed_value = {hashed_value.get_data()}")
-        for _, info in self.conserved_list.items():
-            if self.exp_hashed(info.exp) == hashed_value:
-                # print(f"exp = {info.exp}, conserved_exp = {conserved_exp}")
-                # print(f"exp = {self.exp_hashed(info.exp).data}, conserved_exp = {hashed_value.data}")
-                return None
-        name = self.memory.register_conclusion(Proposition.IsConserved(conserved_exp))
-        self.conserved_list[name] = self.make_conserved_info(name, conserved_exp)
-        return name
-
-    def append_zero_exp(self, zero_exp: Exp) -> str:
-        hashed_value = self.exp_hashed(zero_exp)
-        if hashed_value.is_none or hashed_value.is_zero:
-            # is_zero 代表这个表达式是平凡的零量，例如 m[1] - m[1] 等等
-            return None
-        for _, info in self.zero_list.items():
-            if self.exp_hashed(info.exp) == hashed_value:
-                return None
-        name = self.memory.register_conclusion(Proposition.IsZero(zero_exp))
-        self.zero_list[name] = self.make_zero_info(name, zero_exp)
-        return name
+        # return self.memory.pick_relevant_exprs(self.experiment, self.general)
+        DS = DataStruct.empty()
+        actions = self.memory.choose_actions(6)
+        for action in actions:
+            info = self.memory.actions[action].info
+            if info is not None:
+                list_exps: list[Exp] = self.general.specialize(concept=info, exp_name=self.exp_name)
+                specific_exprs: list[AtomExp] = [i.unwrap_atom for i in list_exps]
+            else:
+                specific_exprs: list[AtomExp] = self.general.specialize_concept(concept_name=action, exp_name=self.exp_name)
+            for atom_exp in specific_exprs:
+                DS.add_data(atom_exp,
+                            self.general.eval(Exp.Atom(atom_exp), self.experiment))
+        # print('DataKeys:',[str(i) for i in DS.data_keys])
+        return DS
 
     def conclusion_raw_complexity(self, prop: Proposition) -> int:
         """
@@ -173,20 +243,20 @@ class SpecificModel:
         """
         这个函数的目的是将当前实验中的所有的 conserved 和 zero 的表达式整理并取 minimal 表示
         """
-        conclusions: Dict[str, Proposition] = self.memory.fetch_conclusions
-        name_list: List[str] = list(conclusions.keys())
-        name_list = sorted(name_list, key=lambda x: self.conclusion_raw_complexity(conclusions[x]))
+        name_list: List[str] = list(self.conclusions.keys())
+        name_list = sorted(name_list,
+                           key=lambda x: self.conclusion_raw_complexity(self.conclusions.get(x)))
         # 第一步：提取 DifferentialRing
         # all_symbols = set()
         all_normal_symbols = set()
         all_intrinsic_symbols = set()
         all_functions = set()
-        for name, info in self.conserved_list.items():
+        for name, info in self.conclusions.conserved_list.items():
             if info.is_intrinsic:
                 all_intrinsic_symbols.add(sp.Symbol(name))
             else:
                 all_normal_symbols.add(sp.Symbol(name))
-        for value in conclusions.values():
+        for value in self.conclusions.values():
             all_intrinsic_symbols |= self._sympy_of_raw_defi(value.unwrap_exp).atoms(sp.Symbol)
             all_functions |= self._sympy_of_raw_defi(value.unwrap_exp).atoms(sp.Function)
         argument = sp.Symbol("t_0")
@@ -211,7 +281,7 @@ class SpecificModel:
         subs_dict = dict()
         inverse_dict = dict()
         for name in tqdm(name_list):
-            prop: Proposition = conclusions[name]
+            prop: Proposition = self.conclusions.get(name)
             sp_expr = sp.simplify(
                 self._sympy_of_raw_defi(prop.unwrap_exp)
                 .subs(subs_dict, simultaneous=True)
@@ -221,7 +291,7 @@ class SpecificModel:
                 if sp_expr.is_Function:
                     subs_dict[sp_expr] = sp.Symbol(sp_expr.name)
                     inverse_dict[sp.Symbol(sp_expr.name)] = sp_expr
-                info: ConservedInfo = self.conserved_list.get(name)
+                info: ConservedInfo = self.conclusions.conserved_list.get(name)
                 flag = info.is_intrinsic
                 diff_eq = sp.diff(sp_expr, argument).as_numer_denom()[0]
                 reduce_diff_eq_result: sp.Expr = ideal.gb[0].reduce(diff_eq)
@@ -238,8 +308,7 @@ class SpecificModel:
                             else:
                                 ideal = insert_to_ideal_both(ideal, sp_expr - sp.Symbol(name), sp.Symbol(name))
                                 if_print = True
-                        self.memory.remove_conclusion(name)
-                        del self.conserved_list[name]
+                        self.conclusions.remove_conclusion(name)
                     else:
                         ideal = insert_to_ideal_both(ideal, sp_expr - sp.Symbol(name), sp.Symbol(name))
                         if_print = True
@@ -251,8 +320,7 @@ class SpecificModel:
             elif prop.prop_type == "IsZero":
                 new_eq = sp_expr.as_numer_denom()[0]
                 if ideal.reduce(new_eq).is_zero:
-                    self.memory.remove_conclusion(name)
-                    del self.zero_list[name]
+                    self.conclusions.remove_conclusion(name)
                 else:
                     if new_eq.func == sp.Add and len(new_eq.args) == 2:
                         atom1 = new_eq.args[0]
@@ -333,12 +401,22 @@ class SpecificModel:
         obj.is_intrinsic, obj.relevant_id = self.check_intrinsic(exp)
         return obj
 
+    def append_conserved_exp(self, conserved_exp: Exp) -> str | None:
+        if self.conclusions.already_exist(conserved_exp, "const"):
+            return None
+        return self.conclusions.append_conserved_exp(conserved_exp, self.make_conserved_info(None, conserved_exp))
+
+    def append_zero_exp(self, zero_exp: Exp) -> str | None:
+        if self.conclusions.already_exist(zero_exp, "zero"):
+            return None
+        return self.conclusions.append_zero_exp(zero_exp, self.make_zero_info(None, zero_exp))
+
     def print_conclusion(self):
         print(f"Exp's name = {self.exp_name}, conclusions:")
-        self.memory.print_conclusions()
+        self.conclusions.print_conclusions()
 
     def print_full_conclusion(self):
-        for name, exp in self.zero_list:
+        for name, exp in self.conclusions.zero_list:
             print(name, "zero:", exp, "=", self.general.raw_definition_exp(exp))
         for name, exp in self.conserved_list:
             print(name, "conserved:", exp, "=", self.general.raw_definition_exp(exp))
@@ -350,9 +428,9 @@ class SpecificModel:
         ))
 
     def print_sympy_conclusion(self):
-        for name, info in self.zero_list.items():
+        for name, info in self.conclusions.zero_list.items():
             print(name, "zero:", info.exp, "=", self._sympy_of_raw_defi(info.exp))
-        for name, info in self.conserved_list.items():
+        for name, info in self.conclusions.conserved_list.items():
             print(name, "conserved:", info.exp, "=", self._sympy_of_raw_defi(info.exp))
     def list_sympy_conclusion(self) -> List[Tuple[str, sp.Expr]]:
         res = []

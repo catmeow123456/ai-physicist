@@ -179,8 +179,12 @@ class Knowledge:
             return Expression.Concept(self.K.generalize(exp, exp_name))
         except:
             print("Failed to generalize", exp_name, exp)
-    def specialize(self, concept: str, exp_name: str) -> List[Expression]:
-        return self.K.specialize(Concept(concept), exp_name)
+    def specialize(self, concept: Concept | str, exp_name: str) -> List[Exp]:
+        try:
+            concept: Concept = Concept(concept) if isinstance(concept, str) else concept
+            return self.K.specialize(concept, exp_name)
+        except:
+            print("Failed to specialize", concept, exp_name)
     def fetch_concept_by_name(self, concept_name: str) -> Concept:
         return self.K.fetch_concept_by_name(concept_name).unwrap_concept
     def specialize_concept(self, concept_name: str, exp_name: str) -> List[AtomExp]:

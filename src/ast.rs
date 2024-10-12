@@ -144,6 +144,7 @@ impl Exp {
     fn copy(&self) -> Self {
         self.clone()
     }
+    #[getter]#[inline]
     fn unwrap_atom(&self) -> AtomExp {
         match self {
             Exp::Atom {atom} => *atom.clone(),
@@ -168,6 +169,25 @@ impl Exp {
             Exp::Atom {atom: Box::new(AtomExp::Variable {name})}
         } else {
             Exp::Atom {atom: Box::new(AtomExp::VariableIds {name, ids})}
+        }
+    }
+    #[getter]
+    pub fn get_all_atoms(&self) -> HashSet<AtomExp> {
+        match self {
+            Exp::Number {num: _} => HashSet::new(),
+            Exp::Atom {atom} => HashSet::from([*atom.clone()]),
+            Exp::UnaryExp {op: _, exp} => exp.get_all_atoms(),
+            Exp::BinaryExp {left, op: _, right} => {
+                let left = left.get_all_atoms();
+                let right = right.get_all_atoms();
+                left.union(&right).cloned().collect()
+            },
+            Exp::DiffExp {left, right, ord: _} => {
+                let left = left.get_all_atoms();
+                let right = right.get_all_atoms();
+                left.union(&right).cloned().collect()
+            },
+            Exp::ExpWithMeasureType {exp, measuretype: _} => exp.get_all_atoms(),
         }
     }
     pub fn subst(&self, oid: i32, nid: i32) -> Self{

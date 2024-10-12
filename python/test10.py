@@ -1,7 +1,7 @@
 from main import Theorist
 
 def step_one():
-    theorist = Theorist()
+    theorist = Theorist.read_from_file("data/a_knowledge.txt", "data/a_memory.json")
 
     theorist.theoretical_analysis("motion0", ver='trivial')
     theorist.specific["motion0"].print_sympy_conclusion()
@@ -28,4 +28,6 @@ def step_two():
     theorist.theoretical_analysis("oscillation", ver='ver3')    
 
 step_one()
-step_two()
+step_one()
+step_one()
+# step_two()
