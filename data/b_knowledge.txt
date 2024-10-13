@@ -14,4 +14,4 @@ C_09 := (1->MassPoint) (2->Spring) |- (posx[1] - posr[2])
 C_10 := [#oscillation (2->Spring) [1->Obj_01] |- D[posr[2]]/D[C_02[1, 0]]]
 C_11 := [#oscillation (1->MassPoint) |- (C_10[2] / D[posr[2]]/D[C_02[1, 0]])]
 [end]
-{"concept_id": 11, "conclusion_id": 0, "object_id": 1}
+{"concept_id": 14, "conclusion_id": 0, "object_id": 2}

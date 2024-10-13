@@ -165,8 +165,7 @@ class ConclusionSet:
 
 class SpecificModel:
     """
-    SpecificModel 类是专注于特定实验的物理学家模型，
-    它包括一个 knowledge 对象，存储了有关这个实验的知识；
+    SpecificModel 类是掌管特定实验和实验对照组的物理学家模型，
     一个 experiment 对象，存储了这个实验的具体信息和某个随机参数下的实验结果；
     以及一个 experiment_control 字典，是相对于 experiment 的实验对照组，表达了在控制变量的条件下做实验获得的新结果。
     """
@@ -187,52 +186,33 @@ class SpecificModel:
         """
         self.exp_name = exp_name
         self.general = general
-        self.memory = Memory()
         self.experiment = self.general.fetch_expstruct(exp_name)
         self.experiment.random_settings()
         self.experiment.collect_expdata(MeasureType.default())
         self.experiment_control = {}
-        for concept in self.experiment.original_concept:
-            self.memory.register_action(concept.atomexp_name, str(concept))
         self.conclusions = ConclusionSet(self.general)
         self.intrinsic_buffer = {}
+
+    def generate_data_struct(self, exprs: List[AtomExp]) -> DataStruct:
+        """
+        这个函数的目的是根据一组原子表达式在 self.experiment 下求值生成一个 DataStruct 对象
+        """
+        DS = DataStruct.empty()
+        for atom_exp in exprs:
+            DS.add_data(atom_exp, self.general.eval(Exp.Atom(atom_exp), self.experiment))
+        return DS
 
     def to_json(self) -> Dict[str, str]:
         return {
             "exp_name": self.exp_name,
             "conclusions": self.conclusions.to_json(),
-            "memory": self.memory.to_json(),
         }
 
     def load_json(self, data: Dict[str, Any]):
         assert data["exp_name"] == self.exp_name
-        self.memory = Memory.from_json(data["memory"])
         self.conclusions.load_json(data["conclusions"])
 
     # 待修改（下面的所有函数都处于最 naive 的实现，之后需要添加更多的逻辑来进行优化）
-
-    def pick_relevant_exprs(self) -> DataStruct:
-        """
-        这个函数的目的是选取当前实验中的一些 specific 的原子表达式 （ 例如 posx[1], v[2] 等等 ） 。
-        这些 specific 的原子表达式由概念库中的概念 specialize 生成，以备后续组合出更复杂的表达式。
-        TODO：需要有方向性的智能的随机选取，且这种随机选取方式是可学习的
-        """
-        # return self.memory.pick_relevant_exprs(self.experiment, self.general)
-        DS = DataStruct.empty()
-        actions = self.memory.choose_actions(6)
-        for action in actions:
-            info = self.memory.actions[action].info
-            if info is not None:
-                list_exps: list[Exp] = self.general.specialize(concept=info, exp_name=self.exp_name)
-                specific_exprs: list[AtomExp] = [i.unwrap_atom for i in list_exps]
-            else:
-                specific_exprs: list[AtomExp] = self.general.specialize_concept(concept_name=action, exp_name=self.exp_name)
-            for atom_exp in specific_exprs:
-                DS.add_data(atom_exp,
-                            self.general.eval(Exp.Atom(atom_exp), self.experiment))
-        # print('DataKeys:',[str(i) for i in DS.data_keys])
-        return DS
-
     def conclusion_raw_complexity(self, prop: Proposition) -> int:
         """
         这个函数的目的是计算一个结论（ conclusion ）的 rawdefinition 的复杂度，以便在 reduce_conclusions 函数中进行排序

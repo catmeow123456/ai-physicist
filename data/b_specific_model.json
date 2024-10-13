@@ -1,0 +1,129 @@
+{
+    "motion0": {
+        "exp_name": "motion0",
+        "conclusions": {
+            "conclusion": {
+                "P1": "D[posx[1]]/D[t[0]] is conserved"
+            },
+            "conclusion_id": 2,
+            "conserved_list": [
+                [
+                    "motion0",
+                    "P1",
+                    "D[posx[1]]/D[t[0]]",
+                    false,
+                    []
+                ]
+            ],
+            "zero_list": []
+        }
+    },
+    "stringmotion0": {
+        "exp_name": "stringmotion0",
+        "conclusions": {
+            "conclusion": {
+                "P1": "D[posr[1]]/D[t[0]] is conserved",
+                "P4": "(posr[1] - posl[1]) is conserved"
+            },
+            "conclusion_id": 7,
+            "conserved_list": [
+                [
+                    "stringmotion0",
+                    "P1",
+                    "D[posr[1]]/D[t[0]]",
+                    false,
+                    []
+                ],
+                [
+                    "stringmotion0",
+                    "P4",
+                    "(posr[1] - posl[1])",
+                    true,
+                    [
+                        1
+                    ]
+                ]
+            ],
+            "zero_list": []
+        }
+    },
+    "oscillation": {
+        "exp_name": "oscillation",
+        "conclusions": {
+            "conclusion": {
+                "P1": "posl[2] is conserved",
+                "P2": "D[posr[2]]/D[C_02[1, 0]] is conserved",
+                "P7": "(posx[1] - posr[2]) is zero"
+            },
+            "conclusion_id": 85,
+            "conserved_list": [
+                [
+                    "oscillation",
+                    "P1",
+                    "posl[2]",
+                    false,
+                    []
+                ],
+                [
+                    "oscillation",
+                    "P2",
+                    "D[posr[2]]/D[C_02[1, 0]]",
+                    true,
+                    [
+                        1,
+                        2
+                    ]
+                ]
+            ],
+            "zero_list": [
+                [
+                    "oscillation",
+                    "P7",
+                    "(posx[1] - posr[2])"
+                ]
+            ]
+        }
+    },
+    "collision": {
+        "exp_name": "collision",
+        "conclusions": {
+            "conclusion": {
+                "P1": "D[C_01[2, 0]]/D[t[0]] is zero",
+                "P2": "D[C_01[1, 0]]/D[t[0]] is zero"
+            },
+            "conclusion_id": 8,
+            "conserved_list": [],
+            "zero_list": [
+                [
+                    "collision",
+                    "P1",
+                    "D[C_01[2, 0]]/D[t[0]]"
+                ],
+                [
+                    "collision",
+                    "P2",
+                    "D[C_01[1, 0]]/D[t[0]]"
+                ]
+            ]
+        }
+    },
+    "motion": {
+        "exp_name": "motion",
+        "conclusions": {
+            "conclusion": {
+                "P1": "D[C_01[1, 0]]/D[t[0]] is conserved"
+            },
+            "conclusion_id": 2,
+            "conserved_list": [
+                [
+                    "motion",
+                    "P1",
+                    "D[C_01[1, 0]]/D[t[0]]",
+                    false,
+                    []
+                ]
+            ],
+            "zero_list": []
+        }
+    }
+}

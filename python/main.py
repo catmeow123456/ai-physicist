@@ -1,6 +1,6 @@
 import json
 from typing import Dict, List, Tuple, Set
-from memory import Memory
+from memory import Memory, Bandit
 from specific_model import SpecificModel, ConservedInfo
 from object_model import ObjectModel
 from interface import Knowledge
@@ -35,36 +35,46 @@ class Theorist:
 
     def __init__(self):
         self.general = Knowledge.default()
-        self.memory = Memory()
+        self.memory = Memory(self.general)
         experiment_list = self.general.fetch_exps
         self.specific = {}
         for name in experiment_list:
             self.specific[name] = SpecificModel(name, self.general)
+            self.memory.specific[name] = Bandit()
+            for concept in self.specific[name].experiment.original_concept:
+                self.memory.specific[name].register_action(concept.atomexp_name, str(concept))
         self.objmodel = {}
 
-    def read_from_file(filename_for_knowledge: str, filename_for_memory: str) -> "Theorist":
+    def read_from_file(filename: str) -> "Theorist":
+        filename_for_knowledge = filename + "_knowledge.txt"
+        filename_for_memory = filename + "_memory.json"
+        filename_for_specific_model = filename + "_specific_model.json"
         obj = object.__new__(Theorist)
         obj.general = Knowledge.read_from_file(filename_for_knowledge)
         with open(filename_for_memory, "r") as f:
             memory_dict = json.load(f)
-        obj.memory = Memory.from_json(memory_dict["general"])
+        obj.memory = Memory.from_json(memory_dict, obj.general)
+        with open(filename_for_specific_model, "r") as f:
+            specific_model_dict = json.load(f)
         obj.specific = {}
         for name in obj.general.fetch_exps:
             obj.specific[name] = SpecificModel(name, obj.general)
-            obj.specific[name].load_json(memory_dict["specific"][name])
+            obj.specific[name].load_json(specific_model_dict[name])
         obj.objmodel = {}
         return obj
 
-    def save_to_file(self, filename_for_knowledge: str, filename_for_memory: str):
+    def save_to_file(self, filename: str):
+        filename_for_knowledge = filename + "_knowledge.txt"
+        filename_for_memory = filename + "_memory.json"
+        filename_for_specific_model = filename + "_specific_model.json"
         self.general.save_to_file(filename_for_knowledge)
-        memory_dict = {
-            "general": self.memory.to_json(),
-            "specific": {
-                key: value.to_json() for key, value in self.specific.items()
-            }
-        }
         with open(filename_for_memory, "w") as f:
-            json.dump(memory_dict, f, indent=4)
+            json.dump(self.memory.to_json(), f, indent=4)
+        specific_dict = {
+            key: value.to_json() for key, value in self.specific.items()
+        }
+        with open(filename_for_specific_model, "w") as f:
+            json.dump(specific_dict, f, indent=4)
 
     def newObjectModel(self, obj_type: str) -> ObjectModel:
         return ObjectModel(obj_type, self.general)
@@ -75,14 +85,15 @@ class Theorist:
         name = self.objmodel[obj_type].register_intrinsic(intrinsic)
         if name is not None:
             print("\033[1m" + f"Registered New Concept: {name} = {intrinsic}" + "\033[0m")
-            for key in self.specific:
-                self.specific[key].memory.register_action(name)
+            for exp_name in self.specific:
+                self.memory.specific[exp_name].register_action(name)
         return name
 
     def theoretical_analysis(self, exp_name: str, ver: str | None = None):
         assert (exp_name in self.specific)
         spm: SpecificModel = self.specific[exp_name]
-        data_info: DataStruct = spm.pick_relevant_exprs()
+        exprs: List[AtomExp] = self.memory.pick_relevant_exprs(exp_name)
+        data_info: DataStruct = spm.generate_data_struct(exprs)
         conclusion_before = set(spm.conclusions.keys())
         # list_datainfo(data_info)
         if ver is None:
@@ -125,7 +136,7 @@ class Theorist:
                 rewards[action] = rewards.get(action, 0) + 1 / len(actions)
         spm.intrinsic_buffer.clear()
         # update reward to spm.memory
-        spm.memory.update_rewards(rewards)
+        self.memory.specific[exp_name].update_rewards(rewards)
 
     def register_intrinsics(self, CQinfos: Dict[str, ConservedInfo]):
         for name, info in CQinfos.items():
@@ -181,7 +192,7 @@ class Theorist:
         if name is not None:
             tqdm.write(f"\033[1m" + f"Registered New Concept: {name} = {concept}" + f"\033[0m")
             for key in self.specific:
-                self.specific[key].memory.register_action(name)
+                self.memory.specific[key].register_action(name)
 
 
 def work_at_exp(knowledge: Knowledge, exp_name: str) -> ExpStructure:
