@@ -124,10 +124,6 @@ pub fn search_relations_ver3(fn_list: &DataStruct) -> Vec<(Exp, ExpData)> {
             }
         }
     }
-    println!("search_relations_ver3 from list");
-    for (exp, _) in list.iter() {
-        println!("exp: {}", exp);
-    }
     result
 }
 

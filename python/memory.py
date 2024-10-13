@@ -27,6 +27,7 @@ class Bandit:
         新注册一个动作
         """
         self.actions[name] = nsUCB(info)
+        self.actions[name].update(1.0)
 
     def choose_actions(self, num: int) -> List[str]:
         """
@@ -80,6 +81,7 @@ class Memory:
         TODO：需要有方向性的智能的随机选取，且这种随机选取方式是可学习的
         """
         actions = self.specific[exp_name].choose_actions(6)
+        print("Pick out Concepts: ", actions)
         exprs = []
         for action in actions:
             info = self.specific[exp_name].actions[action].info
@@ -90,3 +92,12 @@ class Memory:
                 specific_exprs: list[AtomExp] = self.knowledge.specialize_concept(concept_name=action, exp_name=exp_name)
             exprs.extend(specific_exprs)
         return exprs
+
+    def register_action(self, action_name: str):
+        self.general.register_action(action_name)
+        for exp_name in self.specific:
+            self.specific[exp_name].register_action(action_name)
+
+    def update_rewards(self, exp_name: str, rewards: Dict[str, float]):
+        self.general.update_rewards(rewards)
+        self.specific[exp_name].update_rewards(rewards)

@@ -260,12 +260,18 @@ class SpecificModel:
             return ideal._insert_new_eqs_and_ineqs([new_eq], [new_ineqs])
         subs_dict = dict()
         inverse_dict = dict()
-        for name in tqdm(name_list):
+        for name in tqdm(name_list, desc='Reduce Conclusions'):
             prop: Proposition = self.conclusions.get(name)
-            sp_expr = sp.simplify(
-                self._sympy_of_raw_defi(prop.unwrap_exp)
-                .subs(subs_dict, simultaneous=True)
-            ).subs(inverse_dict, simultaneous=True)
+            try:
+                sp_expr = sp.simplify(
+                    self._sympy_of_raw_defi(prop.unwrap_exp)
+                    .subs(subs_dict, simultaneous=True)
+                ).subs(inverse_dict, simultaneous=True)
+            except:
+                print(f'Failed to simplify {prop.unwrap_exp}')
+                print(f'subs_dict = {subs_dict}')
+                print(f'inverse_dict = {inverse_dict}')
+                raise Exception(f'Failed to simplify {prop.unwrap_exp}')
             if_print = False
             if prop.prop_type == "IsConserved":
                 if sp_expr.is_Function:

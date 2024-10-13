@@ -85,14 +85,17 @@ class Theorist:
         name = self.objmodel[obj_type].register_intrinsic(intrinsic)
         if name is not None:
             print("\033[1m" + f"Registered New Concept: {name} = {intrinsic}" + "\033[0m")
-            for exp_name in self.specific:
-                self.memory.specific[exp_name].register_action(name)
+            self.memory.register_action(name)
         return name
 
     def theoretical_analysis(self, exp_name: str, ver: str | None = None):
         assert (exp_name in self.specific)
+        print('\n')
+        print('#'*10 + ' \033[1m' + exp_name + '\033[0m ' + '#'*10)
+        print('\n')
         spm: SpecificModel = self.specific[exp_name]
         exprs: List[AtomExp] = self.memory.pick_relevant_exprs(exp_name)
+        print(f"Work on {len(exprs)} relevant expressions: ", [str(i) for i in exprs])
         data_info: DataStruct = spm.generate_data_struct(exprs)
         conclusion_before = set(spm.conclusions.keys())
         # list_datainfo(data_info)
@@ -105,7 +108,7 @@ class Theorist:
         elif ver == 'trivial':
             res: List[Tuple[Exp, ExpData]] = search_trivial_relations(data_info)
         print(f"Found {len(res)} relations")
-        for (expr, expdata) in tqdm(res):
+        for (expr, expdata) in tqdm(res, desc="Add to Specific model"):
             name: str = None
             if expdata.is_zero:
                 name = spm.append_zero_exp(expr)
@@ -135,8 +138,8 @@ class Theorist:
             for action in actions:
                 rewards[action] = rewards.get(action, 0) + 1 / len(actions)
         spm.intrinsic_buffer.clear()
-        # update reward to spm.memory
-        self.memory.specific[exp_name].update_rewards(rewards)
+        # update reward to self.memory
+        self.memory.update_rewards(exp_name, rewards)
 
     def register_intrinsics(self, CQinfos: Dict[str, ConservedInfo]):
         for name, info in CQinfos.items():
@@ -189,6 +192,7 @@ class Theorist:
         """
         expression: Expression = Expression.Concept(concept=concept)
         name = self.general.register_expr(expression)
+        self.memory.register_action(name)
         if name is not None:
             tqdm.write(f"\033[1m" + f"Registered New Concept: {name} = {concept}" + f"\033[0m")
             for key in self.specific:

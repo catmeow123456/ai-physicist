@@ -44,14 +44,14 @@ https://zhuanlan.zhihu.com/p/565617662
 0.（完成） `aiphysicist.pyi` 存根文件。
 1.（完成） 知识库的存储、读取。
 2. 内禀概念判重还没做，挑选量程大的内禀概念定义方式。
-3. 维护概念历史权重，用 UCB 公式探索性地抽取概念，以获得较大的回报。
+3.（完成） 维护概念历史权重，用 UCB 公式探索性地抽取概念，以获得较大的回报。
 4.（完成） reduce conclusions （Grobner 方法）流程优化，将内禀概念的判重也纳入到这个流程中来。
 5. 不需要把所有发现的关系都加入 concept（可以只添加那些 reduce conclusions 剩下的那些 conclusion 作为概念）。
 6. 新概念如果比旧概念定义更简单，需要进行替换，这个还没做。
 7. 发现的守恒量与之前发现的守恒量做 PCA 寻找它们之间的非线性关系（例如 ma - kx = kr + kl）。
 8. PCA 找守恒量
 9. （完成）reduce conclusion 完善，对于守恒的符号变量，先用简单策略化简。保证通过 `test9/step_three` 测试的条件下，获得最好的 minimal 表示
-目前的效果：
+目前暴力搜索程序的效果：
 ```json
 "oscillation": {
     "conclusion": {
@@ -62,3 +62,4 @@ https://zhuanlan.zhihu.com/p/565617662
     }
 }
 ```
+10. 给选择实验，选择抽取概念数量，选择实验，选择次数全部套用非平稳 ucb 策略。
