@@ -11,6 +11,13 @@ from interface import (
 )
 from tqdm import tqdm
 
+search_type = {
+    None: search_relations,
+    'ver2': search_relations_ver2,
+    'ver3': search_relations_ver3,
+    'trivial': search_trivial_relations
+}
+
 
 def list_datainfo(data_info: DataStruct):
     df = data_info.data_keys
@@ -19,27 +26,34 @@ def list_datainfo(data_info: DataStruct):
 
 class Theorist:
     """
-    Theorist 类，由一个主要 Knowledge 类 `general` 
-    和一系列特殊 Model 类 `specific`,`objmodel` 组成。
-    general 是一个全局的知识库。
-    specific 代表了关于每一个实验的知识库（也被叫做“具体模型”）。
-    objmodel 代表了关于每一个物体的知识库（刻画了对物体的认识）。
-    理论家的主要工作就是不断地做实验，然后从实验中发现一些规律，将这些规律注册到 general 或者具体的 specific 中，
+    Theorist 类，由一个主要 Knowledge 类 `knowledge` 
+    和一系列特殊 Model 类 `specific`,`objmodel` 组成，
+    除此以外它还包括一个 Memory 类 `memory` 用于存储 AI 对各个动作的记忆
+    （为了在接下来的探索中更高效率有更高回报地选择动作）。
+
+    knowledge 是一个全局的知识库。
+    specific 代表了关于每一个实验的“具体模型”。
+    objmodel 代表了关于每一个物体的模型（刻画了对物体的认识）。
+
+    理论家的主要工作就是不断地做实验，然后从实验中发现一些规律，
+    将这些规律注册到 knowledge 和 具体的 specific 中，
     如果这个过程中发现一些关于物理对象的具体知识，这个知识会被注册到 objmodel 中。
-    理论家可以调用不同知识库的记忆，来辅助推理分析，也可以将推理分析的结果注册到不同的知识库中。
+
+    memory 负责记忆 AI 对各个动作的“期待”（或者说“倾向性”）和“熟悉度”，
+    它采用的是非平稳老虎机的一个变种公式来更新动作的期待值和熟悉值，来辅助 AI 对动作进行选择。
     """
-    general: Knowledge
+    knowledge: Knowledge
     memory: Memory
     specific: Dict[str, SpecificModel]
     objmodel: Dict[str, ObjectModel]
 
     def __init__(self):
-        self.general = Knowledge.default()
-        self.memory = Memory(self.general)
-        experiment_list = self.general.fetch_exps
+        self.knowledge = Knowledge.default()
+        self.memory = Memory(self.knowledge)
+        experiment_list = self.knowledge.fetch_exps
         self.specific = {}
         for name in experiment_list:
-            self.specific[name] = SpecificModel(name, self.general)
+            self.specific[name] = SpecificModel(name, self.knowledge)
             self.memory.specific[name] = Bandit()
             for concept in self.specific[name].experiment.original_concept:
                 self.memory.specific[name].register_action(concept.atomexp_name, str(concept))
@@ -50,15 +64,15 @@ class Theorist:
         filename_for_memory = filename + "_memory.json"
         filename_for_specific_model = filename + "_specific_model.json"
         obj = object.__new__(Theorist)
-        obj.general = Knowledge.read_from_file(filename_for_knowledge)
+        obj.knowledge = Knowledge.read_from_file(filename_for_knowledge)
         with open(filename_for_memory, "r") as f:
             memory_dict = json.load(f)
-        obj.memory = Memory.from_json(memory_dict, obj.general)
+        obj.memory = Memory.from_json(memory_dict, obj.knowledge)
         with open(filename_for_specific_model, "r") as f:
             specific_model_dict = json.load(f)
         obj.specific = {}
-        for name in obj.general.fetch_exps:
-            obj.specific[name] = SpecificModel(name, obj.general)
+        for name in obj.knowledge.fetch_exps:
+            obj.specific[name] = SpecificModel(name, obj.knowledge)
             obj.specific[name].load_json(specific_model_dict[name])
         obj.objmodel = {}
         return obj
@@ -67,7 +81,7 @@ class Theorist:
         filename_for_knowledge = filename + "_knowledge.txt"
         filename_for_memory = filename + "_memory.json"
         filename_for_specific_model = filename + "_specific_model.json"
-        self.general.save_to_file(filename_for_knowledge)
+        self.knowledge.save_to_file(filename_for_knowledge)
         with open(filename_for_memory, "w") as f:
             json.dump(self.memory.to_json(), f, indent=4)
         specific_dict = {
@@ -77,7 +91,7 @@ class Theorist:
             json.dump(specific_dict, f, indent=4)
 
     def newObjectModel(self, obj_type: str) -> ObjectModel:
-        return ObjectModel(obj_type, self.general)
+        return ObjectModel(obj_type, self.knowledge)
 
     def register_new_intrinsic(self, obj_type: str, intrinsic: Intrinsic) -> str:
         if not self.objmodel.__contains__(obj_type):
@@ -99,14 +113,7 @@ class Theorist:
         data_info: DataStruct = spm.generate_data_struct(exprs)
         conclusion_before = set(spm.conclusions.keys())
         # list_datainfo(data_info)
-        if ver is None:
-            res: List[Tuple[Exp, ExpData]] = search_relations(data_info)
-        elif ver == 'ver2':
-            res: List[Tuple[Exp, ExpData]] = search_relations_ver2(data_info)
-        elif ver == 'ver3':
-            res: List[Tuple[Exp, ExpData]] = search_relations_ver3(data_info)
-        elif ver == 'trivial':
-            res: List[Tuple[Exp, ExpData]] = search_trivial_relations(data_info)
+        res: List[Tuple[Exp, ExpData]] = search_type[ver](data_info)
         print(f"Found {len(res)} relations")
         for (expr, expdata) in tqdm(res, desc="Add to Specific model"):
             name: str = None
@@ -125,7 +132,7 @@ class Theorist:
         conclusion_diff = conclusion_after - conclusion_before
         for name in conclusion_diff:
             expr: Exp = spm.conclusions.get(name).unwrap_exp
-            expression: Expression = self.general.generalize(exp_name, expr)
+            expression: Expression = self.knowledge.generalize(exp_name, expr)
             self.register_concept(expression.unwrap_concept)
             actions: Set[str] = {i.name for i in expr.all_atoms}
             for action in actions: # 枚举表达式的原子，计算 action reward
@@ -166,7 +173,7 @@ class Theorist:
                     obj_type, IExpConfig.From(exp_name), id
                 )
                 id1, obj_type1 = relevant_id[0], str(experiment.get_obj_type(relevant_id[0]))
-                standard_object_name = self.general.register_object(experiment.get_obj(relevant_id[0]))
+                standard_object_name = self.knowledge.register_object(experiment.get_obj(relevant_id[0]))
                 iexp_config = IExpConfig.Mkfix(
                     standard_object_name, iexp_config, id1
                 )
@@ -187,11 +194,11 @@ class Theorist:
         """
         Theorist 类中新注册一个概念。
 
-        新注册的概念在 general 中注册过后，可以有选择性地给 specific 中的每一个实验注册
+        新注册的概念在 knowledge 中注册过后，可以有选择性地给 specific 中的每一个实验注册
         这个地方有很多优化空间，因为在一些实验中某个概念可能是毫无用处的，这个时候就可以删掉。
         """
         expression: Expression = Expression.Concept(concept=concept)
-        name = self.general.register_expr(expression)
+        name = self.knowledge.register_expr(expression)
         self.memory.register_action(name)
         if name is not None:
             tqdm.write(f"\033[1m" + f"Registered New Concept: {name} = {concept}" + f"\033[0m")

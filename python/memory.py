@@ -46,11 +46,13 @@ class Bandit:
 
 class Memory:
     """
-    AI 的记忆仓库，其中包括了各种概念或者其他抽象的表达，
-    且每一个概念拥有一个权重（ TODO ）。
-    给记忆仓库一个 pick_relevant_exprs 指令，并传入特定实验 experiment、Knowledge，
-    它会根据记忆联想到与实验 experiment 相关的一些特定的原子表达式。
-    后续会接入神经网络来调节这一部分。
+    AI 的记忆仓库，目的是在传入具体实验名称 exp_name 时，
+    回想起一些相关的原子表达式，并根据权重抽取原子表达式 （pick_relevant_exprs）。
+    抽取算法是基于非平稳多臂老虎机的，
+    每一个具体实验都对应一个老虎机 specific[exp_name]，
+    一个老虎机有一个动作空间，每一个动作都对应一个原子表达式。
+    不同实验的经验是可以相互迁移的，因此有一个通用的老虎机 general，
+    它的动作空间是所有实验的并集。如果在实验 A 中概念 v 有很好的表现，那么在其他实验中会有更高的倾向去选择 v。
     """
     knowledge: Knowledge
     general: Bandit

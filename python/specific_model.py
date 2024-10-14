@@ -170,7 +170,7 @@ class SpecificModel:
     以及一个 experiment_control 字典，是相对于 experiment 的实验对照组，表达了在控制变量的条件下做实验获得的新结果。
     """
     exp_name: str
-    general: Knowledge
+    knowledge: Knowledge
     memory: Memory
     experiment: ExpStructure
     experiment_control: Dict[int, List[ExpStructure]]
@@ -180,17 +180,17 @@ class SpecificModel:
     intrinsic_buffer: Dict[str, ConservedInfo]
     # 保证 conserved_list 与 zero_list 对应了 memory.conclusion 中的结论
 
-    def __init__(self, exp_name: str, general: Knowledge):
+    def __init__(self, exp_name: str, knowledge: Knowledge):
         """
         初始化一个 SpecificModel 对象，需要提供实验的名称和实验的结构
         """
         self.exp_name = exp_name
-        self.general = general
-        self.experiment = self.general.fetch_expstruct(exp_name)
+        self.knowledge = knowledge
+        self.experiment = self.knowledge.fetch_expstruct(exp_name)
         self.experiment.random_settings()
         self.experiment.collect_expdata(MeasureType.default())
         self.experiment_control = {}
-        self.conclusions = ConclusionSet(self.general)
+        self.conclusions = ConclusionSet(self.knowledge)
         self.intrinsic_buffer = {}
 
     def generate_data_struct(self, exprs: List[AtomExp]) -> DataStruct:
@@ -199,7 +199,7 @@ class SpecificModel:
         """
         DS = DataStruct.empty()
         for atom_exp in exprs:
-            DS.add_data(atom_exp, self.general.eval(Exp.Atom(atom_exp), self.experiment))
+            DS.add_data(atom_exp, self.knowledge.eval(Exp.Atom(atom_exp), self.experiment))
         return DS
 
     def to_json(self) -> Dict[str, str]:
@@ -217,7 +217,7 @@ class SpecificModel:
         """
         这个函数的目的是计算一个结论（ conclusion ）的 rawdefinition 的复杂度，以便在 reduce_conclusions 函数中进行排序
         """
-        return self.general.K.raw_definition_prop(prop).complexity
+        return self.knowledge.K.raw_definition_prop(prop).complexity
 
     def reduce_conclusions(self, debug=False):
         """
@@ -329,7 +329,7 @@ class SpecificModel:
         如果是，返回 True 和它依赖的实验对象编号
         否则，返回 False 和 None
         """
-        expdata: ExpData = self.general.eval(exp, self.experiment)
+        expdata: ExpData = self.knowledge.eval(exp, self.experiment)
         if not expdata.is_const:
             return False, None
         if not self.experiment_control.__contains__(-1):
@@ -341,7 +341,7 @@ class SpecificModel:
                 self.experiment_control[-1].append(new_exp)
         expdata_list = [expdata.const_data]
         for new_exp in self.experiment_control[-1]:
-            new_expdata = self.general.eval(exp, new_exp)
+            new_expdata = self.knowledge.eval(exp, new_exp)
             if new_expdata.is_const:
                 expdata_list.append(new_expdata.const_data)
             else:
@@ -362,7 +362,7 @@ class SpecificModel:
                     self.experiment_control[id].append(new_exp)
             expdata_list = [expdata.const_data]
             for new_exp in self.experiment_control[id]:
-                new_expdata = self.general.eval(exp, new_exp)
+                new_expdata = self.knowledge.eval(exp, new_exp)
                 if new_expdata.is_const:
                     expdata_list.append(new_expdata.const_data)
                 else:
@@ -403,13 +403,13 @@ class SpecificModel:
 
     def print_full_conclusion(self):
         for name, exp in self.conclusions.zero_list:
-            print(name, "zero:", exp, "=", self.general.raw_definition_exp(exp))
+            print(name, "zero:", exp, "=", self.knowledge.raw_definition_exp(exp))
         for name, exp in self.conserved_list:
-            print(name, "conserved:", exp, "=", self.general.raw_definition_exp(exp))
+            print(name, "conserved:", exp, "=", self.knowledge.raw_definition_exp(exp))
 
     def _sympy_of_raw_defi(self, exp: Exp) -> sp.Expr:
-        return sp.sympify(self.general.K.parse_exp_to_sympy_str(
-            self.general.K.raw_definition_exp(exp),
+        return sp.sympify(self.knowledge.K.parse_exp_to_sympy_str(
+            self.knowledge.K.raw_definition_exp(exp),
             "t_0"
         ))
 
